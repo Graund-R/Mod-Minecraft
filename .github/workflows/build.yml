@@ -25,7 +25,7 @@ jobs:
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
       - name: Build
         working-directory: mdk
-        run: ./gradlew setupCIWorkspace build --no-daemon
+        run: ./gradlew build --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: pocketmod-jar
