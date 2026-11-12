@@ -1,0 +1,4 @@
+key.pocketmod.pocket=Pocket dimension
+key.categories.pocketmod=Pocket Mod
+pocketmod.msg.no_mana=Not enough mana: %s needed
+pocketmod.msg.mana_gained=+%s mana

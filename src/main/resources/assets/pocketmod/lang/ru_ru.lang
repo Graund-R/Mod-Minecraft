@@ -1,0 +1,4 @@
+key.pocketmod.pocket=Карманное измерение
+key.categories.pocketmod=Pocket Mod
+pocketmod.msg.no_mana=Не хватает маны: нужно %s
+pocketmod.msg.mana_gained=+%s маны
