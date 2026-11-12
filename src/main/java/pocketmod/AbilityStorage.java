@@ -8,8 +8,8 @@ public class AbilityStorage {
     private static final String ROOT = "pocketmod_abilities";
 
     private static NBTTagCompound root(EntityPlayer player) {
-        NBTTagCompound data = player.getEntityData();
-        if (!data.hasKey(ROOT)) {
+        NBTTagCompound data = PlayerData.root(player);
+        if (!data.hasKey(ROOT, 10)) {
             data.setTag(ROOT, new NBTTagCompound());
         }
         return data.getCompoundTag(ROOT);
