@@ -1,17 +1,13 @@
 package pocketmod;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldServer;
 
-/**
- * Логика карманного измерения: построение стартовой комнаты 5x5,
- * кольца стен, оплата и расширение.
- */
 public class Pocket {
 
-    // Стартовая комната (центр около 0, 64, 0)
     public static final int X_MIN = 0, X_MAX = 4;
     public static final int Y_MIN = 63, Y_MAX = 67;
     public static final int Z_MIN = 0, Z_MAX = 4;
@@ -22,7 +18,6 @@ public class Pocket {
             return;
         }
 
-        // Пол, потолок, стены из конфиг-блока
         for (int x = X_MIN - 1; x <= X_MAX + 1; x++) {
             for (int y = Y_MIN - 1; y <= Y_MAX + 1; y++) {
                 for (int z = Z_MIN - 1; z <= Z_MAX + 1; z++) {
@@ -49,8 +44,8 @@ public class Pocket {
         return Math.max(dx, Math.max(dy, dz));
     }
 
-    public static int cost(BlockPos p) {
-        return PocketConfig.expandCost(ring(p));
+    public static double costMana(BlockPos p, EntityPlayer player) {
+        return PocketConfig.expandCost(ring(p)) * (double) PocketConfig.valueIron * Mana.getPriceMultiplier(player);
     }
 
     public static boolean isPayable(PocketData d, BlockPos p) {
@@ -72,6 +67,7 @@ public class Pocket {
         d.walls.remove(p);
         d.paid.remove(p);
         d.interior.add(p);
+        d.maxRing = Math.max(d.maxRing, ring(p));
         w.setBlockState(p, Blocks.AIR.getDefaultState(), 3);
 
         for (int dx = -1; dx <= 1; dx++) {
