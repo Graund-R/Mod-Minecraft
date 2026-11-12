@@ -94,7 +94,7 @@ public class ClientHandler {
         if (v && !wasV) { downV = now; holdV = false; }
         if (v && !holdV && downV > 0 && now - downV >= holdMs) {
             holdV = true;
-            mc.player.sendStatusMessage(new TextComponentString("Shop (soon)"), true);
+            mc.displayGuiScreen(new ShopGui(mc.player));
         }
         if (!v && wasV) {
             if (!holdV && downV > 0) {
