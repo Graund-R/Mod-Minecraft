@@ -1,4 +1,12 @@
 key.pocketmod.pocket=Карманное измерение
+key.pocketmod.teleport=Телепорт
+key.pocketmod.invis=Невидимость
+key.pocketmod.slow=Замедление времени
 key.categories.pocketmod=Pocket Mod
 pocketmod.msg.no_mana=Не хватает маны: нужно %s
 pocketmod.msg.mana_gained=+%s маны
+pocketmod.msg.invis_on=Невидимость вкл
+pocketmod.msg.invis_off=Невидимость выкл
+pocketmod.msg.slow_on=Замедление вкл
+pocketmod.msg.slow_off=Замедление выкл
+pocketmod.msg.teleport_unsafe=Нет безопасной точки для телепорта

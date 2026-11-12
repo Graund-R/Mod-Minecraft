@@ -1,4 +1,12 @@
 key.pocketmod.pocket=Pocket dimension
+key.pocketmod.teleport=Teleport
+key.pocketmod.invis=Invisibility
+key.pocketmod.slow=Time slow
 key.categories.pocketmod=Pocket Mod
 pocketmod.msg.no_mana=Not enough mana: %s needed
 pocketmod.msg.mana_gained=+%s mana
+pocketmod.msg.invis_on=Invisibility ON
+pocketmod.msg.invis_off=Invisibility OFF
+pocketmod.msg.slow_on=Time slow ON
+pocketmod.msg.slow_off=Time slow OFF
+pocketmod.msg.teleport_unsafe=No safe teleport location
