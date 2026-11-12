@@ -158,6 +158,13 @@ public class ClientHandler {
         Gui.drawRect(x, y, x + (int) (w * fill), y + h, 0xFF55AAFF);
         mc.fontRenderer.drawStringWithShadow(String.valueOf((int) mana), x + w + 6, y, 0xFFFFFF);
 
+        if (Abilities.isSlow(sp)) {
+            float factor = Abilities.getSlowFactor(sp);
+            float intensity = (1.0f - factor) / 0.9f;
+            intensity = Math.min(1.0f, Math.max(0.15f, intensity));
+            drawSlowVignette(event.getResolution(), intensity);
+        }
+
         if (mc.player.dimension == PocketMod.DIM_ID
                 && mc.objectMouseOver != null
                 && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
@@ -178,5 +185,27 @@ public class ClientHandler {
             }
         }
         GlStateManager.color(1f, 1f, 1f, 1f);
+    }
+
+    private void drawSlowVignette(ScaledResolution res, float intensity) {
+        int sw = res.getScaledWidth();
+        int sh = res.getScaledHeight();
+        int edge = (int) (40 + intensity * 80);
+        int alpha = (int) (0x40 + intensity * 0x90);
+        if (alpha > 220) alpha = 220;
+        int color = (alpha << 24);
+
+        Gui.drawRect(0, 0, sw, edge, color);
+        Gui.drawRect(0, sh - edge, sw, sh, color);
+        Gui.drawRect(0, edge, edge, sh - edge, color);
+        Gui.drawRect(sw - edge, edge, sw, sh - edge, color);
+
+        int edge2 = edge / 2;
+        int alpha2 = alpha / 2;
+        int color2 = (alpha2 << 24);
+        Gui.drawRect(edge, edge, sw - edge, edge + edge2, color2);
+        Gui.drawRect(edge, sh - edge - edge2, sw - edge, sh - edge, color2);
+        Gui.drawRect(edge, edge + edge2, edge + edge2, sh - edge - edge2, color2);
+        Gui.drawRect(sw - edge - edge2, edge + edge2, sw - edge, sh - edge - edge2, color2);
     }
 }
