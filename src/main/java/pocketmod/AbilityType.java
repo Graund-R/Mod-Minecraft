@@ -1,6 +1,7 @@
 package pocketmod;
 
 public enum AbilityType {
+    POCKET("pocket", "Карманное измерение", 100, 0, 0, 1),
     TELEPORT("teleport", "Телепорт", 150, 400, 900, 3),
     INVISIBILITY("invis", "Невидимость", 120, 350, 800, 3),
     SLOW("slow", "Замедление времени", 200, 500, 1100, 3),
