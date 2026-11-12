@@ -96,13 +96,7 @@ public class Abilities {
     }
 
     public static void tickSlow(EntityPlayerMP player) {
-        if (!isSlow(player)) return;
-        float factor = getSlowFactor(player);
-        double costPerSec = (1.0 / factor) * 2.0 * Mana.getPriceMultiplier(player);
-        if (!Mana.spend(player, costPerSec / 20.0)) {
-            player.getEntityData().setBoolean(KEY_SLOW, false);
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_off"), true);
-        }
+        TimeSlow.tickMana(player);
     }
 
     public static void teleportLook(EntityPlayerMP player) {
