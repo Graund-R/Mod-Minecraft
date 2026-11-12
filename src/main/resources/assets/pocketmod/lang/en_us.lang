@@ -10,3 +10,4 @@ pocketmod.msg.invis_off=Invisibility OFF
 pocketmod.msg.slow_on=Time slow ON
 pocketmod.msg.slow_off=Time slow OFF
 pocketmod.msg.teleport_unsafe=No safe teleport location
+pocketmod.msg.need_shop=Buy it in the shop first (hold V)

@@ -10,3 +10,4 @@ pocketmod.msg.invis_off=Невидимость выкл
 pocketmod.msg.slow_on=Замедление вкл
 pocketmod.msg.slow_off=Замедление выкл
 pocketmod.msg.teleport_unsafe=Нет безопасной точки для телепорта
+pocketmod.msg.need_shop=Сначала купи в магазине (удержание V)
