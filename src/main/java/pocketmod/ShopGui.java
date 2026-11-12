@@ -34,6 +34,7 @@ public class ShopGui extends GuiScreen {
 
     public ShopGui(EntityPlayer player) {
         this.player = player;
+        list.add(AbilityType.POCKET);
         list.add(AbilityType.TELEPORT);
         list.add(AbilityType.INVISIBILITY);
         list.add(AbilityType.SLOW);
@@ -57,7 +58,7 @@ public class ShopGui extends GuiScreen {
         }
         int cy = height - 52;
         buttonList.add(new GuiButton(BTN_CREDIT_100, cx - 160, cy, 60, 20, "+100"));
-        buttonList.add(new GuiButton(BTN_CREDIT_500, cx - 90, cy, 60, 20, "+500"));
+        buttonList.add(new GuiButton(BTN_CREDIT_500, cx - 90, cy, 70, 20, "+500"));
         buttonList.add(new GuiButton(BTN_CREDIT_1000, cx - 20, cy, 70, 20, "+1000"));
         buttonList.add(new GuiButton(BTN_CLOSE, cx + 70, cy, 70, 20, "\u0417\u0430\u043a\u0440\u044b\u0442\u044c"));
     }
