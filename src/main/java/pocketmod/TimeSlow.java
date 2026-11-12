@@ -8,6 +8,7 @@ import java.util.Map;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityTNTPrimed;
+import net.minecraft.entity.EntityHanging;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -60,6 +61,16 @@ public class TimeSlow {
 
     @SubscribeEvent
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
+        try {
+            worldTick(event);
+        } catch (Throwable t) {
+            System.err.println("[PocketMod] TimeSlow world tick error:");
+            t.printStackTrace();
+            states.clear();
+        }
+    }
+
+    private static void worldTick(TickEvent.WorldTickEvent event) {
         if (event.world.isRemote) return;
         if (!(event.world instanceof WorldServer)) return;
         WorldServer world = (WorldServer) event.world;
@@ -100,7 +111,7 @@ public class TimeSlow {
             AxisAlignedBB box = source.getEntityBoundingBox().grow(RADIUS);
             List<Entity> list = world.getEntitiesWithinAABB(Entity.class, box);
             for (Entity e : list) {
-                if (e instanceof EntityPlayer || e instanceof EntityLivingBase) continue;
+                if (e instanceof EntityPlayer || e instanceof EntityLivingBase || e instanceof EntityHanging) continue;
                 if (isPlayerMount(e)) continue;
                 double fuse = e instanceof EntityTNTPrimed ? ((EntityTNTPrimed) e).getFuse() : 0.0;
                 st.frozen.add(e);
@@ -137,6 +148,15 @@ public class TimeSlow {
 
     @SubscribeEvent
     public static void onLivingUpdate(LivingEvent.LivingUpdateEvent event) {
+        try {
+            livingUpdate(event);
+        } catch (Throwable t) {
+            System.err.println("[PocketMod] TimeSlow living update error:");
+            t.printStackTrace();
+        }
+    }
+
+    private static void livingUpdate(LivingEvent.LivingUpdateEvent event) {
         EntityLivingBase e = event.getEntityLiving();
         if (e.world.isRemote || e instanceof EntityPlayer) return;
         State st = states.get(Integer.valueOf(e.world.provider.getDimension()));

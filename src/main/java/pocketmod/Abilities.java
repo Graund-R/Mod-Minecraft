@@ -150,11 +150,12 @@ public class Abilities {
         BlockPos land = null;
 
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-            // Сначала — остановиться перед стеной, и только если там небезопасно — встать сверху
-            Vec3d before = hit.hitVec.subtract(look.scale(0.3));
-            land = findSafePos(world, new BlockPos(before));
+            // Луч попал в блок (в бок, снизу или сверху): сначала пробуем встать НА его верх,
+            // и только если там небезопасно — остановиться перед стеной
+            land = findTopLanding(world, hit.getBlockPos());
             if (land == null) {
-                land = findTopLanding(world, hit.getBlockPos());
+                Vec3d before = hit.hitVec.subtract(look.scale(0.3));
+                land = findSafePos(world, new BlockPos(before));
             }
         } else {
             land = findSafePos(world, new BlockPos(end));

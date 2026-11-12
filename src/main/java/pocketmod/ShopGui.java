@@ -7,7 +7,6 @@ import java.util.List;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.integrated.IntegratedServer;
@@ -65,8 +64,8 @@ public class ShopGui extends GuiScreen {
         sliderH = 10;
         sliderX = cx - 160;
         sliderY = height - 34;
-        buttonList.add(new GuiButton(BTN_TAKE, cx, height - 40, 80, 18, I18n.format("pocketmod.gui.take")));
-        buttonList.add(new GuiButton(BTN_CLOSE, cx + 90, height - 40, 70, 18, I18n.format("pocketmod.gui.close")));
+        buttonList.add(new GuiButton(BTN_TAKE, cx, height - 40, 80, 18, Tr.format("pocketmod.gui.take")));
+        buttonList.add(new GuiButton(BTN_CLOSE, cx + 90, height - 40, 70, 18, Tr.format("pocketmod.gui.close")));
         if (creditAmount == 0) {
             creditAmount = PocketConfig.creditMin;
         }
@@ -75,11 +74,11 @@ public class ShopGui extends GuiScreen {
     private String buyLabel(AbilityType t) {
         EntityPlayer dp = dataPlayer();
         int lvl = AbilityStorage.getLevel(dp, t);
-        if (lvl >= t.maxLevel) return I18n.format("pocketmod.gui.max");
+        if (lvl >= t.maxLevel) return Tr.format("pocketmod.gui.max");
         int cost = t.costForNextLevel(lvl);
         if (cost < 0) return "-";
         double real = cost * Mana.getPriceMultiplier(dp);
-        String s = I18n.format(lvl == 0 ? "pocketmod.gui.buy" : "pocketmod.gui.upgrade", (int) Math.ceil(real));
+        String s = Tr.format(lvl == 0 ? "pocketmod.gui.buy" : "pocketmod.gui.upgrade", (int) Math.ceil(real));
         // красная цена, если не хватает маны
         return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + s;
     }
@@ -122,18 +121,18 @@ public class ShopGui extends GuiScreen {
         double mult = Mana.getPriceMultiplier(dp);
         double drain = Abilities.totalDrainPerSec(dp);
 
-        drawCenteredString(fontRenderer, I18n.format("pocketmod.gui.title"), cx, 6, 0xFFE080);
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.title"), cx, 6, 0xFFE080);
         drawCenteredString(fontRenderer,
-                I18n.format("pocketmod.gui.mana", (long) mana, String.format("%.2f", mult)), cx, 18, 0xAAAAFF);
+                Tr.format("pocketmod.gui.mana", (long) mana, String.format("%.2f", mult)), cx, 18, 0xAAAAFF);
         String drainLine = drain > 0.001
-                ? I18n.format("pocketmod.gui.drain", String.format("%.1f", drain), (long) (mana / drain / 60.0))
-                : I18n.format("pocketmod.gui.drain_none");
+                ? Tr.format("pocketmod.gui.drain", String.format("%.1f", drain), (long) (mana / drain / 60.0))
+                : Tr.format("pocketmod.gui.drain_none");
         drawCenteredString(fontRenderer, drainLine, cx, 30, 0xCCCCCC);
 
         boolean hasCredit = Mana.hasCredit(dp);
         if (hasCredit) {
             drawCenteredString(fontRenderer,
-                    I18n.format("pocketmod.gui.credit_active", (long) Math.ceil(Mana.getCredit(dp)),
+                    Tr.format("pocketmod.gui.credit_active", (long) Math.ceil(Mana.getCredit(dp)),
                             formatTime(Mana.getCreditLeftMs(dp))),
                     cx, 42, 0xFF8888);
         }
@@ -143,16 +142,16 @@ public class ShopGui extends GuiScreen {
             int y = top + i * rowH;
             int lvl = AbilityStorage.getLevel(dp, t);
             String status = lvl == 0
-                    ? TextFormatting.GRAY + I18n.format("pocketmod.gui.locked")
-                    : TextFormatting.GREEN + I18n.format("pocketmod.gui.level", lvl, t.maxLevel);
-            fontRenderer.drawStringWithShadow(I18n.format(t.titleKey()) + "  " + status, cx - 160, y + (rowH - 10) / 2, 0xFFFFFF);
+                    ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
+                    : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
+            fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()) + "  " + status, cx - 160, y + (rowH - 10) / 2, 0xFFFFFF);
         }
 
         // Кредит: ползунок суммы
         if (!hasCredit) {
             int repay = (int) Math.round(creditAmount * (1.0 + PocketConfig.creditInterest));
             fontRenderer.drawStringWithShadow(
-                    I18n.format("pocketmod.gui.credit_amount", creditAmount, repay, PocketConfig.creditDurationSec / 60),
+                    Tr.format("pocketmod.gui.credit_amount", creditAmount, repay, PocketConfig.creditDurationSec / 60),
                     sliderX, sliderY - 14, 0xCCCCCC);
         }
         Gui.drawRect(sliderX, sliderY + 3, sliderX + sliderW, sliderY + sliderH - 3, 0xFF444444);

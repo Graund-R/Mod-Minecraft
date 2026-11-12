@@ -1,0 +1,46 @@
+key.pocketmod.pocket=Карманное измерение
+key.pocketmod.teleport=Телепорт
+key.pocketmod.invis=Невидимость
+key.pocketmod.slow=Замедление времени
+key.categories.pocketmod=Pocket Mod
+
+pocketmod.ability.pocket=Карманное измерение
+pocketmod.ability.teleport=Телепорт
+pocketmod.ability.invis=Невидимость
+pocketmod.ability.slow=Замедление времени
+pocketmod.ability.decoy=Приманка (клон)
+pocketmod.ability.spector=Спектор
+pocketmod.ability.thermal=Тепловизор
+pocketmod.ability.shield=Щит из маны
+pocketmod.ability.flight=Полёт
+pocketmod.ability.totem=Тотемы
+
+pocketmod.gui.title=Магазин способностей
+pocketmod.gui.mana=Мана: %s   Множитель цен: x%s
+pocketmod.gui.drain=Расход: %s/сек, хватит примерно на %s мин
+pocketmod.gui.drain_none=Расход: нет
+pocketmod.gui.credit_active=Кредит: вернуть %s, осталось %s
+pocketmod.gui.credit_amount=Кредит: %s (вернуть %s за %s мин)
+pocketmod.gui.take=Взять кредит
+pocketmod.gui.close=Закрыть
+pocketmod.gui.buy=Купить %s
+pocketmod.gui.upgrade=Улучшить %s
+pocketmod.gui.max=MAX
+pocketmod.gui.locked=закрыто
+pocketmod.gui.level=ур. %s/%s
+
+pocketmod.msg.no_mana=Не хватает маны: нужно %s
+pocketmod.msg.mana_gained=+%s маны
+pocketmod.msg.invis_on=Невидимость вкл
+pocketmod.msg.invis_off=Невидимость выкл
+pocketmod.msg.slow_on=Замедление вкл
+pocketmod.msg.slow_off=Замедление выкл
+pocketmod.msg.teleport_unsafe=Нет безопасной точки для телепорта
+pocketmod.msg.need_shop=Сначала купи в магазине (удержание V)
+pocketmod.msg.credit_taken=Кредит взят: вернуть %s за %s мин
+pocketmod.msg.credit_warn_5=Кредит: осталось 5 минут, к возврату %s
+pocketmod.msg.credit_warn_1=Кредит: осталась 1 минута, к возврату %s
+pocketmod.msg.credit_paid=Кредит погашен: списано %s маны
+pocketmod.msg.credit_default=Кредит не погашен. Цены навсегда выросли: множитель теперь x%s
+pocketmod.msg.expand_progress=Расширение: внесено %s из %s
+pocketmod.msg.expand_done=Пространство открыто. Сдача в ману: %s

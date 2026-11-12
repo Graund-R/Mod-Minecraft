@@ -217,16 +217,15 @@ public class ClientHandler {
                     Double pd = d.paid.get(pos);
                     double paid = pd == null ? 0.0 : pd.doubleValue();
                     int itemValue = Math.max(1, ManaItems.manaValue(held));
-                    double needItems = Math.max(0.0, cost - paid) / itemValue;
 
                     ScaledResolution res = event.getResolution();
                     int cx = res.getScaledWidth() / 2;
                     int cy = res.getScaledHeight() / 2 + 14;
                     Gui.drawRect(cx - 31, cy - 1, cx + 31, cy + 7, 0xAA000000);
                     Gui.drawRect(cx - 30, cy, cx - 30 + (int) (60.0 * paid / Math.max(1.0, cost)), cy + 6, 0xFFFFD34D);
-                    String t = String.format("%.0f / %.0f", paid, cost);
+                    String t = String.format("%.1f / %.1f", paid / itemValue, cost / itemValue);
                     mc.fontRenderer.drawStringWithShadow(t, cx - mc.fontRenderer.getStringWidth(t) / 2, cy + 10, 0xFFFFFF);
-                    String t2 = String.format("%.1f x %s", needItems, held.getDisplayName());
+                    String t2 = held.getDisplayName();
                     mc.fontRenderer.drawStringWithShadow(t2, cx - mc.fontRenderer.getStringWidth(t2) / 2, cy + 20, 0xFFE080);
                 }
             }

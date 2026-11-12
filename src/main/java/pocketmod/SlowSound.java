@@ -18,6 +18,16 @@ public class SlowSound {
 
     @SubscribeEvent
     public static void onPlaySound(PlaySoundEvent event) {
+        if (!PocketConfig.slowSound) return;
+        try {
+            handle(event);
+        } catch (Throwable t) {
+            System.err.println("[PocketMod] SlowSound error:");
+            t.printStackTrace();
+        }
+    }
+
+    private static void handle(PlaySoundEvent event) {
         // флаг замедления хранится на серверном игроке, у клиентского его нет
         net.minecraft.entity.player.EntityPlayerMP sp = ClientHandler.sp();
         if (sp == null || !Abilities.isSlow(sp)) return;

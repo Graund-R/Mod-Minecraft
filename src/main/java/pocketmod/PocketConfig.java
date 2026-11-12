@@ -43,6 +43,9 @@ public class PocketConfig {
     public static int teleportRange3 = 200;
     public static float teleportCostPerBlock = 0.4f;
 
+    /** Понижать тон звуков при замедлении (выключено, пока не выяснили причину вылета). */
+    public static boolean slowSound = false;
+
     public static void load(File file) {
         Configuration cfg = new Configuration(file);
         cfg.load();
@@ -90,6 +93,8 @@ public class PocketConfig {
         teleportRange2 = cfg.getInt("teleportRange2", "abilities", 100, 5, 1000, "Teleport range, level 2");
         teleportRange3 = cfg.getInt("teleportRange3", "abilities", 200, 5, 2000, "Teleport range, level 3");
         teleportCostPerBlock = cfg.getFloat("teleportCostPerBlock", "abilities", 0.4f, 0f, 1000f, "Mana per block of teleport distance");
+
+        slowSound = cfg.getBoolean("slowSound", "abilities", false, "Lower the pitch of sounds while time is slowed");
 
         if (cfg.hasChanged()) {
             cfg.save();
