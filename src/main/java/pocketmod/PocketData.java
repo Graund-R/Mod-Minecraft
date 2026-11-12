@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.MapStorage;
@@ -17,8 +18,9 @@ public class PocketData extends WorldSavedData {
 
     public final Set<BlockPos> interior = new HashSet<BlockPos>();
     public final Set<BlockPos> walls = new HashSet<BlockPos>();
-    public final Map<BlockPos, Integer> paid = new HashMap<BlockPos, Integer>();
+    public final Map<BlockPos, Double> paid = new HashMap<BlockPos, Double>();
     public boolean built = false;
+    public int maxRing = 0;
 
     public PocketData(String name) {
         super(name);
@@ -41,27 +43,31 @@ public class PocketData extends WorldSavedData {
         paid.clear();
         readSet(nbt.getIntArray("interior"), interior);
         readSet(nbt.getIntArray("walls"), walls);
-        int[] p = nbt.getIntArray("paid");
-        for (int i = 0; i + 3 < p.length; i += 4) {
-            paid.put(new BlockPos(p[i], p[i + 1], p[i + 2]), p[i + 3]);
+        NBTTagList pl = nbt.getTagList("paidList", 10);
+        for (int i = 0; i < pl.tagCount(); i++) {
+            NBTTagCompound c = pl.getCompoundTagAt(i);
+            paid.put(new BlockPos(c.getInteger("x"), c.getInteger("y"), c.getInteger("z")), c.getDouble("v"));
         }
         built = nbt.getBoolean("built");
+        maxRing = nbt.getInteger("maxRing");
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         nbt.setIntArray("interior", writeSet(interior));
         nbt.setIntArray("walls", writeSet(walls));
-        int[] p = new int[paid.size() * 4];
-        int i = 0;
-        for (Map.Entry<BlockPos, Integer> e : paid.entrySet()) {
-            p[i++] = e.getKey().getX();
-            p[i++] = e.getKey().getY();
-            p[i++] = e.getKey().getZ();
-            p[i++] = e.getValue();
+        NBTTagList pl = new NBTTagList();
+        for (Map.Entry<BlockPos, Double> e : paid.entrySet()) {
+            NBTTagCompound c = new NBTTagCompound();
+            c.setInteger("x", e.getKey().getX());
+            c.setInteger("y", e.getKey().getY());
+            c.setInteger("z", e.getKey().getZ());
+            c.setDouble("v", e.getValue().doubleValue());
+            pl.appendTag(c);
         }
-        nbt.setIntArray("paid", p);
+        nbt.setTag("paidList", pl);
         nbt.setBoolean("built", built);
+        nbt.setInteger("maxRing", maxRing);
         return nbt;
     }
 
