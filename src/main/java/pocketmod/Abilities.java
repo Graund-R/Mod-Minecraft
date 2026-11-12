@@ -108,14 +108,20 @@ public class Abilities {
         Vec3d end = eye.addVector(look.x * range, look.y * range, look.z * range);
 
         RayTraceResult hit = world.rayTraceBlocks(eye, end, false, true, false);
-        Vec3d target;
+        BlockPos land = null;
+
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-            target = hit.hitVec.subtract(look.scale(0.3));
+            // Always try to stand ON TOP of the hit block (ceiling -> roof, underside of island -> top)
+            BlockPos hitBlock = hit.getBlockPos();
+            land = findTopLanding(world, hitBlock);
+            if (land == null) {
+                Vec3d before = hit.hitVec.subtract(look.scale(0.3));
+                land = findSafePos(world, new BlockPos(before));
+            }
         } else {
-            target = end;
+            land = findSafePos(world, new BlockPos(end));
         }
 
-        BlockPos land = findSafePos(world, new BlockPos(target));
         if (land == null) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.teleport_unsafe"), true);
             return;
@@ -138,6 +144,30 @@ public class Abilities {
                 player.rotationYaw, player.rotationPitch);
     }
 
+    /** Climb solid column up to 16, then stand on top if safe. */
+    private static BlockPos findTopLanding(World world, BlockPos hitBlock) {
+        BlockPos top = hitBlock;
+        for (int i = 0; i < 16; i++) {
+            BlockPos above = top.up();
+            if (world.isAirBlock(above) || !world.getBlockState(above).getMaterial().isSolid()) {
+                break;
+            }
+            top = above;
+        }
+        BlockPos feet = top.up();
+        if (isSafe(world, feet)) {
+            return feet;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                BlockPos p = feet.add(dx, 0, dz);
+                if (isSafe(world, p)) return p;
+            }
+        }
+        return null;
+    }
+
     private static BlockPos findSafePos(World world, BlockPos near) {
         for (int dy = 0; dy >= -3; dy--) {
             for (int dx = -1; dx <= 1; dx++) {
@@ -147,7 +177,7 @@ public class Abilities {
                 }
             }
         }
-        for (int dy = 1; dy <= 3; dy++) {
+        for (int dy = 1; dy <= 5; dy++) {
             BlockPos p = near.up(dy);
             if (isSafe(world, p)) return p;
         }
