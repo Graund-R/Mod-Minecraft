@@ -14,12 +14,13 @@ jobs:
       - name: Prepare project
         run: |
           curl -fL -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-mdk.zip
-          mkdir mdk code
+          mkdir mdk
           unzip -q mdk.zip -d mdk
-          unzip -q pocketmod-test.zip -d code
           rm -rf mdk/src
-          cp -r code/src mdk/src
-          sed -i 's/net.minecraftforge.client.event.InputEvent/net.minecraftforge.fml.common.gameevent.InputEvent/' mdk/src/main/java/pocketmod/ClientHandler.java
+          cp -r src mdk/src
+          if grep -q "net.minecraftforge.client.event.InputEvent" mdk/src/main/java/pocketmod/ClientHandler.java; then
+            sed -i 's/net.minecraftforge.client.event.InputEvent/net.minecraftforge.fml.common.gameevent.InputEvent/' mdk/src/main/java/pocketmod/ClientHandler.java || true
+          fi
           cd mdk
           chmod +x gradlew
           sed -i 's#http://files.minecraftforge.net/maven#https://maven.minecraftforge.net#g' build.gradle
