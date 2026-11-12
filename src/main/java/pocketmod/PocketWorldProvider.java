@@ -25,4 +25,16 @@ public class PocketWorldProvider extends WorldProvider {
     public boolean isSurfaceWorld() {
         return false;
     }
+
+    @Override
+    protected void generateLightBrightnessTable() {
+        for (int i = 0; i < 16; i++) {
+            this.lightBrightnessTable[i] = 1.0F;
+        }
+    }
+
+    @Override
+    public float calculateCelestialAngle(long worldTime, float partialTicks) {
+        return 0.0F;
+    }
 }
