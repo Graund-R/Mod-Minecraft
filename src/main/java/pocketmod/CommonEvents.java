@@ -42,7 +42,8 @@ public class CommonEvents {
         }
         EntityPlayer player = event.getEntityPlayer();
         ItemStack stack = player.getHeldItemMainhand();
-        if (!ManaItems.isManaItem(stack)) {
+        int itemValue = ManaItems.manaValue(stack);
+        if (itemValue <= 0) {
             return;
         }
 
@@ -55,19 +56,30 @@ public class CommonEvents {
             return;
         }
 
-        int cost = Pocket.cost(pos);
-        int paid = data.paid.containsKey(pos) ? data.paid.get(pos) : 0;
-        int give = Math.min(stack.getCount(), cost - paid);
-        if (give <= 0) {
+        double cost = Pocket.costMana(pos, player);
+        Double already = data.paid.get(pos);
+        double paid = already == null ? 0.0 : already.doubleValue();
+        double need = Math.max(0.0, cost - paid);
+
+        int n = (int) Math.min((double) stack.getCount(), Math.ceil(need / (double) itemValue));
+        if (n <= 0) {
             return;
         }
-        stack.shrink(give);
-        paid += give;
-        if (paid >= cost) {
+        stack.shrink(n);
+        paid += n * (double) itemValue;
+
+        if (paid >= cost - 1.0E-9) {
+            double excess = Math.max(0.0, paid - cost);
+            if (excess > 0.0) {
+                Mana.add(player, excess);
+            }
             Pocket.open((WorldServer) world, data, pos);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.expand_done", (int) excess), true);
         } else {
             data.paid.put(pos, paid);
             data.markDirty();
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.expand_progress",
+                    (int) paid, (int) Math.ceil(cost)), true);
         }
     }
 
@@ -83,12 +95,9 @@ public class CommonEvents {
         }
         EntityPlayer player = event.getEntityPlayer();
 
-        if (world.provider.getDimension() == PocketMod.DIM_ID) {
-            RayTraceResult hit = player.rayTrace(5.0D, 1.0F);
-            if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK
-                    && PocketData.get(world).walls.contains(hit.getBlockPos())) {
-                return;
-            }
+        RayTraceResult hit = player.rayTrace(5.0D, 1.0F);
+        if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
+            return;
         }
 
         int gained = ManaItems.manaValue(stack) * stack.getCount();
@@ -102,29 +111,13 @@ public class CommonEvents {
         EntityPlayer old = event.getOriginal();
         EntityPlayer now = event.getEntityPlayer();
 
-        Mana.setPriceMultiplier(now, Mana.getPriceMultiplier(old));
-        if (Mana.hasCredit(old)) {
-            now.getEntityData().setDouble("pocketmod_credit", Mana.getCredit(old));
-            now.getEntityData().setLong("pocketmod_credit_due", Mana.getCreditDue(old));
-        }
+        now.getEntityData().setTag(PlayerData.KEY, PlayerData.root(old).copy());
 
-        double mana = Mana.get(old);
         if (event.isWasDeath()) {
-            mana = mana * (1.0 - PocketConfig.deathManaLoss);
+            Mana.set(now, Mana.get(now) * (1.0 - PocketConfig.deathManaLoss));
             if (old.dimension == PocketMod.DIM_ID) {
                 Mana.setFreeEntry(now, true);
             }
-        } else {
-            String[] keys = { "pocket_return_dim", "pocket_return_x", "pocket_return_y", "pocket_return_z" };
-            for (String k : keys) {
-                if (old.getEntityData().hasKey(k)) {
-                    now.getEntityData().setTag(k, old.getEntityData().getTag(k));
-                }
-            }
-            if (Mana.hasFreeEntry(old)) {
-                Mana.setFreeEntry(now, true);
-            }
         }
-        Mana.set(now, mana);
     }
 }
