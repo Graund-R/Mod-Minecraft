@@ -37,6 +37,10 @@ public class Abilities {
     }
 
     public static void toggleInvisibility(EntityPlayerMP player) {
+        if (!AbilityStorage.isUnlocked(player, AbilityType.INVISIBILITY)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            return;
+        }
         boolean now = !isInvisible(player);
         if (now) {
             double cost = 2.0 * Mana.getPriceMultiplier(player);
@@ -79,6 +83,10 @@ public class Abilities {
     }
 
     public static void toggleSlow(EntityPlayerMP player) {
+        if (!AbilityStorage.isUnlocked(player, AbilityType.SLOW)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            return;
+        }
         boolean now = !isSlow(player);
         if (now) {
             double cost = 3.0 * Mana.getPriceMultiplier(player);
@@ -100,6 +108,10 @@ public class Abilities {
     }
 
     public static void teleportLook(EntityPlayerMP player) {
+        if (!AbilityStorage.isUnlocked(player, AbilityType.TELEPORT)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            return;
+        }
         World world = player.world;
         double range = PocketConfig.teleportBaseRange;
 
@@ -111,7 +123,6 @@ public class Abilities {
         BlockPos land = null;
 
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-            // Always try to stand ON TOP of the hit block (ceiling -> roof, underside of island -> top)
             BlockPos hitBlock = hit.getBlockPos();
             land = findTopLanding(world, hitBlock);
             if (land == null) {
@@ -144,7 +155,6 @@ public class Abilities {
                 player.rotationYaw, player.rotationPitch);
     }
 
-    /** Climb solid column up to 16, then stand on top if safe. */
     private static BlockPos findTopLanding(World world, BlockPos hitBlock) {
         BlockPos top = hitBlock;
         for (int i = 0; i < 16; i++) {
