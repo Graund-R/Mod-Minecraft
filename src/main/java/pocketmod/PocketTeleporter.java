@@ -30,6 +30,10 @@ public class PocketTeleporter implements ITeleporter {
     }
 
     public static void toggle(EntityPlayerMP player) {
+        if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            return;
+        }
         MinecraftServer server = player.getServer();
         if (server == null) return;
         if (player.dimension == PocketMod.DIM_ID) {
