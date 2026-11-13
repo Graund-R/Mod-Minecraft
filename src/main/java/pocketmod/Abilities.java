@@ -50,6 +50,19 @@ public class Abilities {
         }
     }
 
+    public static void tickInvisibility(EntityPlayerMP player) {
+        if (!isInvis(player)) return;
+        int lvl = AbilityStorage.getLevel(player, AbilityType.INVISIBILITY);
+        double drain = lvl >= 3 ? 0.15 : (lvl >= 2 ? 0.25 : 0.4);
+        if (!Mana.spend(player, drain / 20.0)) {
+            setInvis(player, false);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.invis_off"), true);
+        } else {
+            player.addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 40, 0, false, false));
+            player.setInvisible(true);
+        }
+    }
+
     public static void toggleSlow(EntityPlayerMP player) {
         if (!AbilityStorage.isUnlocked(player, AbilityType.SLOW)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
@@ -78,6 +91,27 @@ public class Abilities {
 
     public static void setSlowFactor(EntityPlayer player, float factor) {
         PlayerData.root(player).setFloat(KEY_SLOW_FACTOR, factor);
+    }
+
+    public static void tickSlow(EntityPlayerMP player) {
+        if (!isSlow(player)) return;
+        double drain = 0.8 / 20.0;
+        if (!Mana.spend(player, drain)) {
+            setSlow(player, false);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_off"), true);
+            return;
+        }
+        TimeSlow.apply(player, getSlowFactor(player));
+    }
+
+    public static double totalDrainPerSec(EntityPlayer player) {
+        double d = 0;
+        if (isInvis(player)) {
+            int lvl = AbilityStorage.getLevel(player, AbilityType.INVISIBILITY);
+            d += lvl >= 3 ? 0.15 : (lvl >= 2 ? 0.25 : 0.4);
+        }
+        if (isSlow(player)) d += 0.8;
+        return d;
     }
 
     public static void teleportLook(EntityPlayerMP player) {
