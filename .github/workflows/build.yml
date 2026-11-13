@@ -25,6 +25,15 @@ jobs:
             cp -r src work/src
           fi
           test -d work/src/main/java/pocketmod
+          # Forge 1.12.2 does not expose the newer beacon activation sound IDs.
+          # Use the matching metal pressure-plate on/off sounds supported by 1.12.2.
+          SHIELD=work/src/main/java/pocketmod/Shield.java
+          if [ -f "$SHIELD" ]; then
+            sed -i \
+              -e 's/SoundEvents\.BLOCK_BEACON_ACTIVATE/SoundEvents.BLOCK_METAL_PRESSPLATE_CLICK_ON/g' \
+              -e 's/SoundEvents\.BLOCK_BEACON_DEACTIVATE/SoundEvents.BLOCK_METAL_PRESSPLATE_CLICK_OFF/g' \
+              "$SHIELD"
+          fi
       - name: Prepare project
         run: |
           set -e
