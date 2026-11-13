@@ -44,3 +44,16 @@ pocketmod.msg.credit_paid=Кредит погашен: списано %s ман�
 pocketmod.msg.credit_default=Кредит не погашен. Цены навсегда выросли: множитель теперь x%s
 pocketmod.msg.expand_progress=Расширение: внесено %s из %s
 pocketmod.msg.expand_done=Пространство открыто. Сдача в ману: %s
+
+pocketmod.gui.totems_title=Тотемы
+pocketmod.gui.totem_create=Создать здесь (%s)
+pocketmod.gui.totem_slots=Слоты: %s/%s
+pocketmod.gui.totem_empty=Тотемов пока нет
+pocketmod.gui.totem_name_hint=Название тотема
+pocketmod.gui.totem_hint=Клик по строке: телепорт. ^ v: порядок. X дважды: удалить (%s маны)
+
+pocketmod.msg.totem_created=Тотем создан: %s
+pocketmod.msg.totem_deleted=Тотем удалён: %s
+pocketmod.msg.totem_full=Нет свободных слотов тотемов
+pocketmod.msg.totem_none=Тотемов ещё нет (Shift+G)
+pocketmod.msg.totem_in_pocket=В карманном измерении тотемы недоступны
