@@ -134,6 +134,12 @@ public class PocketTeleporter implements ITeleporter {
 
     /** Ищет ближайшую безопасную точку возле места, откуда игрок ушёл в карман. */
     private static double[] findSafeExit(WorldServer w, double x, double y, double z) {
+        double[] r = findStandable(w, x, y, z);
+        return r != null ? r : new double[] { x, y, z };
+    }
+
+    /** Ближайшая точка, где можно стоять (радиус до 6 блоков), или null. */
+    public static double[] findStandable(WorldServer w, double x, double y, double z) {
         BlockPos origin = new BlockPos(MathHelper.floor(x), MathHelper.floor(y), MathHelper.floor(z));
         for (int r = 0; r <= 6; r++) {
             for (int dx = -r; dx <= r; dx++) {
@@ -149,7 +155,7 @@ public class PocketTeleporter implements ITeleporter {
                 }
             }
         }
-        return new double[] { x, y, z };
+        return null;
     }
 
     private static boolean standable(World w, BlockPos feet) {
