@@ -25,68 +25,29 @@ public class Abilities {
     private static final String KEY_SLOW = "pocketmod_slow";
     private static final String KEY_SLOW_FACTOR = "pocketmod_slow_factor";
 
-    /** Расход невидимости, маны/сек (до множителя цен). */
-    private static final double INVIS_COST_PER_SEC = 2.0;
-
-    // ===== Невидимость =====
-    public static boolean isInvisible(EntityPlayer player) {
-        return player.getEntityData().getBoolean(KEY_INVIS);
-    }
-
-    public static void setInvisible(EntityPlayer player, boolean v) {
-        player.getEntityData().setBoolean(KEY_INVIS, v);
-        if (v) {
-            player.addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 40, 0, false, false));
-        } else {
-            player.removePotionEffect(MobEffects.INVISIBILITY);
-        }
-    }
-
     public static void toggleInvisibility(EntityPlayerMP player) {
         if (!AbilityStorage.isUnlocked(player, AbilityType.INVISIBILITY)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
-        boolean now = !isInvisible(player);
-        if (now) {
-            double cost = INVIS_COST_PER_SEC * Mana.getPriceMultiplier(player);
-            if (Mana.get(player) < cost) {
-                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) cost), true);
-                return;
-            }
+        boolean on = isInvis(player);
+        setInvis(player, !on);
+        player.sendStatusMessage(new TextComponentTranslation(on ? "pocketmod.msg.invis_off" : "pocketmod.msg.invis_on"), true);
+    }
+
+    public static boolean isInvis(EntityPlayer player) {
+        return PlayerData.root(player).getBoolean(KEY_INVIS);
+    }
+
+    public static void setInvis(EntityPlayer player, boolean on) {
+        PlayerData.root(player).setBoolean(KEY_INVIS, on);
+        if (on) {
+            player.addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 20 * 60 * 60, 0, false, false));
+            player.setInvisible(true);
+        } else {
+            player.removePotionEffect(MobEffects.INVISIBILITY);
+            player.setInvisible(false);
         }
-        setInvisible(player, now);
-        player.sendStatusMessage(new TextComponentTranslation(
-                now ? "pocketmod.msg.invis_on" : "pocketmod.msg.invis_off"), true);
-    }
-
-    public static void tickInvisibility(EntityPlayerMP player) {
-        if (!isInvisible(player)) return;
-        double cost = INVIS_COST_PER_SEC * Mana.getPriceMultiplier(player);
-        if (!Mana.spend(player, cost / 20.0)) {
-            setInvisible(player, false);
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.invis_off"), true);
-            return;
-        }
-        if (!player.isPotionActive(MobEffects.INVISIBILITY)) {
-            player.addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 40, 0, false, false));
-        }
-    }
-
-    // ===== Замедление =====
-    public static boolean isSlow(EntityPlayer player) {
-        return player.getEntityData().getBoolean(KEY_SLOW);
-    }
-
-    public static float getSlowFactor(EntityPlayer player) {
-        float f = player.getEntityData().getFloat(KEY_SLOW_FACTOR);
-        if (f < 0.05f || f > 1.0f) f = 0.25f;
-        return f;
-    }
-
-    public static void setSlowFactor(EntityPlayer player, float f) {
-        f = MathHelper.clamp(f, 0.1f, 0.75f);
-        player.getEntityData().setFloat(KEY_SLOW_FACTOR, f);
     }
 
     public static void toggleSlow(EntityPlayerMP player) {
@@ -94,44 +55,29 @@ public class Abilities {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
-        boolean now = !isSlow(player);
-        if (now) {
-            double cost = 3.0 * Mana.getPriceMultiplier(player);
-            if (Mana.get(player) < cost) {
-                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) cost), true);
-                return;
-            }
-            if (!player.getEntityData().hasKey(KEY_SLOW_FACTOR)) {
-                setSlowFactor(player, 0.25f);
-            }
-        }
-        player.getEntityData().setBoolean(KEY_SLOW, now);
-        player.sendStatusMessage(new TextComponentTranslation(
-                now ? "pocketmod.msg.slow_on" : "pocketmod.msg.slow_off"), true);
+        boolean on = isSlow(player);
+        setSlow(player, !on);
+        player.sendStatusMessage(new TextComponentTranslation(on ? "pocketmod.msg.slow_off" : "pocketmod.msg.slow_on"), true);
     }
 
-    public static void tickSlow(EntityPlayerMP player) {
-        TimeSlow.tickMana(player);
+    public static boolean isSlow(EntityPlayer player) {
+        return PlayerData.root(player).getBoolean(KEY_SLOW);
     }
 
-    /** Суммарный расход маны в секунду (для шапки магазина). */
-    public static double totalDrainPerSec(EntityPlayer player) {
-        double d = 0.0;
-        if (isInvisible(player)) {
-            d += INVIS_COST_PER_SEC * Mana.getPriceMultiplier(player);
+    public static void setSlow(EntityPlayer player, boolean on) {
+        PlayerData.root(player).setBoolean(KEY_SLOW, on);
+        if (!on) {
+            TimeSlow.clear(player);
         }
-        if (isSlow(player)) {
-            d += TimeSlow.drainPerSec(player);
-        }
-        return d;
     }
 
-    // ===== Телепорт =====
-    public static double teleportRange(EntityPlayer player) {
-        int lvl = AbilityStorage.getLevel(player, AbilityType.TELEPORT);
-        if (lvl >= 3) return PocketConfig.teleportRange3;
-        if (lvl == 2) return PocketConfig.teleportRange2;
-        return PocketConfig.teleportBaseRange;
+    public static float getSlowFactor(EntityPlayer player) {
+        float f = PlayerData.root(player).getFloat(KEY_SLOW_FACTOR);
+        return f > 0.05f ? f : 0.5f;
+    }
+
+    public static void setSlowFactor(EntityPlayer player, float factor) {
+        PlayerData.root(player).setFloat(KEY_SLOW_FACTOR, factor);
     }
 
     public static void teleportLook(EntityPlayerMP player) {
@@ -139,37 +85,32 @@ public class Abilities {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
-        World world = player.world;
-        double range = teleportRange(player);
+        int range = PocketConfig.teleportBaseRange;
+        int lvl = AbilityStorage.getLevel(player, AbilityType.TELEPORT);
+        if (lvl >= 3) range = PocketConfig.teleportRange3;
+        else if (lvl >= 2) range = PocketConfig.teleportRange2;
 
+        World world = player.world;
         Vec3d eye = player.getPositionEyes(1.0f);
         Vec3d look = player.getLook(1.0f);
-        Vec3d end = eye.addVector(look.x * range, look.y * range, look.z * range);
-
+        Vec3d end = eye.add(look.x * range, look.y * range, look.z * range);
         RayTraceResult hit = world.rayTraceBlocks(eye, end, false, true, false);
-        BlockPos land = null;
 
+        BlockPos land;
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-            // Луч попал в блок (в бок, снизу или сверху): сначала пробуем встать НА его верх,
-            // и только если там небезопасно — остановиться перед стеной
-            land = findTopLanding(world, hit.getBlockPos());
-            if (land == null) {
-                Vec3d before = hit.hitVec.subtract(look.scale(0.3));
-                land = findSafePos(world, new BlockPos(before));
-            }
+            land = hit.getBlockPos().offset(hit.sideHit);
+            land = findTopLanding(world, land);
         } else {
-            land = findSafePos(world, new BlockPos(end));
+            land = new BlockPos(end);
+            land = findTopLanding(world, land);
         }
-
         if (land == null) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.teleport_unsafe"), true);
             return;
         }
 
-        double dist = player.getDistance(land.getX() + 0.5, land.getY(), land.getZ() + 0.5);
+        double dist = Math.sqrt(player.getDistanceSq(land.getX() + 0.5, land.getY(), land.getZ() + 0.5));
         double cost = dist * PocketConfig.teleportCostPerBlock * Mana.getPriceMultiplier(player);
-        cost = Math.max(1.0, cost);
-
         if (!Mana.spend(player, cost)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
@@ -177,11 +118,9 @@ public class Abilities {
 
         Vec3d from = new Vec3d(player.posX, player.posY + 1.0, player.posZ);
         Vec3d to = new Vec3d(land.getX() + 0.5, land.getY() + 1.0, land.getZ() + 0.5);
-
         clearMobTargets(player, 16.0);
         player.dismountRidingEntity();
         player.fallDistance = 0f;
-
         player.connection.setPlayerLocation(land.getX() + 0.5, land.getY(), land.getZ() + 0.5,
                 player.rotationYaw, player.rotationPitch);
 
@@ -189,7 +128,7 @@ public class Abilities {
     }
 
     /** След частиц по пути и звук. */
-    private static void teleportFx(WorldServer ws, Vec3d from, Vec3d to) {
+    static void teleportFx(WorldServer ws, Vec3d from, Vec3d to) {
         double len = from.distanceTo(to);
         int steps = (int) Math.min(40.0, Math.max(2.0, len / 1.5));
         for (int i = 0; i <= steps; i++) {
@@ -208,65 +147,18 @@ public class Abilities {
         for (int i = 0; i < 16; i++) {
             BlockPos above = top.up();
             if (world.isAirBlock(above) || !world.getBlockState(above).getMaterial().isSolid()) {
-                break;
+                if (world.isAirBlock(top) || !world.getBlockState(top).getMaterial().isSolid()) {
+                    return top;
+                }
+                return above;
             }
             top = above;
         }
-        BlockPos feet = top.up();
-        if (isSafe(world, feet)) {
-            return feet;
-        }
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                if (dx == 0 && dz == 0) continue;
-                BlockPos p = feet.add(dx, 0, dz);
-                if (isSafe(world, p)) return p;
-            }
-        }
         return null;
     }
 
-    private static BlockPos findSafePos(World world, BlockPos near) {
-        for (int dy = 0; dy >= -3; dy--) {
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    BlockPos p = near.add(dx, dy, dz);
-                    if (isSafe(world, p)) return p;
-                }
-            }
-        }
-        for (int dy = 1; dy <= 5; dy++) {
-            BlockPos p = near.up(dy);
-            if (isSafe(world, p)) return p;
-        }
-        return null;
-    }
-
-    static boolean isSafe(World world, BlockPos feet) {
-        if (feet.getY() < 1 || feet.getY() > 254) return false;
-        if (world.provider.getDimension() == -1 && feet.getY() >= 127) return false;
-
-        BlockPos head = feet.up();
-        BlockPos ground = feet.down();
-
-        if (!world.isAirBlock(feet) || !world.isAirBlock(head)) return false;
-        if (world.isAirBlock(ground) && !world.getBlockState(ground).getMaterial().isSolid()) {
-            if (world.isAirBlock(ground.down()) && world.isAirBlock(ground.down(2))) return false;
-        }
-
-        String name = world.getBlockState(feet).getBlock().getRegistryName().toString();
-        String name2 = world.getBlockState(head).getBlock().getRegistryName().toString();
-        String nameG = world.getBlockState(ground).getBlock().getRegistryName().toString();
-        if (name.contains("lava") || name.contains("fire") || name.contains("cactus")) return false;
-        if (name2.contains("lava") || name2.contains("fire")) return false;
-        if (nameG.contains("lava") || nameG.contains("fire") || nameG.contains("cactus")) return false;
-
-        return true;
-    }
-
-    /** Мобы в радиусе теряют цель на игрока. */
     public static void clearMobTargets(EntityPlayer player, double radius) {
-        if (radius <= 0) return;
+        if (!(player.world instanceof WorldServer)) return;
         AxisAlignedBB box = player.getEntityBoundingBox().grow(radius);
         List<EntityLiving> list = player.world.getEntitiesWithinAABB(EntityLiving.class, box);
         for (EntityLiving e : list) {
