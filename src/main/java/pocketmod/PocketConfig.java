@@ -43,6 +43,20 @@ public class PocketConfig {
     public static int teleportRange3 = 200;
     public static float teleportCostPerBlock = 0.4f;
 
+    // Тотемы
+    public static int totemCreateCost = 30;
+    public static int totemDeleteCost = 10;
+    public static int totemTeleportBase = 20;
+    public static float totemTeleportPerBlock = 0.02f;
+    public static int totemDimensionCost = 100;
+    public static int totemSlots1 = 4;
+    public static int totemSlots2 = 8;
+    public static int totemSlots3 = 16;
+    public static float totemDiscount2 = 0.25f;
+    public static float totemDiscount3 = 0.5f;
+    public static int totemMarkerRange = 48;
+    public static int[] totemPalette = { 0xFF6B6B, 0xFFD93D, 0x6BCB77, 0x4D96FF, 0xC77DFF, 0xFF9F45 };
+
     /** Понижать тон звуков при замедлении (выключено, пока не выяснили причину вылета). */
     public static boolean slowSound = false;
 
@@ -94,11 +108,42 @@ public class PocketConfig {
         teleportRange3 = cfg.getInt("teleportRange3", "abilities", 200, 5, 2000, "Teleport range, level 3");
         teleportCostPerBlock = cfg.getFloat("teleportCostPerBlock", "abilities", 0.4f, 0f, 1000f, "Mana per block of teleport distance");
 
+        totemCreateCost = cfg.getInt("totemCreateCost", "totems", 30, 0, 1000000, "Mana to create a totem");
+        totemDeleteCost = cfg.getInt("totemDeleteCost", "totems", 10, 0, 1000000, "Mana to delete a totem");
+        totemTeleportBase = cfg.getInt("totemTeleportBase", "totems", 20, 0, 1000000, "Base mana for a totem teleport");
+        totemTeleportPerBlock = cfg.getFloat("totemTeleportPerBlock", "totems", 0.02f, 0f, 1000f, "Mana per block of distance (same dimension)");
+        totemDimensionCost = cfg.getInt("totemDimensionCost", "totems", 100, 0, 1000000, "Extra mana when changing dimension");
+        totemSlots1 = cfg.getInt("totemSlots1", "totems", 4, 1, 64, "Slots at totem level 1");
+        totemSlots2 = cfg.getInt("totemSlots2", "totems", 8, 1, 64, "Slots at totem level 2");
+        totemSlots3 = cfg.getInt("totemSlots3", "totems", 16, 1, 64, "Slots at totem level 3");
+        totemDiscount2 = cfg.getFloat("totemDiscount2", "totems", 0.25f, 0f, 1f, "Teleport price discount at level 2");
+        totemDiscount3 = cfg.getFloat("totemDiscount3", "totems", 0.5f, 0f, 1f, "Teleport price discount at level 3");
+        totemMarkerRange = cfg.getInt("totemMarkerRange", "totems", 48, 8, 128, "Marker draw distance");
+        String[] cols = cfg.getStringList("totemColors", "totems",
+                new String[] { "FF6B6B", "FFD93D", "6BCB77", "4D96FF", "C77DFF", "FF9F45" },
+                "Marker colors (RRGGBB), used in list order");
+        int[] parsed = new int[cols.length];
+        int n = 0;
+        for (String c : cols) {
+            try {
+                parsed[n] = Integer.parseInt(c.trim().replace("#", ""), 16) & 0xFFFFFF;
+                n++;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (n > 0) {
+            totemPalette = java.util.Arrays.copyOf(parsed, n);
+        }
+
         slowSound = cfg.getBoolean("slowSound", "abilities", false, "Lower the pitch of sounds while time is slowed");
 
         if (cfg.hasChanged()) {
             cfg.save();
         }
+    }
+
+    public static int totemColor(int index) {
+        return totemPalette[Math.abs(index) % totemPalette.length];
     }
 
     public static IBlockState wallState() {
