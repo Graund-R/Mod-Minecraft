@@ -44,3 +44,16 @@ pocketmod.msg.credit_paid=Credit repaid: %s mana charged
 pocketmod.msg.credit_default=Credit not repaid. Prices are permanently higher: multiplier is now x%s
 pocketmod.msg.expand_progress=Expansion: paid %s of %s
 pocketmod.msg.expand_done=Space opened. Change returned as mana: %s
+
+pocketmod.gui.totems_title=Totems
+pocketmod.gui.totem_create=Create here (%s)
+pocketmod.gui.totem_slots=Slots: %s/%s
+pocketmod.gui.totem_empty=No totems yet
+pocketmod.gui.totem_name_hint=Totem name
+pocketmod.gui.totem_hint=Click a row: teleport. ^ v: reorder. X twice: delete (%s mana)
+
+pocketmod.msg.totem_created=Totem created: %s
+pocketmod.msg.totem_deleted=Totem deleted: %s
+pocketmod.msg.totem_full=No free totem slots
+pocketmod.msg.totem_none=No totems yet (Shift+G)
+pocketmod.msg.totem_in_pocket=Totems are unavailable in the pocket dimension
