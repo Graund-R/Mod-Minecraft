@@ -4,6 +4,7 @@ import org.lwjgl.input.Keyboard;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
@@ -13,6 +14,7 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -112,6 +114,8 @@ public class ClientHandler {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player == null) return;
 
+        TotemMarkers.tick(mc);
+
         // Пока открыто окно — клавиши молчат, а после закрытия ждём отпускания
         if (mc.currentScreen != null) {
             resetHold(hG);
@@ -123,9 +127,24 @@ public class ClientHandler {
         long now = System.currentTimeMillis();
         int holdMs = PocketConfig.holdMs;
 
-        int g = poll(keyTeleport.isKeyDown(), hG, now, holdMs);
+        boolean gDown = keyTeleport.isKeyDown();
+        // Shift+G — окно тотемов (сразу при нажатии)
+        if (gDown && !hG.was && !hG.wait && GuiScreen.isShiftKeyDown()) {
+            EntityPlayerMP sp0 = sp();
+            if (sp0 != null && !AbilityStorage.isUnlocked(sp0, AbilityType.TOTEM)) {
+                mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+                hG.wait = true;
+            } else {
+                mc.displayGuiScreen(new TotemGui(mc.player));
+            }
+            return;
+        }
+
+        int g = poll(gDown, hG, now, holdMs);
         if (g == EV_HOLD) {
-            mc.player.sendStatusMessage(new TextComponentString("Totem (soon)"), true);
+            // удержание G — быстрый телепорт к последнему тотему
+            EntityPlayerMP p = sp();
+            if (p != null) server(() -> Totems.teleportLast(p));
         } else if (g == EV_TAP) {
             EntityPlayerMP p = sp();
             if (p != null) server(() -> Abilities.teleportLook(p));
