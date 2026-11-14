@@ -1,15 +1,14 @@
 package pocketmod;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
@@ -18,97 +17,66 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class ShopGui extends GuiScreen {
 
-    private static final int BTN_BUY_BASE = 100;
-    private static final int BTN_TAKE = 1;
+    private static final int BTN_TAB = 10;
     private static final int BTN_CLOSE = 0;
+    private static final int BTN_TAKE = 1;
+    private static final int BTN_SILENCE = 151;
+    private static final int BTN_BUYSEL = 160;
+    private static final int BTN_PERM = 200;
+    private static final int BTN_RENT = 210;
+    private static final int BTN_STAKE = 220;
+
+    private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
+    private static final AbilityType[][] TAB_ABIL = {
+            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET },
+            { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW },
+            { AbilityType.SPECTOR, AbilityType.THERMAL },
+            { AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD },
+            { AbilityType.BLOODSUCKER }, {} };
+
+    private static int tab = 0;
+    private static int selected = 0;
 
     private final EntityPlayer player;
-    private final List<AbilityType> list = new ArrayList<AbilityType>();
-
     private int creditAmount = 0;
     private boolean dragging = false;
     private int sliderX, sliderY, sliderW, sliderH;
-    private int top = 58;
+    private final int top = 66;
     private int rowH = 20;
+    private int spinTicks = 0;
+    private String shownResult = "";
 
     public ShopGui(EntityPlayer player) {
         this.player = player;
-        list.add(AbilityType.POCKET);
-        list.add(AbilityType.TELEPORT);
-        list.add(AbilityType.INVISIBILITY);
-        list.add(AbilityType.SLOW);
-        list.add(AbilityType.DECOY);
-        list.add(AbilityType.TOTEM);
-        list.add(AbilityType.SPECTOR);
-        list.add(AbilityType.THERMAL);
-        list.add(AbilityType.SHIELD);
-        list.add(AbilityType.FLIGHT);
     }
 
-    /** Данные хранятся на серверном игроке встроенного сервера. */
     private EntityPlayer dataPlayer() {
         EntityPlayerMP mp = ClientHandler.sp();
         return mp != null ? mp : player;
+    }
+
+    private AbilityType[] currentTab() {
+        return TAB_ABIL[tab];
     }
 
     @Override
     public void initGui() {
         buttonList.clear();
         int cx = width / 2;
-        rowH = Math.max(14, Math.min(20, (height - 78 - top) / list.size()));
-        for (int i = 0; i < list.size(); i++) {
-            AbilityType t = list.get(i);
-            buttonList.add(new GuiButton(BTN_BUY_BASE + i, cx + 70, top + i * rowH, 90, rowH - 2, buyLabel(t)));
+        for (int i = 0; i < TAB_KEYS.length; i++) {
+            buttonList.add(new GuiButton(BTN_TAB + i, 8 + i * 52, 8, 50, 16, Tr.format("pocketmod.gui.tab." + TAB_KEYS[i])));
         }
-        sliderW = 150;
+        AbilityType[] l = currentTab();
+        rowH = Math.max(14, Math.min(20, (height - 100 - top) / Math.max(1, l.length + 1)));
+        if (selected >= l.length) selected = 0;
+        buttonList.add(new GuiButton(BTN_BUYSEL, cx + 40, height - 48, 100, 18, "..."));
+        buttonList.add(new GuiButton(BTN_TAKE, cx - 120, height - 48, 70, 18, Tr.format("pocketmod.gui.take")));
+        buttonList.add(new GuiButton(BTN_CLOSE, cx + 150, height - 48, 50, 18, Tr.format("pocketmod.gui.close")));
+        if (creditAmount == 0) creditAmount = PocketConfig.creditMin;
+        sliderW = 120;
         sliderH = 10;
         sliderX = cx - 160;
-        sliderY = height - 34;
-        buttonList.add(new GuiButton(BTN_TAKE, cx, height - 40, 80, 18, Tr.format("pocketmod.gui.take")));
-        buttonList.add(new GuiButton(BTN_CLOSE, cx + 90, height - 40, 70, 18, Tr.format("pocketmod.gui.close")));
-        if (creditAmount == 0) {
-            creditAmount = PocketConfig.creditMin;
-        }
-    }
-
-    private String buyLabel(AbilityType t) {
-        EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
-        if (lvl >= t.maxLevel) return Tr.format("pocketmod.gui.max");
-        int cost = t.costForNextLevel(lvl);
-        if (cost < 0) return "-";
-        double real = cost * Mana.getPriceMultiplier(dp);
-        String s = Tr.format(lvl == 0 ? "pocketmod.gui.buy" : "pocketmod.gui.upgrade", (int) Math.ceil(real));
-        // красная цена, если не хватает маны
-        return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + s;
-    }
-
-    private static String formatTime(long ms) {
-        long sec = Math.max(0L, ms) / 1000L;
-        return String.format("%d:%02d", sec / 60L, sec % 60L);
-    }
-
-    private double sliderFraction() {
-        int min = PocketConfig.creditMin;
-        int max = Math.max(min, PocketConfig.creditMax);
-        if (max == min) return 0.0;
-        return (creditAmount - min) / (double) (max - min);
-    }
-
-    private void updateSlider(int mx) {
-        double f = (mx - sliderX) / (double) sliderW;
-        f = Math.max(0.0, Math.min(1.0, f));
-        int min = PocketConfig.creditMin;
-        int max = Math.max(min, PocketConfig.creditMax);
-        int v = min + (int) Math.round(f * (max - min));
-        if (max - min >= 100) {
-            v = (v / 10) * 10;
-        }
-        creditAmount = Math.max(min, Math.min(max, v));
-    }
-
-    private boolean inSlider(int mx, int my) {
-        return mx >= sliderX && mx <= sliderX + sliderW && my >= sliderY - 2 && my <= sliderY + sliderH + 2;
+        sliderY = height - 28;
     }
 
     @Override
@@ -116,47 +84,49 @@ public class ShopGui extends GuiScreen {
         drawDefaultBackground();
         EntityPlayer dp = dataPlayer();
         int cx = width / 2;
-
         double mana = Mana.get(dp);
         double mult = Mana.getPriceMultiplier(dp);
         double drain = Abilities.totalDrainPerSec(dp);
 
-        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.title"), cx, 6, 0xFFE080);
-        drawCenteredString(fontRenderer,
-                Tr.format("pocketmod.gui.mana", (long) mana, String.format("%.2f", mult)), cx, 18, 0xAAAAFF);
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.title"), cx, 28, 0xFFE080);
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.mana", (long) mana, String.format("%.2f", mult)), cx, 40, 0xAAAAFF);
         String drainLine = drain > 0.001
                 ? Tr.format("pocketmod.gui.drain", String.format("%.1f", drain), (long) (mana / drain / 60.0))
                 : Tr.format("pocketmod.gui.drain_none");
-        drawCenteredString(fontRenderer, drainLine, cx, 30, 0xCCCCCC);
+        drawCenteredString(fontRenderer, drainLine, cx, 52, 0xCCCCCC);
 
-        boolean hasCredit = Mana.hasCredit(dp);
-        if (hasCredit) {
-            drawCenteredString(fontRenderer,
-                    Tr.format("pocketmod.gui.credit_active", (long) Math.ceil(Mana.getCredit(dp)),
-                            formatTime(Mana.getCreditLeftMs(dp))),
-                    cx, 42, 0xFF8888);
-        }
-
-        for (int i = 0; i < list.size(); i++) {
-            AbilityType t = list.get(i);
+        AbilityType[] l = currentTab();
+        for (int i = 0; i < l.length; i++) {
+            AbilityType t = l[i];
             int y = top + i * rowH;
             int lvl = AbilityStorage.getLevel(dp, t);
-            String status = lvl == 0
-                    ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
+            String status = lvl == 0 ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
                     : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
-            fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()) + "  " + status, cx - 160, y + (rowH - 10) / 2, 0xFFFFFF);
+            int col = (i == selected) ? 0xFFFFFF : 0xCCCCCC;
+            fontRenderer.drawStringWithShadow((i == selected ? "> " : "  ") + Tr.format(t.titleKey()) + "  " + status, 20, y + (rowH - 10) / 2, col);
         }
 
-        // Кредит: ползунок суммы
-        if (!hasCredit) {
+        if (l.length > 0 && selected < l.length) {
+            AbilityType t = l[selected];
+            int lx = cx - 10;
+            fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()), lx, top, 0xFFE080);
+            fontRenderer.drawSplitString(ShopInfo.desc(t), lx, top + 14, 180, 0xCCCCCC);
+            fontRenderer.drawStringWithShadow(ShopInfo.keys(t), lx, top + 50, 0xAAAAAA);
+            int lvl = AbilityStorage.getLevel(dp, t);
+            for (int lv = 1; lv <= t.maxLevel; lv++) {
+                String line = ShopInfo.level(t, lv);
+                int c = lv <= lvl ? 0x88FF88 : 0xAAAAAA;
+                fontRenderer.drawStringWithShadow("L" + lv + ": " + line, lx, top + 64 + (lv - 1) * 12, c);
+            }
+        }
+
+        if (!Mana.hasCredit(dp)) {
             int repay = (int) Math.round(creditAmount * (1.0 + PocketConfig.creditInterest));
-            fontRenderer.drawStringWithShadow(
-                    Tr.format("pocketmod.gui.credit_amount", creditAmount, repay, PocketConfig.creditDurationSec / 60),
-                    sliderX, sliderY - 14, 0xCCCCCC);
+            fontRenderer.drawStringWithShadow(Tr.format("pocketmod.gui.credit_amount", creditAmount, repay, PocketConfig.creditDurationSec / 60), sliderX, sliderY - 12, 0xCCCCCC);
         }
         Gui.drawRect(sliderX, sliderY + 3, sliderX + sliderW, sliderY + sliderH - 3, 0xFF444444);
-        int kx = sliderX + (int) (sliderFraction() * (sliderW - 6));
-        Gui.drawRect(kx, sliderY, kx + 6, sliderY + sliderH, hasCredit ? 0xFF888888 : 0xFFFFD34D);
+        int kx = sliderX + (int) (((creditAmount - PocketConfig.creditMin) / (double) Math.max(1, PocketConfig.creditMax - PocketConfig.creditMin)) * (sliderW - 6));
+        Gui.drawRect(kx, sliderY, kx + 6, sliderY + sliderH, Mana.hasCredit(dp) ? 0xFF888888 : 0xFFFFD34D);
 
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -164,9 +134,21 @@ public class ShopGui extends GuiScreen {
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (mouseButton == 0 && inSlider(mouseX, mouseY) && !Mana.hasCredit(dataPlayer())) {
-            dragging = true;
-            updateSlider(mouseX);
+        if (mouseButton == 0) {
+            AbilityType[] l = currentTab();
+            for (int i = 0; i < l.length; i++) {
+                int y = top + i * rowH;
+                if (mouseX >= 20 && mouseX < width / 2 - 20 && mouseY >= y && mouseY < y + rowH) {
+                    selected = i;
+                    return;
+                }
+            }
+            if (mouseX >= sliderX && mouseX <= sliderX + sliderW && mouseY >= sliderY - 2 && mouseY <= sliderY + sliderH + 2 && !Mana.hasCredit(dataPlayer())) {
+                dragging = true;
+                double f = (mouseX - sliderX) / (double) sliderW;
+                f = Math.max(0, Math.min(1, f));
+                creditAmount = PocketConfig.creditMin + (int) Math.round(f * (PocketConfig.creditMax - PocketConfig.creditMin));
+            }
         }
     }
 
@@ -174,7 +156,9 @@ public class ShopGui extends GuiScreen {
     protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
         super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
         if (dragging) {
-            updateSlider(mouseX);
+            double f = (mouseX - sliderX) / (double) sliderW;
+            f = Math.max(0, Math.min(1, f));
+            creditAmount = PocketConfig.creditMin + (int) Math.round(f * (PocketConfig.creditMax - PocketConfig.creditMin));
         }
     }
 
@@ -190,9 +174,14 @@ public class ShopGui extends GuiScreen {
             mc.player.closeScreen();
             return;
         }
-        IntegratedServer server = mc.getIntegratedServer();
+        if (button.id >= BTN_TAB && button.id < BTN_TAB + TAB_KEYS.length) {
+            tab = button.id - BTN_TAB;
+            selected = 0;
+            initGui();
+            return;
+        }
+        net.minecraft.server.integrated.IntegratedServer server = mc.getIntegratedServer();
         if (server == null) return;
-
         if (button.id == BTN_TAKE) {
             if (Mana.hasCredit(dataPlayer())) return;
             final int amt = creditAmount;
@@ -201,20 +190,19 @@ public class ShopGui extends GuiScreen {
                 if (mp != null && !Mana.hasCredit(mp)) {
                     double repay = Mana.takeCredit(mp, amt);
                     if (repay > 0) {
-                        mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken",
-                                (int) Math.ceil(repay), PocketConfig.creditDurationSec / 60), true);
+                        mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken", (int) Math.ceil(repay), PocketConfig.creditDurationSec / 60), true);
                     }
                 }
             });
             return;
         }
-        if (button.id >= BTN_BUY_BASE && button.id < BTN_BUY_BASE + list.size()) {
-            final AbilityType t = list.get(button.id - BTN_BUY_BASE);
+        if (button.id == BTN_BUYSEL) {
+            AbilityType[] l = currentTab();
+            if (l.length == 0 || selected >= l.length) return;
+            final AbilityType t = l[selected];
             server.addScheduledTask(() -> {
                 EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(player.getUniqueID());
-                if (mp != null) {
-                    AbilityStorage.tryUpgrade(mp, t);
-                }
+                if (mp != null) AbilityStorage.tryUpgrade(mp, t);
             });
         }
     }
@@ -222,15 +210,27 @@ public class ShopGui extends GuiScreen {
     @Override
     public void updateScreen() {
         EntityPlayer dp = dataPlayer();
-        boolean hasCredit = Mana.hasCredit(dp);
+        AbilityType[] l = currentTab();
         for (GuiButton b : buttonList) {
-            if (b.id >= BTN_BUY_BASE && b.id < BTN_BUY_BASE + list.size()) {
-                AbilityType t = list.get(b.id - BTN_BUY_BASE);
-                b.displayString = buyLabel(t);
-                int lvl = AbilityStorage.getLevel(dp, t);
-                b.enabled = lvl < t.maxLevel && t.costForNextLevel(lvl) > 0;
+            if (b.id == BTN_BUYSEL) {
+                if (l.length == 0 || selected >= l.length) {
+                    b.displayString = "-";
+                    b.enabled = false;
+                } else {
+                    AbilityType t = l[selected];
+                    int lvl = AbilityStorage.getLevel(dp, t);
+                    if (lvl >= t.maxLevel) {
+                        b.displayString = Tr.format("pocketmod.gui.max");
+                        b.enabled = false;
+                    } else {
+                        int cost = t.costForNextLevel(lvl);
+                        double real = cost * Mana.getPriceMultiplier(dp);
+                        b.displayString = (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + Tr.format(lvl == 0 ? "pocketmod.gui.buy" : "pocketmod.gui.upgrade", (int) Math.ceil(real));
+                        b.enabled = cost > 0;
+                    }
+                }
             } else if (b.id == BTN_TAKE) {
-                b.enabled = !hasCredit;
+                b.enabled = !Mana.hasCredit(dp);
             }
         }
     }
