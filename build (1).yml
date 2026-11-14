@@ -1,0 +1,67 @@
+name: Build mod
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Pick sources (newest pocketmod-v*.zip in the repo root, otherwise ./src)
+        run: |
+          set -e
+          ZIP=$(ls pocketmod-v*.zip 2>/dev/null | sort -V | tail -1 || true)
+          rm -rf work
+          mkdir work
+          if [ -n "$ZIP" ]; then
+            echo "Building from $ZIP"
+            unzip -q "$ZIP" -d work
+          else
+            echo "No zip found, building from ./src"
+            cp -r src work/src
+          fi
+          test -d work/src/main/java/pocketmod
+      - name: Prepare project
+        run: |
+          set -e
+          curl -fL -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-mdk.zip
+          mkdir mdk
+          unzip -q mdk.zip -d mdk
+          rm -rf mdk/src
+          cp -r work/src mdk/src
+          cd mdk
+          chmod +x gradlew
+          sed -i 's#http://files.minecraftforge.net/maven#https://maven.minecraftforge.net#g' build.gradle
+          sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
+      - name: Optional JourneyMap API (totem waypoints)
+        run: |
+          # Best effort: if anything here fails the mod is built without JourneyMap markers.
+          if [ -f work/jm/pocketmod/JmPlugin.java ] && git clone -q --depth 1 -b 1.12.2 https://github.com/TeamJM/journeymap-api.git jmapi; then
+            cp -r jmapi/src/main/java/journeymap mdk/src/main/java/journeymap
+            cp work/jm/pocketmod/JmPlugin.java mdk/src/main/java/pocketmod/JmPlugin.java
+            # API classes are only needed to compile; JourneyMap itself provides them in the game
+            printf '\njar { exclude "journeymap/**" }\n' >> mdk/build.gradle
+            echo "JM=1" >> "$GITHUB_ENV"
+          else
+            echo "JourneyMap API not used"
+          fi
+      - name: Build
+        working-directory: mdk
+        run: |
+          if ! ./gradlew build --no-daemon; then
+            if [ "$JM" = "1" ]; then
+              echo "Build with JourneyMap failed, retrying without it"
+              rm -rf src/main/java/journeymap src/main/java/pocketmod/JmPlugin.java
+              ./gradlew build --no-daemon
+            else
+              exit 1
+            fi
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocketmod-jar
+          path: mdk/build/libs/*.jar
