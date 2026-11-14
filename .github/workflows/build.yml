@@ -25,8 +25,6 @@ jobs:
             cp -r src work/src
           fi
           test -d work/src/main/java/pocketmod
-          # Forge 1.12.2 does not expose the newer beacon activation sound IDs.
-          # Use the matching metal pressure-plate on/off sounds supported by 1.12.2.
           SHIELD=work/src/main/java/pocketmod/Shield.java
           if [ -f "$SHIELD" ]; then
             sed -i \
@@ -34,6 +32,12 @@ jobs:
               -e 's/SoundEvents\.BLOCK_BEACON_DEACTIVATE/SoundEvents.BLOCK_METAL_PRESSPLATE_CLICK_OFF/g' \
               "$SHIELD"
           fi
+      - name: Export sources for the 1.2 update
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketmod-source-v1.1
+          path: work/src/
+          if-no-files-found: error
       - name: Prepare project
         run: |
           set -e
@@ -48,11 +52,9 @@ jobs:
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
       - name: Optional JourneyMap API (totem waypoints)
         run: |
-          # Best effort: if anything here fails the mod is built without JourneyMap markers.
           if [ -f work/jm/pocketmod/JmPlugin.java ] && git clone -q --depth 1 -b 1.12.2 https://github.com/TeamJM/journeymap-api.git jmapi; then
             cp -r jmapi/src/main/java/journeymap mdk/src/main/java/journeymap
             cp work/jm/pocketmod/JmPlugin.java mdk/src/main/java/pocketmod/JmPlugin.java
-            # API classes are only needed to compile; JourneyMap itself provides them in the game
             printf '\njar { exclude "journeymap/**" }\n' >> mdk/build.gradle
             echo "JM=1" >> "$GITHUB_ENV"
           else
