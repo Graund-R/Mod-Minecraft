@@ -11,17 +11,22 @@ public enum AbilityType {
     SPECTOR("spector", 300, 0, 0, 1),
     THERMAL("thermal", 180, 450, 0, 2),
     SHIELD("shield", 220, 550, 0, 2),
-    FLIGHT("flight", 400, 0, 0, 1),
-    TOTEM("totem", 150, 350, 700, 3);
+    FLIGHT("flight", 400, 800, 1500, 3),
+    TOTEM("totem", 150, 350, 700, 3),
+    SOFTFALL("softfall", 200, 450, 0, 2),
+    BLOODSUCKER("bloodsucker", 350, 0, 0, 1),
+    MAGNET("magnet", 200, 500, 0, 2);
 
     public final String id;
     public final int[] levelCosts;
+    public final int[] defaultCosts;
     public final int maxLevel;
 
     AbilityType(String id, int c1, int c2, int c3, int maxLevel) {
         this.id = id;
         this.maxLevel = maxLevel;
         this.levelCosts = new int[] { c1, c2, c3 };
+        this.defaultCosts = new int[] { c1, c2, c3 };
     }
 
     /** Ключ перевода названия. */
