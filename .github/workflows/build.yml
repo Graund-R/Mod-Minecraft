@@ -32,11 +32,20 @@ jobs:
               -e 's/SoundEvents\.BLOCK_BEACON_DEACTIVATE/SoundEvents.BLOCK_METAL_PRESSPLATE_CLICK_OFF/g' \
               "$SHIELD"
           fi
-      - name: Export sources for the 1.2 update
+      - name: Apply 1.2 changes
+        run: |
+          set -e
+          base64 -d .github/patches/pocketmod-1.2.py.gz.b64 | gzip -d > /tmp/patch_1_2.py
+          python3 /tmp/patch_1_2.py work/src
+      - name: Package 1.2 source
+        run: |
+          cd work
+          zip -qr ../pocketmod-v1.2.zip src
+      - name: Export 1.2 source
         uses: actions/upload-artifact@v4
         with:
-          name: pocketmod-source-v1.1
-          path: work/src/
+          name: pocketmod-source-v1.2
+          path: pocketmod-v1.2.zip
           if-no-files-found: error
       - name: Prepare project
         run: |
@@ -50,6 +59,7 @@ jobs:
           chmod +x gradlew
           sed -i 's#http://files.minecraftforge.net/maven#https://maven.minecraftforge.net#g' build.gradle
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
+          sed -i 's#^version = .*#version = "1.2"#' build.gradle
       - name: Optional JourneyMap API (totem waypoints)
         run: |
           if [ -f work/jm/pocketmod/JmPlugin.java ] && git clone -q --depth 1 -b 1.12.2 https://github.com/TeamJM/journeymap-api.git jmapi; then
@@ -74,5 +84,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: pocketmod-jar
+          name: pocketmod-jar-v1.2
           path: mdk/build/libs/*.jar
