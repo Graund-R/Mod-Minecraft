@@ -29,6 +29,13 @@ public class ServerTick {
 
         Abilities.tickInvisibility(player);
         Abilities.tickSlow(player);
+        Spector.tick(player);
+        Thermal.tick(player);
+        Shield.tick(player);
+        Flight.tick(player);
+        SoftFall.tick(player);
+        BodyEffects.tick(player);
+        Magnet.tick(player);
         Mana.tickCredit(player, delta);
     }
 }
