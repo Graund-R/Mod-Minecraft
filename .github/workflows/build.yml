@@ -32,50 +32,6 @@ jobs:
               -e 's/SoundEvents\.BLOCK_BEACON_DEACTIVATE/SoundEvents.BLOCK_METAL_PRESSPLATE_CLICK_OFF/g' \
               "$SHIELD"
           fi
-      - name: Apply 1.2 changes
-        run: |
-          set -e
-          base64 -d .github/patches/pocketmod-1.2.py.gz.b64 | gzip -d > /tmp/patch_1_2.py
-          python3 /tmp/patch_1_2.py work/src
-      - name: Keep pocket dimension ticking while unattended
-        run: |
-          set -e
-          python3 - <<'PY'
-          from pathlib import Path
-          root = Path("work/src/main")
-          cfg = root / "java/pocketmod/PocketConfig.java"
-          s = cfg.read_text()
-          s = "\n".join(line for line in s.splitlines() if "pocketTickDrain" not in line) + "\n"
-          cfg.write_text(s)
-          tick = root / "java/pocketmod/ServerTick.java"
-          s = tick.read_text()
-          start = s.find("        if (player.dimension == PocketMod.DIM_ID && !player.isCreative() && !player.isSpectator()")
-          if start >= 0:
-              end = s.find("\n        long now = System.nanoTime()", start)
-              if end < 0: raise SystemExit("Could not find end of pocket upkeep block")
-              s = s[:start] + s[end:]
-          tick.write_text(s)
-          mod = root / "java/pocketmod/PocketMod.java"
-          s = mod.read_text()
-          needle = "        DimensionManager.registerDimension(DIM_ID, POCKET_TYPE);"
-          if "DimensionManager.keepDimensionLoaded(DIM_ID, true);" not in s:
-              if needle not in s: raise SystemExit("Could not find dimension registration")
-              s = s.replace(needle, needle + "\n        // Keep the pocket dimension ticking even when its owner is outside.\n        DimensionManager.keepDimensionLoaded(DIM_ID, true);", 1)
-          mod.write_text(s)
-          for lang in (root / "resources/assets/pocketmod/lang").glob("*.lang"):
-              s = "\n".join(line for line in lang.read_text().splitlines() if "pocketmod.msg.pocket_tick_empty=" not in line) + "\n"
-              lang.write_text(s)
-          PY
-      - name: Package 1.2 source
-        run: |
-          cd work
-          zip -qr ../pocketmod-v1.2.zip src
-      - name: Export 1.2 source
-        uses: actions/upload-artifact@v4
-        with:
-          name: pocketmod-source-v1.2
-          path: pocketmod-v1.2.zip
-          if-no-files-found: error
       - name: Prepare project
         run: |
           set -e
@@ -113,5 +69,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: pocketmod-jar-v1.2
+          name: pocketmod-jar
           path: mdk/build/libs/*.jar
