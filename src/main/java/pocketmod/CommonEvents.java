@@ -79,6 +79,7 @@ public class CommonEvents {
         } else {
             data.paid.put(pos, paid);
             data.markDirty();
+            NetworkHandler.syncPocketWorld((WorldServer) world);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.expand_progress",
                     (int) paid, (int) Math.ceil(cost)), true);
         }
