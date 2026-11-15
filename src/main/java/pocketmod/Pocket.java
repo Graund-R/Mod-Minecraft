@@ -94,5 +94,6 @@ public class Pocket {
             }
         }
         d.markDirty();
+        NetworkHandler.syncPocketWorld(w);
     }
 }
