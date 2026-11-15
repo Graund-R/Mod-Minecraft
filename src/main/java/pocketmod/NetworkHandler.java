@@ -94,7 +94,10 @@ public final class NetworkHandler {
             net.minecraft.client.Minecraft.getMinecraft().addScheduledTask(() -> {
                 net.minecraft.entity.player.EntityPlayer player =
                         net.minecraft.client.Minecraft.getMinecraft().player;
-                if (player != null && message.data != null) PlayerData.replace(player, message.data);
+                if (player != null && message.data != null) {
+                    PlayerData.replace(player, message.data);
+                    JmHook.fire();
+                }
             });
             return null;
         }
