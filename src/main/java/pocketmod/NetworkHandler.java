@@ -25,9 +25,8 @@ public final class NetworkHandler {
     private NetworkHandler() {}
 
     public static void register() {
-        CHANNEL_INSTANCE.registerMessage(SyncHandler.class, SyncMessage.class, 0, Side.CLIENT);
         CHANNEL_INSTANCE.registerMessage(ActionHandler.class, ActionMessage.class, 1, Side.SERVER);
-        CHANNEL_INSTANCE.registerMessage(PocketSyncHandler.class, PocketSyncMessage.class, 2, Side.CLIENT);
+        PocketMod.proxy.registerClientMessages();
         MinecraftForge.EVENT_BUS.register(NetworkHandler.class);
     }
 
@@ -64,11 +63,29 @@ public final class NetworkHandler {
     }
 
     public static class SyncMessage implements IMessage {
-        private NBTTagCompound data = new NBTTagCompound();
+        public NBTTagCompound data = new NBTTagCompound();
         public SyncMessage() {}
         public SyncMessage(NBTTagCompound data) { this.data = data == null ? new NBTTagCompound() : data; }
         @Override public void fromBytes(ByteBuf buf) { data = ByteBufUtils.readTag(buf); }
         @Override public void toBytes(ByteBuf buf) { ByteBufUtils.writeTag(buf, data); }
+    }
+
+    public static class PocketSyncMessage implements IMessage {
+        public int dimension;
+        public NBTTagCompound data = new NBTTagCompound();
+        public PocketSyncMessage() {}
+        public PocketSyncMessage(int dimension, NBTTagCompound data) {
+            this.dimension = dimension;
+            this.data = data == null ? new NBTTagCompound() : data;
+        }
+        @Override public void fromBytes(ByteBuf buf) {
+            dimension = buf.readInt();
+            data = ByteBufUtils.readTag(buf);
+        }
+        @Override public void toBytes(ByteBuf buf) {
+            buf.writeInt(dimension);
+            ByteBufUtils.writeTag(buf, data);
+        }
     }
 
     public static class ActionMessage implements IMessage {
@@ -88,51 +105,6 @@ public final class NetworkHandler {
         @Override public void toBytes(ByteBuf buf) {
             buf.writeInt(action == null ? 0 : action.id); buf.writeInt(a); buf.writeInt(b);
             buf.writeDouble(value); ByteBufUtils.writeUTF8String(buf, text);
-        }
-    }
-
-    public static class SyncHandler implements IMessageHandler<SyncMessage, IMessage> {
-        @Override public IMessage onMessage(SyncMessage message, MessageContext ctx) {
-            net.minecraft.client.Minecraft.getMinecraft().addScheduledTask(() -> {
-                net.minecraft.entity.player.EntityPlayer player =
-                        net.minecraft.client.Minecraft.getMinecraft().player;
-                if (player != null && message.data != null) {
-                    PlayerData.replace(player, message.data);
-                    JmHook.fire();
-                }
-            });
-            return null;
-        }
-    }
-
-    public static class PocketSyncMessage implements IMessage {
-        private int dimension;
-        private NBTTagCompound data = new NBTTagCompound();
-        public PocketSyncMessage() {}
-        public PocketSyncMessage(int dimension, NBTTagCompound data) {
-            this.dimension = dimension;
-            this.data = data == null ? new NBTTagCompound() : data;
-        }
-        @Override public void fromBytes(ByteBuf buf) {
-            dimension = buf.readInt();
-            data = ByteBufUtils.readTag(buf);
-        }
-        @Override public void toBytes(ByteBuf buf) {
-            buf.writeInt(dimension);
-            ByteBufUtils.writeTag(buf, data);
-        }
-    }
-
-    public static class PocketSyncHandler implements IMessageHandler<PocketSyncMessage, IMessage> {
-        @Override public IMessage onMessage(PocketSyncMessage message, MessageContext ctx) {
-            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
-            mc.addScheduledTask(() -> {
-                if (mc.world != null && message.dimension == PocketMod.DIM_ID
-                        && mc.world.provider.getDimension() == message.dimension) {
-                    PocketData.get(mc.world).readFromNBT(message.data);
-                }
-            });
-            return null;
         }
     }
 
