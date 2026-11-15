@@ -72,7 +72,7 @@ public class TotemGui extends GuiScreen {
 
     private void createTotem() {
         final String name = nameField.getText();
-        NetworkHandler.action(9, 0, 0, 0, name);
+        NetworkHandler.action(NetAction.CREATE_TOTEM, 0, 0, 0, name);
         nameField.setText("");
     }
 
@@ -169,20 +169,20 @@ public class TotemGui extends GuiScreen {
 
             if (mouseX >= left + 250 && mouseX <= left + 264) {
                 confirmIndex = -1;
-                NetworkHandler.action(10, i, -1, 0, "");
+                NetworkHandler.action(NetAction.MOVE_TOTEM, i, -1, 0, "");
             } else if (mouseX >= left + 266 && mouseX <= left + 280) {
                 confirmIndex = -1;
-                NetworkHandler.action(10, i, 1, 0, "");
+                NetworkHandler.action(NetAction.MOVE_TOTEM, i, 1, 0, "");
             } else if (mouseX >= left + 284) {
                 if (confirmIndex == i) {
                     confirmIndex = -1;
-                    NetworkHandler.action(11, i, 0, 0, "");
+                    NetworkHandler.action(NetAction.DELETE_TOTEM, i, 0, 0, "");
                 } else {
                     confirmIndex = i;
                 }
             } else {
                 confirmIndex = -1;
-                NetworkHandler.action(12, i, 0, 0, "");
+                NetworkHandler.action(NetAction.TELEPORT_TOTEM, i, 0, 0, "");
                 mc.player.closeScreen();
             }
             return;
