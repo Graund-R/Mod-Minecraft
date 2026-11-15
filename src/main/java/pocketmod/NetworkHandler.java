@@ -33,6 +33,13 @@ public final class NetworkHandler {
         CHANNEL_INSTANCE.sendToServer(new ActionMessage(action, a, b, value, text));
     }
 
+    public static void actionPosition(int action, double x, double y, double z, float yaw, float pitch) {
+        ActionMessage message = new ActionMessage(action, 0, 0, 0, "");
+        message.x = x; message.y = y; message.z = z;
+        message.yaw = yaw; message.pitch = pitch;
+        CHANNEL_INSTANCE.sendToServer(message);
+    }
+
     public static void sync(EntityPlayerMP player) {
         NBTTagCompound snapshot = PlayerData.root(player).copy();
         snapshot.setBoolean("pm_sync_slow", player.getEntityData().getBoolean("pocketmod_slow"));
@@ -56,7 +63,8 @@ public final class NetworkHandler {
 
     public static class ActionMessage implements IMessage {
         public int action, a, b;
-        public double value;
+        public double value, x, y, z;
+        public float yaw, pitch;
         public String text = "";
         public ActionMessage() {}
         public ActionMessage(int action, int a, int b, double value, String text) {
@@ -66,10 +74,14 @@ public final class NetworkHandler {
         @Override public void fromBytes(ByteBuf buf) {
             action = buf.readInt(); a = buf.readInt(); b = buf.readInt();
             value = buf.readDouble(); text = ByteBufUtils.readUTF8String(buf);
+            x = buf.readDouble(); y = buf.readDouble(); z = buf.readDouble();
+            yaw = buf.readFloat(); pitch = buf.readFloat();
         }
         @Override public void toBytes(ByteBuf buf) {
             buf.writeInt(action); buf.writeInt(a); buf.writeInt(b);
             buf.writeDouble(value); ByteBufUtils.writeUTF8String(buf, text);
+            buf.writeDouble(x); buf.writeDouble(y); buf.writeDouble(z);
+            buf.writeFloat(yaw); buf.writeFloat(pitch);
         }
     }
 
@@ -113,6 +125,30 @@ public final class NetworkHandler {
             case 10: Totems.move(p, m.a, m.b); break;
             case 11: Totems.delete(p, m.a); break;
             case 12: Totems.teleport(p, m.a); break;
+            case 13:
+                if (Totems.hasDeathTotem(p)) Totems.teleportDeath(p);
+                else Totems.teleportLast(p);
+                break;
+            case 14: Abilities.teleportLook(p); break;
+            case 15: Abilities.toggleInvisibility(p); break;
+            case 16: Abilities.toggleSlow(p); break;
+            case 17:
+                if (Spector.isActive(p)) Spector.stop(p);
+                else Spector.start(p);
+                break;
+            case 18: Spector.phaseStep(p, m.x, m.y, m.z, m.yaw, m.pitch); break;
+            case 19: Abilities.shockwave(p); break;
+            case 20: Thermal.toggle(p); break;
+            case 21: Shield.toggle(p); break;
+            case 22: Flight.start(p); break;
+            case 23: PocketTeleporter.toggle(p); break;
+            case 24:
+                float factor = (float) Math.max(Abilities.minSlowFactor(p), Math.min(0.75, m.value));
+                Abilities.setSlowFactor(p, factor);
+                p.sendStatusMessage(new TextComponentTranslation(
+                        factor <= 0.001f ? "pocketmod.msg.slow_stop" : "pocketmod.msg.slow_factor",
+                        String.format("%.2f", factor)), true);
+                break;
         }
         sync(p);
     }

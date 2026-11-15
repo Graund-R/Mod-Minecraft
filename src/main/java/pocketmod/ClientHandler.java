@@ -15,16 +15,13 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -117,20 +114,6 @@ public class ClientHandler {
         RenderingRegistry.registerEntityRenderingHandler(EntityDecoy.class, manager -> new RenderDecoy(manager));
     }
 
-    /** Серверный (настоящий) объект игрока во встроенном сервере. */
-    public static EntityPlayerMP sp() {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || !mc.isIntegratedServerRunning()) return null;
-        IntegratedServer s = mc.getIntegratedServer();
-        return s == null ? null : s.getPlayerList().getPlayerByUUID(mc.player.getUniqueID());
-    }
-
-    private static void server(Runnable r) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.isIntegratedServerRunning() && mc.getIntegratedServer() != null)
-            mc.getIntegratedServer().addScheduledTask(r);
-    }
-
     private static void resetHold(Hold h) {
         h.was = false;
         h.held = false;
@@ -178,7 +161,7 @@ public class ClientHandler {
         if (mc.player.ticksExisted % 100 == 1) Tr.ensureLoaded();
         TotemMarkers.tick(mc);
         if (mc.player.ticksExisted % 4 == 0) updateThermalGlow(mc);
-        EntityPlayerMP spt = sp();
+        EntityPlayer spt = mc.player;
         updateSlowShader(mc, spt != null && Abilities.isSlow(spt));
         if (spt != null && SoftFall.isActive(spt) && !mc.player.onGround) {
             double lim = -PocketConfig.softFallSpeed;
@@ -201,7 +184,7 @@ public class ClientHandler {
         boolean gDown = raw(keyTeleport);
         // Shift+G — окно тотемов (сразу при нажатии)
         if (gDown && !hG.was && !hG.wait && GuiScreen.isShiftKeyDown()) {
-            EntityPlayerMP sp0 = sp();
+            EntityPlayer sp0 = mc.player;
             if (sp0 != null && !AbilityStorage.isUnlocked(sp0, AbilityType.TOTEM)) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
                 hG.wait = true;
@@ -214,22 +197,19 @@ public class ClientHandler {
         int g = poll(gDown, hG, now, holdMs);
         if (g == EV_HOLD) {
             // удержание G — тотем смерти (если есть), иначе последний обычный тотем
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> {
-                if (Totems.hasDeathTotem(p)) Totems.teleportDeath(p);
-                else Totems.teleportLast(p);
-            });
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(13, 0, 0, 0, "");
         } else if (g == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.teleportLook(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(14, 0, 0, 0, "");
         }
 
         int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
         if (v == EV_HOLD) {
             mc.displayGuiScreen(new ShopGui(mc.player));
         } else if (v == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.toggleInvisibility(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(15, 0, 0, 0, "");
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);
@@ -237,8 +217,8 @@ public class ClientHandler {
             if (zWheelUsed) {
                 zWheelUsed = false; // крутили колесо при зажатой Z — это не тап
             } else {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Abilities.toggleSlow(p));
+                EntityPlayer p = mc.player;
+                if (p != null) NetworkHandler.action(16, 0, 0, 0, "");
             }
         } else if (!keySlow.isKeyDown()) {
             zWheelUsed = false;
@@ -253,7 +233,7 @@ public class ClientHandler {
             xPhys = false;
         }
         boolean shiftDown = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-        EntityPlayerMP px = sp();
+        EntityPlayer px = mc.player;
         boolean specActive = px != null && Spector.isActive(px);
         if (specActive) specClient = true;
         // отдельная клавиша фазового шага (по умолчанию R) — тот же вызов, что и Shift+X
@@ -261,57 +241,41 @@ public class ClientHandler {
         boolean phaseRequest = phKey && !phWas;
         phWas = phKey;
         if (px != null && ((xPhys && !xWas) || phaseRequest)) {
-            final EntityPlayerMP target = px;
             final boolean doPhase = phaseRequest || (shiftDown && (specActive || specClient));
             if (doPhase) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_try"), true);
+                NetworkHandler.actionPosition(18, mc.player.posX, mc.player.posY, mc.player.posZ,
+                        mc.player.rotationYaw, mc.player.rotationPitch);
+            } else {
+                NetworkHandler.action(17, 0, 0, 0, "");
             }
-            final double cx = mc.player.posX;
-            final double cy = mc.player.posY;
-            final double cz = mc.player.posZ;
-            final float cyaw = mc.player.rotationYaw;
-            final float cpitch = mc.player.rotationPitch;
-            server(() -> {
-                if (doPhase) {
-                    Spector.phaseStep(target, cx, cy, cz, cyaw, cpitch);
-                } else if (!shiftDown && !phaseRequest) {
-                    if (Spector.isActive(target)) Spector.stop(target);
-                    else Spector.start(target);
-                }
-            });
         }
         xWas = xPhys;
         shiftWas = shiftDown;
-        if (px != null && Spector.isActive(px)) {
-            specClient = true;
-            px.setPositionAndRotation(mc.player.posX, mc.player.posY, mc.player.posZ,
-                    mc.player.rotationYaw, mc.player.rotationPitch);
-        } else if (px != null) {
-            specClient = false;
-        }
+        specClient = px != null && Spector.isActive(px);
 
         // Волна: Shift + пробел
         boolean jDown = mc.gameSettings.keyBindJump.isKeyDown();
         if (jDown && !jWas && shiftDown && !specActive) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.shockwave(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(19, 0, 0, 0, "");
         }
 
         if (keyThermal.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Thermal.toggle(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(20, 0, 0, 0, "");
         }
         if (keyShield.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Shield.toggle(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(21, 0, 0, 0, "");
         }
 
         // Полёт: двойной пробел в воздухе (без Shift)
         if (jDown && !jWas && !shiftDown) {
             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
                     && !mc.player.isRiding() && !mc.player.isInWater()) {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Flight.start(p));
+                EntityPlayer p = mc.player;
+                if (p != null) NetworkHandler.action(22, 0, 0, 0, "");
                 lastJump = 0L;
             } else {
                 lastJump = now;
@@ -320,8 +284,8 @@ public class ClientHandler {
         jWas = jDown;
 
         if (keyPocket.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> PocketTeleporter.toggle(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(23, 0, 0, 0, "");
         }
     }
 
@@ -367,7 +331,7 @@ public class ClientHandler {
         boolean on = false;
         int radius = 0;
         try {
-            EntityPlayerMP sp = sp();
+            EntityPlayer sp = mc.player;
             if (sp != null && Thermal.isOn(sp)) {
                 on = true;
                 radius = Thermal.radius(sp);
@@ -480,28 +444,21 @@ public class ClientHandler {
 
     @SubscribeEvent
     public void onMouse(MouseEvent event) {
-        if (!keySlow.isKeyDown() || Minecraft.getMinecraft().currentScreen != null) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (!keySlow.isKeyDown() || mc.currentScreen != null || mc.player == null) return;
         int wheel = event.getDwheel();
         if (wheel == 0) return;
         event.setCanceled(true);
         zWheelUsed = true;
-        EntityPlayerMP p = sp();
-        if (p == null) return;
-        float cur = Abilities.getSlowFactor(p);
+        EntityPlayer player = mc.player;
+        float cur = Abilities.getSlowFactor(player);
         float raw = Math.round((cur + (wheel > 0 ? 0.05f : -0.05f)) * 100f) / 100f;
-        final float next = Math.max(Abilities.minSlowFactor(p), Math.min(0.75f, raw));
-        server(() -> {
-            Abilities.setSlowFactor(p, next);
-            if (next <= 0.001f) {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_stop"), true);
-            } else {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_factor", String.format("%.2f", next)), true);
-            }
-        });
+        float next = Math.max(Abilities.minSlowFactor(player), Math.min(0.75f, raw));
+        NetworkHandler.action(24, 0, 0, next, "");
     }
 
     /** Длина шкалы: цена самого дорогого уже открытого действия (пока ничего нет — hudBarScale, по умолчанию 100). */
-    private static double barScale(EntityPlayerMP sp) {
+    private static double barScale(EntityPlayer sp) {
         double max = Math.max(1, PocketConfig.hudBarScale);
         for (AbilityType t : AbilityType.values()) {
             int lvl = AbilityStorage.getLevel(sp, t);
@@ -516,10 +473,10 @@ public class ClientHandler {
     public void onOverlay(RenderGameOverlayEvent.Post event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || mc.gameSettings.hideGUI || !mc.isIntegratedServerRunning()) return;
+        if (mc.player == null || mc.gameSettings.hideGUI) return;
 
         try {
-            EntityPlayerMP sp = sp();
+            EntityPlayer sp = mc.player;
             if (sp == null) return;
 
             double mana = Mana.get(sp);
@@ -546,9 +503,7 @@ public class ClientHandler {
                     && mc.objectMouseOver != null
                     && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
                     && ManaItems.isManaItem(held)) {
-                IntegratedServer server = mc.getIntegratedServer();
-                WorldServer pw = server.getWorld(PocketMod.DIM_ID);
-                PocketData d = PocketData.get(pw);
+                PocketData d = PocketData.get(mc.world);
                 BlockPos pos = mc.objectMouseOver.getBlockPos();
                 if (Pocket.isPayable(d, pos)) {
                     double cost = Pocket.costMana(pos, sp);
@@ -568,7 +523,7 @@ public class ClientHandler {
                 }
             }
         } catch (Exception ignored) {
-            // данные сервера читаются из потока рендера — редкая гонка не должна ронять игру
+            // клиентский снимок данных может обновиться между кадрами
         }
         GlStateManager.color(1f, 1f, 1f, 1f);
     }
