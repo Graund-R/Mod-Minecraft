@@ -447,22 +447,22 @@ public class ShopGui extends GuiScreen {
             selected = button.id - BTN_BUY; initGui(); return;
         }
         if (button.id == BTN_TAKE) {
-            if (!Mana.hasCredit(dataPlayer())) NetworkHandler.action(1, 0, 0, creditAmount, "");
+            if (!Mana.hasCredit(dataPlayer())) NetworkHandler.action(NetAction.TAKE_CREDIT, 0, 0, creditAmount, "");
             return;
         }
-        if (button.id == BTN_DECOY) { NetworkHandler.action(2, 0, 0, 0, ""); return; }
-        if (button.id == BTN_SILENCE) { NetworkHandler.action(3, 0, 0, 0, ""); return; }
-        if (button.id == BTN_BLOOD) { NetworkHandler.action(4, 0, 0, 0, ""); return; }
+        if (button.id == BTN_DECOY) { NetworkHandler.action(NetAction.TOGGLE_DECOY, 0, 0, 0, ""); return; }
+        if (button.id == BTN_SILENCE) { NetworkHandler.action(NetAction.TOGGLE_SILENCE, 0, 0, 0, ""); return; }
+        if (button.id == BTN_BLOOD) { NetworkHandler.action(NetAction.UPGRADE_BLOODSUCKER, 0, 0, 0, ""); return; }
         if (button.id == BTN_BUYSEL && tab <= 3) {
             AbilityType[] abilities = list();
-            if (abilities.length > 0) NetworkHandler.action(5, abilities[Math.min(selected, abilities.length - 1)].ordinal(), 0, 0, "");
+            if (abilities.length > 0) NetworkHandler.action(NetAction.UPGRADE_ABILITY, abilities[Math.min(selected, abilities.length - 1)].ordinal(), 0, 0, "");
             return;
         }
         if (button.id >= BTN_PERM && button.id < BTN_PERM + 5) {
-            NetworkHandler.action(6, button.id - BTN_PERM, 0, 0, ""); return;
+            NetworkHandler.action(NetAction.BUY_BODY_PERMANENT, button.id - BTN_PERM, 0, 0, ""); return;
         }
         if (button.id >= BTN_RENT && button.id < BTN_RENT + 5) {
-            NetworkHandler.action(7, button.id - BTN_RENT, 0, 0, ""); return;
+            NetworkHandler.action(NetAction.TOGGLE_BODY_RENT, button.id - BTN_RENT, 0, 0, ""); return;
         }
         if (button.id >= BTN_STAKE && button.id < BTN_STAKE + 3) {
             if (spinTicks > 0) return;
@@ -470,7 +470,7 @@ public class ShopGui extends GuiScreen {
             double real = PocketConfig.lootStakes[tier] * Mana.getPriceMultiplier(dataPlayer());
             if (Mana.get(dataPlayer()) < real) return;
             spinTicks = 30; shownResult = "";
-            NetworkHandler.action(8, tier, 0, 0, "");
+            NetworkHandler.action(NetAction.SPIN_LOOT, tier, 0, 0, "");
         }
     }
 
