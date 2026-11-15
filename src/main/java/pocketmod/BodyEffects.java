@@ -16,7 +16,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 /** Эффекты тела: сердца, скорость, сила, огнестойкость, дыхание. Навсегда или в аренду (мана/сек). */
 public class BodyEffects {
 
-    public static final String[] IDS = { "hearts", "speed", "strength", "fire", "breath" };
+    public static final String[] IDS = { "hearts", "speed", "strength", "fire", "breath", "regen" };
     private static final UUID HEART_ID = UUID.fromString("5b7c1a52-3d2e-4e0a-9d51-7a6f0c1b9e11");
 
     private static NBTTagCompound d(EntityPlayer p) {
@@ -32,7 +32,7 @@ public class BodyEffects {
     }
 
     public static int maxPerm(int i) {
-        return i == 0 ? PocketConfig.heartsMaxBuys : 1;
+        return i == 0 ? PocketConfig.heartsMaxBuys : i == 5 ? PocketConfig.regenMaxBuys : 1;
     }
 
     public static double rentCost(EntityPlayer p, int i) {
@@ -79,12 +79,19 @@ public class BodyEffects {
         apply(p, 3, MobEffects.FIRE_RESISTANCE);
         apply(p, 4, MobEffects.WATER_BREATHING);
         applyHearts(p);
+        applyRegeneration(p);
     }
 
     private static void apply(EntityPlayerMP p, int i, Potion pot) {
         if (perm(p, i) > 0 || rent(p, i)) {
             p.addPotionEffect(new PotionEffect(pot, 60, 0, true, false));
         }
+    }
+
+    private static void applyRegeneration(EntityPlayerMP p) {
+        int level = perm(p, 5);
+        if (rent(p, 5)) level = Math.max(1, level);
+        if (level > 0) p.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 60, Math.min(2, level - 1), true, false));
     }
 
     private static void applyHearts(EntityPlayerMP p) {

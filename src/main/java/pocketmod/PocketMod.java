@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.2", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.3", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 
@@ -19,12 +19,14 @@ public class PocketMod {
     @Mod.Instance(MODID)
     public static PocketMod instance;
     public static final int DIM_ID = 100;
+    public static final int GUI_WAREHOUSE = 23;
     public static DimensionType POCKET_TYPE;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         PocketConfig.load(event.getSuggestedConfigurationFile());
         NetworkHandler.register();
+        net.minecraftforge.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new PocketGuiHandler());
         net.minecraftforge.common.ForgeChunkManager.setForcedChunkLoadingCallback(this, new net.minecraftforge.common.ForgeChunkManager.LoadingCallback() {
             @Override
             public void ticketsLoaded(java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> tickets, net.minecraft.world.World world) {

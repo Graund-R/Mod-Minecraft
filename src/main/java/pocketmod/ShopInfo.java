@@ -37,6 +37,10 @@ public class ShopInfo {
                 return Tr.format(k, ClientHandler.keyName("shield"));
             case TOTEM:
                 return Tr.format(k, ClientHandler.keyName("teleport"), ClientHandler.keyName("teleport"));
+            case ORE_SCANNER:
+                return Tr.format(k, ClientHandler.keyName("scanner"));
+            case WAREHOUSE:
+                return Tr.format(k);
             default:
                 return Tr.format(k);
         }
@@ -82,6 +86,12 @@ public class ShopInfo {
                         : Tr.format(k, n(PocketConfig.magnetRadius2));
             case BLOODSUCKER:
                 return Tr.format(k);
+            case ORE_SCANNER: {
+                int i = Math.max(0, Math.min(PocketConfig.oreScannerRadius.length - 1, lvl - 1));
+                return Tr.format(k, PocketConfig.oreScannerRadius[i], n(PocketConfig.oreScannerDrain));
+            }
+            case WAREHOUSE:
+                return Tr.format(k, lvl);
             case WAVE: {
                 int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
                 return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),

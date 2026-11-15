@@ -15,7 +15,9 @@ public enum AbilityType {
     SOFTFALL("softfall", 200, 450),
     BLOODSUCKER("bloodsucker", 350, 550, 800),
     MAGNET("magnet", 200, 500),
-    WAVE("wave", 280, 450, 700, 1000, 1500);
+    WAVE("wave", 280, 450, 700, 1000, 1500),
+    ORE_SCANNER("scanner", 250, 500, 900),
+    WAREHOUSE("warehouse", 500, 900, 1500);
 
     public final String id;
     public final int[] levelCosts;

@@ -21,6 +21,7 @@ public class ShopGui extends GuiScreen {
     private static final int BTN_DECOY = 150;
     private static final int BTN_SILENCE = 151;
     private static final int BTN_BUYSEL = 160;
+    private static final int BTN_OPEN_WAREHOUSE = 161;
     private static final int BTN_BLOOD = 165;   // кровосися на вкладке «Тело»
     private static final int BTN_PERM = 200;     // 200..204
     private static final int BTN_RENT = 210;     // 210..214
@@ -28,8 +29,8 @@ public class ShopGui extends GuiScreen {
 
     private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
     private static final AbilityType[][] TAB_ABIL = {
-            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER },
-            { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW },
+            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER, AbilityType.ORE_SCANNER },
+            { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW, AbilityType.WAREHOUSE },
             { AbilityType.SPECTOR, AbilityType.THERMAL },
             { AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD },
             {}, {} };
@@ -80,6 +81,9 @@ public class ShopGui extends GuiScreen {
             GuiButton buy = new GuiButton(BTN_BUYSEL, px, height - 78, 160, 20, buyLabel(l[selected]));
             buy.enabled = true;
             buttonList.add(buy);
+            if (l[selected] == AbilityType.WAREHOUSE) {
+                buttonList.add(new GuiButton(BTN_OPEN_WAREHOUSE, px + 164, height - 78, 150, 20, Tr.format("pocketmod.gui.warehouse_open")));
+            }
             if (l[selected] == AbilityType.DECOY) {
                 buttonList.add(new GuiButton(BTN_DECOY, px + 156, height - 66, 120, 18, decoyLabel()));
             } else if (l[selected] == AbilityType.TELEPORT) {
@@ -440,6 +444,7 @@ public class ShopGui extends GuiScreen {
     @Override
     protected void actionPerformed(GuiButton button) throws IOException {
         if (button.id == BTN_CLOSE) { mc.player.closeScreen(); return; }
+        if (button.id == BTN_OPEN_WAREHOUSE) { NetworkHandler.action(NetAction.OPEN_WAREHOUSE, 0, 0, 0, ""); return; }
         if (button.id >= BTN_TAB && button.id < BTN_TAB + 6) {
             tab = button.id - BTN_TAB; selected = 0; initGui(); return;
         }
@@ -458,10 +463,10 @@ public class ShopGui extends GuiScreen {
             if (abilities.length > 0) NetworkHandler.action(NetAction.UPGRADE_ABILITY, abilities[Math.min(selected, abilities.length - 1)].ordinal(), 0, 0, "");
             return;
         }
-        if (button.id >= BTN_PERM && button.id < BTN_PERM + 5) {
+        if (button.id >= BTN_PERM && button.id < BTN_PERM + BodyEffects.IDS.length) {
             NetworkHandler.action(NetAction.BUY_BODY_PERMANENT, button.id - BTN_PERM, 0, 0, ""); return;
         }
-        if (button.id >= BTN_RENT && button.id < BTN_RENT + 5) {
+        if (button.id >= BTN_RENT && button.id < BTN_RENT + BodyEffects.IDS.length) {
             NetworkHandler.action(NetAction.TOGGLE_BODY_RENT, button.id - BTN_RENT, 0, 0, ""); return;
         }
         if (button.id >= BTN_STAKE && button.id < BTN_STAKE + 3) {
@@ -504,17 +509,19 @@ public class ShopGui extends GuiScreen {
                     // активна пока не MAX; нехватка маны не блокирует клик (сообщение при покупке)
                     b.enabled = lvl < t.maxLevel && cost > 0;
                 }
+            } else if (b.id == BTN_OPEN_WAREHOUSE) {
+                b.enabled = AbilityStorage.isUnlocked(dp, AbilityType.WAREHOUSE);
             } else if (b.id == BTN_SILENCE) {
                 b.displayString = silenceLabel();
                 b.enabled = AbilityStorage.getLevel(dp, AbilityType.TELEPORT) >= PocketConfig.silenceMinLevel;
             } else if (b.id == BTN_DECOY) {
                 b.displayString = decoyLabel();
                 b.enabled = AbilityStorage.isUnlocked(dp, AbilityType.DECOY);
-            } else if (b.id >= BTN_PERM && b.id < BTN_PERM + 5) {
+            } else if (b.id >= BTN_PERM && b.id < BTN_PERM + BodyEffects.IDS.length) {
                 int i = b.id - BTN_PERM;
                 b.displayString = permLabel(i);
                 b.enabled = BodyEffects.perm(dp, i) < BodyEffects.maxPerm(i);
-            } else if (b.id >= BTN_RENT && b.id < BTN_RENT + 5) {
+            } else if (b.id >= BTN_RENT && b.id < BTN_RENT + BodyEffects.IDS.length) {
                 b.displayString = rentLabel(b.id - BTN_RENT);
             } else if (b.id >= BTN_STAKE && b.id < BTN_STAKE + 3) {
                 b.displayString = stakeLabel(b.id - BTN_STAKE);

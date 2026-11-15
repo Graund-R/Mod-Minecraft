@@ -119,6 +119,7 @@ public class CommonEvents {
 
         if (event.isWasDeath()) {
             Mana.set(now, Mana.get(now) * (1.0 - PocketConfig.deathManaLoss));
+            WarehouseInventory.handleDeath(old, now);
             if (old.dimension == PocketMod.DIM_ID) {
                 Mana.setFreeEntry(now, true);
             }

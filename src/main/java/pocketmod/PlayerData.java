@@ -20,6 +20,7 @@ public class PlayerData {
         syncFlag(player, data, "pm_sync_softfall", "pm_softfall");
         syncFlag(player, data, "pm_sync_flight", "pm_flight");
         syncFlag(player, data, "pm_sync_shield", "pm_shield");
+        syncFlag(player, data, "pm_sync_ore_scan", "pm_ore_scan");
         if (data.hasKey("pm_sync_slow_factor")) {
             player.getEntityData().setFloat("pocketmod_slow_factor", data.getFloat("pm_sync_slow_factor"));
         }
@@ -30,6 +31,7 @@ public class PlayerData {
         data.removeTag("pm_sync_softfall");
         data.removeTag("pm_sync_flight");
         data.removeTag("pm_sync_shield");
+        data.removeTag("pm_sync_ore_scan");
         data.removeTag("pm_sync_slow_factor");
     }
 

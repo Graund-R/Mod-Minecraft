@@ -104,10 +104,17 @@ public class PocketConfig {
     public static double[] waveCost = { 25, 30, 35, 45, 60 };
 
     // Тело: сердца, скорость, сила, огнестойкость, дыхание
-    public static int[] bodyPermCost = { 300, 500, 600, 150, 150 };
-    public static double[] bodyRentPerSec = { 0.8, 1.0, 1.2, 0.3, 0.3 };
+    public static int[] bodyPermCost = { 300, 500, 600, 150, 150, 1200 };
+    public static double[] bodyRentPerSec = { 0.8, 1.0, 1.2, 0.3, 0.3, 2.5 };
     public static int heartsMaxBuys = 5;
     public static int heartsRent = 2;
+    public static int regenMaxBuys = 3;
+    public static int warehouseDeathCost = 100;
+    public static float oreScannerDrain = 3.0f;
+    public static int[] oreScannerRadius = { 16, 24, 32 };
+    public static int oreScannerVertical = 12;
+    public static String[] oreScannerTargets = { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" };
+    public static float pocketTickCost = 0.0f;
 
     // Лутка
     public static int[] lootStakes = { 50, 150, 400 };
@@ -191,6 +198,7 @@ public class PocketConfig {
         expandBaseCost = cfg.getInt("expandBaseCost", "карман", 4, 1, 100000, "Base expand cost in iron units");
         expandRingStep = cfg.getFloat("expandRingStep", "карман", 0.2f, 0f, 100f, "Ring cost growth");
         wallBlock = cfg.getString("wallBlock", "карман", "minecraft:quartz_block", "Блок стен кармана (кварц; измерение всегда яркое)");
+        pocketTickCost = cfg.getFloat("pocketTickCost", "карман", 0.0f, 0f, 100000f, "Мана в секунду за нахождение в кармане; 0 = бесплатно.");
 
         teleportBaseRange = cfg.getInt("teleportBaseRange", "способности", 50, 5, 500, "Teleport range, level 1");
         teleportRange2 = cfg.getInt("teleportRange2", "способности", 100, 5, 1000, "Teleport range, level 2");
@@ -263,12 +271,23 @@ public class PocketConfig {
         waveWeakSec = arr(cfg, "weaknessSeconds", "волна", waveWeakSec, "Длительность слабости (сек), 0 = нет");
         waveCost = arr(cfg, "manaCost", "волна", waveCost, "Мана за волну по уровням");
 
-        int[] bp = cfg.get("тело", "permCosts", new int[] { 300, 500, 600, 150, 150 }, "Permanent price: hearts, speed, strength, fire resistance, water breathing").getIntList();
-        if (bp.length >= 5) bodyPermCost = bp;
-        double[] br = cfg.get("тело", "rentPerSec", new double[] { 0.8, 1.0, 1.2, 0.3, 0.3 }, "Rent mana/sec in the same order").getDoubleList();
-        if (br.length >= 5) bodyRentPerSec = br;
+        int[] bp = cfg.get("тело", "permCosts", new int[] { 300, 500, 600, 150, 150, 1200 }, "Permanent price: hearts, speed, strength, fire resistance, water breathing, regeneration").getIntList();
+        if (bp.length >= 6) bodyPermCost = bp;
+        else if (bp.length >= 5) { bodyPermCost = java.util.Arrays.copyOf(bp, 6); bodyPermCost[5] = 1200; cfg.get("тело", "permCosts", bodyPermCost).set(bodyPermCost); }
+        double[] br = cfg.get("тело", "rentPerSec", new double[] { 0.8, 1.0, 1.2, 0.3, 0.3, 2.5 }, "Rent mana/sec in the same order").getDoubleList();
+        if (br.length >= 6) bodyRentPerSec = br;
+        else if (br.length >= 5) { bodyRentPerSec = java.util.Arrays.copyOf(br, 6); bodyRentPerSec[5] = 2.5; cfg.get("тело", "rentPerSec", bodyRentPerSec).set(bodyRentPerSec); }
         heartsMaxBuys = cfg.getInt("heartsMaxBuys", "тело", 5, 1, 50, "Max permanent heart purchases (+1 heart each)");
         heartsRent = cfg.getInt("heartsRent", "тело", 2, 1, 50, "Extra hearts while renting");
+        regenMaxBuys = cfg.getInt("regenMaxBuys", "тело", 3, 1, 3, "Maximum permanent regeneration levels");
+        warehouseDeathCost = cfg.getInt("warehouseDeathCost", "склад", 100, 0, 1000000, "Mana per occupied warehouse slot on death.");
+        oreScannerDrain = cfg.getFloat("oreScannerDrain", "сканер", 3.0f, 0f, 10000f, "Mana per second while scanning.");
+        oreScannerVertical = cfg.getInt("oreScannerVertical", "сканер", 12, 4, 64, "Vertical scan distance.");
+        int[] osr = cfg.get("сканер", "radii", new int[] { 16, 24, 32 }, "Ore scan radius by level.").getIntList();
+        if (osr.length >= 3) oreScannerRadius = osr;
+        oreScannerTargets = cfg.getStringList("targets", "сканер",
+                new String[] { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" },
+                "OreDictionary names (oreDiamond) or registry IDs (minecraft:diamond_ore) to highlight.");
 
         int[] ls = cfg.get("удача", "stakes", new int[] { 50, 150, 400 }, "Spin prices (3 tiers)").getIntList();
         if (ls.length >= 3) lootStakes = ls;

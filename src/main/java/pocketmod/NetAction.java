@@ -25,7 +25,9 @@ public enum NetAction {
     TOGGLE_SHIELD(21),
     START_FLIGHT(22),
     TOGGLE_POCKET(23),
-    SET_SLOW_FACTOR(24);
+    SET_SLOW_FACTOR(24),
+    OPEN_WAREHOUSE(25),
+    TOGGLE_ORE_SCANNER(26);
 
     public final int id;
     NetAction(int id) { this.id = id; }

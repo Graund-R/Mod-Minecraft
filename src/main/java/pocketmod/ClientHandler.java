@@ -25,6 +25,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -44,6 +45,7 @@ public class ClientHandler {
     private static boolean phWas;
     private static KeyBinding keyThermal;
     private static KeyBinding keyShield;
+    private static KeyBinding keyOreScanner;
 
     private static boolean phaseLatch;
     private static boolean xWas, xWait, shiftWas, jWas, zWheelUsed;
@@ -70,6 +72,7 @@ public class ClientHandler {
         else if ("spector".equals(id)) k = keySpector;
         else if ("thermal".equals(id)) k = keyThermal;
         else if ("shield".equals(id)) k = keyShield;
+        else if ("scanner".equals(id)) k = keyOreScanner;
         return k == null ? "?" : k.getDisplayName();
     }
     private static boolean slowShaderOn;
@@ -98,10 +101,12 @@ public class ClientHandler {
         keyPhase    = new KeyBinding("key.pocketmod.phase",    Keyboard.KEY_R, "key.categories.pocketmod");
         keyThermal  = new KeyBinding("key.pocketmod.thermal",  Keyboard.KEY_C, "key.categories.pocketmod");
         keyShield   = new KeyBinding("key.pocketmod.shield",   Keyboard.KEY_B, "key.categories.pocketmod");
+        keyOreScanner = new KeyBinding("key.pocketmod.scanner", Keyboard.KEY_O, "key.categories.pocketmod");
         ClientRegistry.registerKeyBinding(keySpector);
         ClientRegistry.registerKeyBinding(keyPhase);
         ClientRegistry.registerKeyBinding(keyThermal);
         ClientRegistry.registerKeyBinding(keyShield);
+        ClientRegistry.registerKeyBinding(keyOreScanner);
         ClientRegistry.registerKeyBinding(keyPocket);
         ClientRegistry.registerKeyBinding(keyTeleport);
         ClientRegistry.registerKeyBinding(keyInvis);
@@ -160,6 +165,7 @@ public class ClientHandler {
 
         if (mc.player.ticksExisted % 100 == 1) Tr.ensureLoaded();
         TotemMarkers.tick(mc);
+        OreScannerClient.clientTick(mc);
         if (mc.player.ticksExisted % 4 == 0) updateThermalGlow(mc);
         EntityPlayer spt = mc.player;
         updateSlowShader(mc, spt != null && Abilities.isSlow(spt));
@@ -268,6 +274,10 @@ public class ClientHandler {
             EntityPlayer p = mc.player;
             if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
         }
+        if (keyOreScanner.isPressed()) {
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_ORE_SCANNER, 0, 0, 0, "");
+        }
 
         // Полёт: двойной пробел в воздухе (без Shift)
         if (jDown && !jWas && !shiftDown) {
@@ -287,6 +297,9 @@ public class ClientHandler {
             if (p != null) NetworkHandler.action(NetAction.TOGGLE_POCKET, 0, 0, 0, "");
         }
     }
+
+    @SubscribeEvent
+    public void onRenderWorldLast(RenderWorldLastEvent event) { OreScannerClient.render(Minecraft.getMinecraft()); }
 
     private static final String TEAM_HOT = "pm_hot";
     private static final java.util.Set<String> hotNames = new java.util.HashSet<String>();

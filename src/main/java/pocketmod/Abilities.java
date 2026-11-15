@@ -227,6 +227,7 @@ public class Abilities {
         if (Flight.isArmed(player) && player.capabilities.isFlying) d += Flight.drainPerSec(player);
         if (SoftFall.isActive(player)) d += SoftFall.drainPerSec(player);
         d += BodyEffects.totalRentDrain(player);
+        if (OreScanner.isOn(player)) d += OreScanner.drainPerSec(player);
         return d;
     }
 

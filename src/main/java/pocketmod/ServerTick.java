@@ -36,6 +36,14 @@ public class ServerTick {
         Flight.tick(player);
         SoftFall.tick(player);
         BodyEffects.tick(player);
+        OreScanner.tick(player);
+        if (player.dimension == PocketMod.DIM_ID && PocketConfig.pocketTickCost > 0 && player.ticksExisted % 20 == 0) {
+            double fee = PocketConfig.pocketTickCost * Mana.getPriceMultiplier(player);
+            if (!Mana.spend(player, fee)) {
+                player.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation("pocketmod.msg.pocket_fee_empty"), true);
+                PocketTeleporter.toggle(player);
+            }
+        }
         if (AbilityStorage.isUnlocked(player, AbilityType.MAGNET)) Magnet.tick(player);
         Mana.tickCredit(player, delta);
     }

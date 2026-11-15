@@ -44,6 +44,7 @@ public final class NetworkHandler {
         snapshot.setBoolean("pm_sync_softfall", player.getEntityData().getBoolean("pm_softfall"));
         snapshot.setBoolean("pm_sync_flight", player.getEntityData().getBoolean("pm_flight"));
         snapshot.setBoolean("pm_sync_shield", player.getEntityData().getBoolean("pm_shield"));
+        snapshot.setBoolean("pm_sync_ore_scan", player.getEntityData().getBoolean("pm_ore_scan"));
         snapshot.setFloat("pm_sync_slow_factor", player.getEntityData().getFloat("pocketmod_slow_factor"));
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
     }
@@ -160,8 +161,8 @@ public final class NetworkHandler {
                 if (m.a >= 0 && m.a < AbilityType.values().length)
                     AbilityStorage.tryUpgrade(p, AbilityType.values()[m.a]);
                 break;
-            case BUY_BODY_PERMANENT: if (m.a >= 0 && m.a < 5) BodyEffects.buyPerm(p, m.a); break;
-            case TOGGLE_BODY_RENT: if (m.a >= 0 && m.a < 5) BodyEffects.toggleRent(p, m.a); break;
+            case BUY_BODY_PERMANENT: if (m.a >= 0 && m.a < BodyEffects.IDS.length) BodyEffects.buyPerm(p, m.a); break;
+            case TOGGLE_BODY_RENT: if (m.a >= 0 && m.a < BodyEffects.IDS.length) BodyEffects.toggleRent(p, m.a); break;
             case SPIN_LOOT: if (m.a >= 0 && m.a < 3) Loot.spin(p, m.a); break;
             case CREATE_TOTEM: Totems.create(p, m.text); break;
             case MOVE_TOTEM: Totems.move(p, m.a, m.b); break;
@@ -183,6 +184,11 @@ public final class NetworkHandler {
             case TOGGLE_THERMAL: Thermal.toggle(p); break;
             case TOGGLE_SHIELD: Shield.toggle(p); break;
             case START_FLIGHT: Flight.start(p); break;
+            case OPEN_WAREHOUSE:
+                if (AbilityStorage.isUnlocked(p, AbilityType.WAREHOUSE)) p.openGui(PocketMod.instance, PocketMod.GUI_WAREHOUSE, p.world, 0, 0, 0);
+                else p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+                break;
+            case TOGGLE_ORE_SCANNER: OreScanner.toggle(p); break;
             case TOGGLE_POCKET: PocketTeleporter.toggle(p); break;
             case SET_SLOW_FACTOR:
                 float factor = (float) Math.max(Abilities.minSlowFactor(p), Math.min(0.75, m.value));
