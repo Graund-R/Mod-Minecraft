@@ -10,7 +10,7 @@ import journeymap.client.api.display.DisplayType;
 import journeymap.client.api.display.Waypoint;
 import journeymap.client.api.event.ClientEvent;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 
 /** Метки тотемов в JourneyMap. Копируется в сборку только если JourneyMap API удалось подключить. */
@@ -52,9 +52,9 @@ public class JmPlugin implements IClientPlugin {
         if (api == null) return;
         try {
             api.removeAll(PocketMod.MODID, DisplayType.Waypoint);
-            EntityPlayerMP sp = ClientHandler.sp();
-            if (sp == null) return;
-            List<Totems.Totem> list = Totems.get(sp);
+            EntityPlayer player = Minecraft.getMinecraft().player;
+            if (player == null) return;
+            List<Totems.Totem> list = Totems.get(player);
             for (int i = 0; i < list.size(); i++) {
                 Totems.Totem t = list.get(i);
                 Waypoint w = new Waypoint(PocketMod.MODID, "totem_" + i, t.name, t.dim,
