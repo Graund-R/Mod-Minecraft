@@ -96,7 +96,7 @@ public final class NetworkHandler {
 
     private static void execute(EntityPlayerMP p, ActionMessage m) {
         switch (m.action) {
-            case 1: Mana.takeCredit(p, m.value); break;
+            case 1:\n                double repay = Mana.takeCredit(p, m.value);\n                if (repay > 0) p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken",\n                        (int) Math.ceil(repay), PocketConfig.creditDurationSec / 60), true);\n                break;
             case 2: Abilities.setDecoyEnabled(p, !Abilities.isDecoyEnabled(p)); break;
             case 3: Abilities.setSilenceEnabled(p, !Abilities.isSilenceEnabled(p)); break;
             case 4: AbilityStorage.tryUpgrade(p, AbilityType.BLOODSUCKER); break;

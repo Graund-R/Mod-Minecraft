@@ -23,7 +23,7 @@ public class PocketMod {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        PocketConfig.load(event.getSuggestedConfigurationFile());\n        NetworkHandler.register();
+        PocketConfig.load(event.getSuggestedConfigurationFile());
         net.minecraftforge.common.ForgeChunkManager.setForcedChunkLoadingCallback(this, new net.minecraftforge.common.ForgeChunkManager.LoadingCallback() {
             @Override
             public void ticketsLoaded(java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> tickets, net.minecraft.world.World world) {

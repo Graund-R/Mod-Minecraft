@@ -10,7 +10,7 @@ public class PlayerData {
 
     public static final String KEY = "PlayerPersisted";
 
-    public static void replace(EntityPlayer player, NBTTagCompound snapshot) {\n        player.getEntityData().setTag(KEY, snapshot == null ? new NBTTagCompound() : snapshot.copy());\n    }\n\n    public static NBTTagCompound root(EntityPlayer player) {
+    public static NBTTagCompound root(EntityPlayer player) {
         NBTTagCompound e = player.getEntityData();
         if (!e.hasKey(KEY, 10)) {
             e.setTag(KEY, new NBTTagCompound());
