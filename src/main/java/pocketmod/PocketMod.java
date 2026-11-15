@@ -5,10 +5,10 @@ import net.minecraft.world.DimensionType;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.relauncher.Side;
 
 @Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.3", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
@@ -18,6 +18,9 @@ public class PocketMod {
 
     @Mod.Instance(MODID)
     public static PocketMod instance;
+    @SidedProxy(clientSide = "pocketmod.ClientProxy", serverSide = "pocketmod.CommonProxy")
+    public static CommonProxy proxy;
+
     public static final int DIM_ID = 100;
     public static final int GUI_WAREHOUSE = 23;
     public static DimensionType POCKET_TYPE;
@@ -39,16 +42,12 @@ public class PocketMod {
         POCKET_TYPE = DimensionType.register("pocket", "_pocket", DIM_ID, PocketWorldProvider.class, true);
         DimensionManager.registerDimension(DIM_ID, POCKET_TYPE);
         EntityRegistry.registerModEntity(new ResourceLocation(MODID, "decoy"), EntityDecoy.class, "decoy", 0, this, 64, 3, false);
-        if (event.getSide() == Side.CLIENT) {
-            ClientHandler.registerRenderers();
-        }
+        proxy.preInit();
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        if (event.getSide() == Side.CLIENT) {
-            ClientHandler.register();
-        }
+        proxy.init();
     }
 
     @Mod.EventHandler
