@@ -26,18 +26,12 @@ public final class NetworkHandler {
     public static void register() {
         CHANNEL_INSTANCE.registerMessage(SyncHandler.class, SyncMessage.class, 0, Side.CLIENT);
         CHANNEL_INSTANCE.registerMessage(ActionHandler.class, ActionMessage.class, 1, Side.SERVER);
+        CHANNEL_INSTANCE.registerMessage(PocketSyncHandler.class, PocketSyncMessage.class, 2, Side.CLIENT);
         MinecraftForge.EVENT_BUS.register(NetworkHandler.class);
     }
 
     public static void action(int action, int a, int b, double value, String text) {
         CHANNEL_INSTANCE.sendToServer(new ActionMessage(action, a, b, value, text));
-    }
-
-    public static void actionPosition(int action, double x, double y, double z, float yaw, float pitch) {
-        ActionMessage message = new ActionMessage(action, 0, 0, 0, "");
-        message.x = x; message.y = y; message.z = z;
-        message.yaw = yaw; message.pitch = pitch;
-        CHANNEL_INSTANCE.sendToServer(message);
     }
 
     public static void sync(EntityPlayerMP player) {
@@ -53,6 +47,20 @@ public final class NetworkHandler {
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
     }
 
+    /** Передаёт клиенту WorldSavedData карманного измерения для подсказок и локального UI. */
+    public static void syncPocket(EntityPlayerMP player) {
+        if (player == null || player.dimension != PocketMod.DIM_ID) return;
+        NBTTagCompound snapshot = PocketData.get(player.world).writeToNBT(new NBTTagCompound());
+        CHANNEL_INSTANCE.sendTo(new PocketSyncMessage(PocketMod.DIM_ID, snapshot), player);
+    }
+
+    public static void syncPocketWorld(WorldServer world) {
+        if (world == null || world.provider.getDimension() != PocketMod.DIM_ID) return;
+        for (net.minecraft.entity.player.EntityPlayer player : world.playerEntities) {
+            if (player instanceof EntityPlayerMP) syncPocket((EntityPlayerMP) player);
+        }
+    }
+
     public static class SyncMessage implements IMessage {
         private NBTTagCompound data = new NBTTagCompound();
         public SyncMessage() {}
@@ -63,8 +71,7 @@ public final class NetworkHandler {
 
     public static class ActionMessage implements IMessage {
         public int action, a, b;
-        public double value, x, y, z;
-        public float yaw, pitch;
+        public double value;
         public String text = "";
         public ActionMessage() {}
         public ActionMessage(int action, int a, int b, double value, String text) {
@@ -74,14 +81,10 @@ public final class NetworkHandler {
         @Override public void fromBytes(ByteBuf buf) {
             action = buf.readInt(); a = buf.readInt(); b = buf.readInt();
             value = buf.readDouble(); text = ByteBufUtils.readUTF8String(buf);
-            x = buf.readDouble(); y = buf.readDouble(); z = buf.readDouble();
-            yaw = buf.readFloat(); pitch = buf.readFloat();
         }
         @Override public void toBytes(ByteBuf buf) {
             buf.writeInt(action); buf.writeInt(a); buf.writeInt(b);
             buf.writeDouble(value); ByteBufUtils.writeUTF8String(buf, text);
-            buf.writeDouble(x); buf.writeDouble(y); buf.writeDouble(z);
-            buf.writeFloat(yaw); buf.writeFloat(pitch);
         }
     }
 
@@ -91,6 +94,37 @@ public final class NetworkHandler {
                 net.minecraft.entity.player.EntityPlayer player =
                         net.minecraft.client.Minecraft.getMinecraft().player;
                 if (player != null && message.data != null) PlayerData.replace(player, message.data);
+            });
+            return null;
+        }
+    }
+
+    public static class PocketSyncMessage implements IMessage {
+        private int dimension;
+        private NBTTagCompound data = new NBTTagCompound();
+        public PocketSyncMessage() {}
+        public PocketSyncMessage(int dimension, NBTTagCompound data) {
+            this.dimension = dimension;
+            this.data = data == null ? new NBTTagCompound() : data;
+        }
+        @Override public void fromBytes(ByteBuf buf) {
+            dimension = buf.readInt();
+            data = ByteBufUtils.readTag(buf);
+        }
+        @Override public void toBytes(ByteBuf buf) {
+            buf.writeInt(dimension);
+            ByteBufUtils.writeTag(buf, data);
+        }
+    }
+
+    public static class PocketSyncHandler implements IMessageHandler<PocketSyncMessage, IMessage> {
+        @Override public IMessage onMessage(PocketSyncMessage message, MessageContext ctx) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+            mc.addScheduledTask(() -> {
+                if (mc.world != null && message.dimension == PocketMod.DIM_ID
+                        && mc.world.provider.getDimension() == message.dimension) {
+                    PocketData.get(mc.world).readFromNBT(message.data);
+                }
             });
             return null;
         }
@@ -136,7 +170,7 @@ public final class NetworkHandler {
                 if (Spector.isActive(p)) Spector.stop(p);
                 else Spector.start(p);
                 break;
-            case 18: Spector.phaseStep(p, m.x, m.y, m.z, m.yaw, m.pitch); break;
+            case 18: Spector.phaseStep(p); break;
             case 19: Abilities.shockwave(p); break;
             case 20: Thermal.toggle(p); break;
             case 21: Shield.toggle(p); break;
@@ -155,7 +189,18 @@ public final class NetworkHandler {
 
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.player instanceof EntityPlayerMP) sync((EntityPlayerMP) event.player);
+        if (event.player instanceof EntityPlayerMP) {
+            EntityPlayerMP player = (EntityPlayerMP) event.player;
+            sync(player);
+            if (player.dimension == PocketMod.DIM_ID) syncPocket(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.player instanceof EntityPlayerMP && event.toDim == PocketMod.DIM_ID) {
+            syncPocket((EntityPlayerMP) event.player);
+        }
     }
 
     @SubscribeEvent
