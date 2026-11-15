@@ -25,6 +25,16 @@ jobs:
             cp -r src work/src
           fi
           test -d work/src/main/java/pocketmod
+          VER=$(echo "$ZIP" | sed -E 's/^pocketmod-v([0-9]+(\.[0-9]+)*).*/\1/')
+          if [ -z "$VER" ]; then VER=1.4; fi
+          echo "MODVER=$VER" >> "$GITHUB_ENV"
+          echo "Mod version: $VER"
+          # Версия в меню Mods (@Mod) должна совпадать с именем zip
+          PM=work/src/main/java/pocketmod/PocketMod.java
+          if [ -f "$PM" ]; then
+            sed -i -E "s/version\s*=\s*\"[0-9]+(\.[0-9]+)*\"/version = \"$VER\"/" "$PM"
+            echo "Patched @Mod version -> $VER"
+          fi
           SHIELD=work/src/main/java/pocketmod/Shield.java
           if [ -f "$SHIELD" ]; then
             sed -i \
@@ -44,7 +54,7 @@ jobs:
           chmod +x gradlew
           sed -i 's#http://files.minecraftforge.net/maven#https://maven.minecraftforge.net#g' build.gradle
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
-          sed -i 's#^version = .*#version = "1.2"#' build.gradle
+          sed -i "s#^version = .*#version = \"$MODVER\"#" build.gradle
       - name: Optional JourneyMap API (totem waypoints)
         run: |
           if [ -f work/jm/pocketmod/JmPlugin.java ] && git clone -q --depth 1 -b 1.12.2 https://github.com/TeamJM/journeymap-api.git jmapi; then
