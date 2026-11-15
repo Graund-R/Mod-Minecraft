@@ -29,7 +29,7 @@ public class SlowSound {
 
     private static void handle(PlaySoundEvent event) {
         // флаг замедления хранится на серверном игроке, у клиентского его нет
-        net.minecraft.entity.player.EntityPlayerMP sp = ClientHandler.sp();
+        net.minecraft.entity.player.EntityPlayer sp = net.minecraft.client.Minecraft.getMinecraft().player;
         if (sp == null || !Abilities.isSlow(sp)) return;
 
         ISound original = event.getSound();

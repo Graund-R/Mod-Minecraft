@@ -3,7 +3,6 @@ package pocketmod;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -16,11 +15,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class TotemMarkers {
 
     public static void tick(Minecraft mc) {
-        if (mc.world == null || mc.player == null || mc.isGamePaused() || !mc.isIntegratedServerRunning()) return;
+        if (mc.world == null || mc.player == null || mc.isGamePaused()) return;
         try {
-            EntityPlayerMP sp = ClientHandler.sp();
-            if (sp == null) return;
-            List<Totems.Totem> list = Totems.get(sp);
+            List<Totems.Totem> list = Totems.get(mc.player);
             if (list.isEmpty()) return;
 
             int dim = mc.player.dimension;
