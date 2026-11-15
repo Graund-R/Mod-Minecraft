@@ -244,8 +244,7 @@ public class ClientHandler {
             final boolean doPhase = phaseRequest || (shiftDown && (specActive || specClient));
             if (doPhase) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_try"), true);
-                NetworkHandler.actionPosition(18, mc.player.posX, mc.player.posY, mc.player.posZ,
-                        mc.player.rotationYaw, mc.player.rotationPitch);
+                NetworkHandler.action(18, 0, 0, 0, "");
             } else {
                 NetworkHandler.action(17, 0, 0, 0, "");
             }
