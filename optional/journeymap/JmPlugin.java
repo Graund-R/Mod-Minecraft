@@ -18,6 +18,7 @@ import net.minecraft.util.math.BlockPos;
 public class JmPlugin implements IClientPlugin {
 
     private IClientAPI api;
+    private String lastState;
 
     @Override
     public void initialize(IClientAPI jmClientApi) {
@@ -51,10 +52,27 @@ public class JmPlugin implements IClientPlugin {
     private void sync() {
         if (api == null) return;
         try {
-            api.removeAll(PocketMod.MODID, DisplayType.Waypoint);
             EntityPlayer player = Minecraft.getMinecraft().player;
-            if (player == null) return;
+            if (player == null) {
+                if (lastState != null) {
+                    api.removeAll(PocketMod.MODID, DisplayType.Waypoint);
+                    lastState = null;
+                }
+                return;
+            }
+
             List<Totems.Totem> list = Totems.get(player);
+            StringBuilder stateBuilder = new StringBuilder();
+            for (Totems.Totem t : list) {
+                stateBuilder.append(t.name).append('|').append(t.dim).append('|')
+                        .append(Double.doubleToLongBits(t.x)).append('|')
+                        .append(Double.doubleToLongBits(t.y)).append('|')
+                        .append(Double.doubleToLongBits(t.z)).append(';');
+            }
+            String state = stateBuilder.toString();
+            if (state.equals(lastState)) return;
+
+            api.removeAll(PocketMod.MODID, DisplayType.Waypoint);
             for (int i = 0; i < list.size(); i++) {
                 Totems.Totem t = list.get(i);
                 Waypoint w = new Waypoint(PocketMod.MODID, "totem_" + i, t.name, t.dim,
@@ -63,6 +81,7 @@ public class JmPlugin implements IClientPlugin {
                 w.setPersistent(false);
                 api.show(w);
             }
+            lastState = state;
         } catch (Throwable ignored) {
         }
     }
