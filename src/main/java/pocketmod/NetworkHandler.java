@@ -140,6 +140,9 @@ public final class NetworkHandler {
     }
 
     private static void execute(EntityPlayerMP p, ActionMessage m) {
+        // Не допускаем NaN/Infinity в экономику и коэффициенты, а также лишние данные пакета.
+        if (p == null || m == null || m.action < 1 || m.action > 24
+                || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
         switch (m.action) {
             case 1:
                 double repay = Mana.takeCredit(p, m.value);
