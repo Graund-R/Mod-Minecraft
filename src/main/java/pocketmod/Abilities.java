@@ -50,11 +50,11 @@ public class Abilities {
     private static final String KEY_SILENCE_OFF = "pm_silence_off";
 
     public static boolean isSilenceEnabled(EntityPlayer p) {
-        return !p.getEntityData().getBoolean(KEY_SILENCE_OFF);
+        return !PlayerData.root(p).getBoolean(KEY_SILENCE_OFF);
     }
 
     public static void setSilenceEnabled(EntityPlayer p, boolean on) {
-        p.getEntityData().setBoolean(KEY_SILENCE_OFF, !on);
+        PlayerData.root(p).setBoolean(KEY_SILENCE_OFF, !on);
     }
 
     public static boolean isDecoyEnabled(EntityPlayer p) {
