@@ -6,7 +6,10 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -50,7 +53,10 @@ public class ShopGui extends GuiScreen {
         this.player = player;
     }
 
-    private EntityPlayer dataPlayer() { return player; }
+    private EntityPlayer dataPlayer() {
+        EntityPlayerMP mp = ClientHandler.sp();
+        return mp != null ? mp : player;
+    }
 
     private AbilityType[] list() {
         return TAB_ABIL[tab];
@@ -454,37 +460,81 @@ public class ShopGui extends GuiScreen {
             initGui();
             return;
         }
+        final IntegratedServer server = mc.getIntegratedServer();
+        if (server == null) return;
+        final java.util.UUID id = player.getUniqueID();
+
         if (button.id == BTN_TAKE) {
-            if (!Mana.hasCredit(dataPlayer())) NetworkHandler.action(1, 0, 0, creditAmount, "");
+            if (Mana.hasCredit(dataPlayer())) return;
+            final int amt = creditAmount;
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null && !Mana.hasCredit(mp)) {
+                    double repay = Mana.takeCredit(mp, amt);
+                    if (repay > 0) {
+                        mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken",
+                                (int) Math.ceil(repay), PocketConfig.creditDurationSec / 60), true);
+                    }
+                }
+            });
             return;
         }
-        if (button.id == BTN_DECOY) { NetworkHandler.action(2, 0, 0, 0, ""); return; }
-        if (button.id == BTN_SILENCE) { NetworkHandler.action(3, 0, 0, 0, ""); return; }
-        if (button.id == BTN_BLOOD) { NetworkHandler.action(4, 0, 0, 0, ""); return; }
+        if (button.id == BTN_DECOY) {
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) Abilities.setDecoyEnabled(mp, !Abilities.isDecoyEnabled(mp));
+            });
+            return;
+        }
+        if (button.id == BTN_SILENCE) {
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) Abilities.setSilenceEnabled(mp, !Abilities.isSilenceEnabled(mp));
+            });
+            return;
+        }
+        if (button.id == BTN_BLOOD) {
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) AbilityStorage.tryUpgrade(mp, AbilityType.BLOODSUCKER);
+            });
+            return;
+        }
         if (button.id == BTN_BUYSEL && tab <= 3) {
-            AbilityType[] abilities = list();
-            if (abilities.length > 0) {
-                AbilityType type = abilities[Math.min(selected, abilities.length - 1)];
-                NetworkHandler.action(5, type.ordinal(), 0, 0, "");
-            }
+            final AbilityType t = list()[Math.min(selected, list().length - 1)];
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) AbilityStorage.tryUpgrade(mp, t);
+            });
             return;
         }
         if (button.id >= BTN_PERM && button.id < BTN_PERM + 5) {
-            NetworkHandler.action(6, button.id - BTN_PERM, 0, 0, "");
+            final int i = button.id - BTN_PERM;
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) BodyEffects.buyPerm(mp, i);
+            });
             return;
         }
         if (button.id >= BTN_RENT && button.id < BTN_RENT + 5) {
-            NetworkHandler.action(7, button.id - BTN_RENT, 0, 0, "");
+            final int i = button.id - BTN_RENT;
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) BodyEffects.toggleRent(mp, i);
+            });
             return;
         }
         if (button.id >= BTN_STAKE && button.id < BTN_STAKE + 3) {
             if (spinTicks > 0) return;
-            int tier = button.id - BTN_STAKE;
+            final int tier = button.id - BTN_STAKE;
             double real = PocketConfig.lootStakes[tier] * Mana.getPriceMultiplier(dataPlayer());
             if (Mana.get(dataPlayer()) < real) return;
             spinTicks = 30;
             shownResult = "";
-            NetworkHandler.action(8, tier, 0, 0, "");
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp != null) Loot.spin(mp, tier);
+            });
         }
     }
 

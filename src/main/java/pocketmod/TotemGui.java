@@ -11,6 +11,8 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -25,6 +27,10 @@ public class TotemGui extends GuiScreen {
     private static final int ROW_W = 314;
     private static final int LIST_TOP = 66;
 
+    private interface ServerAction {
+        void run(EntityPlayerMP p);
+    }
+
     private final EntityPlayer player;
     private GuiTextField nameField;
     private int scroll = 0;
@@ -34,7 +40,19 @@ public class TotemGui extends GuiScreen {
         this.player = player;
     }
 
-    private EntityPlayer dataPlayer() { return player; }
+    private EntityPlayer dataPlayer() {
+        EntityPlayerMP mp = ClientHandler.sp();
+        return mp != null ? mp : player;
+    }
+
+    private void server(final ServerAction action) {
+        final IntegratedServer s = mc.getIntegratedServer();
+        if (s == null) return;
+        s.addScheduledTask(() -> {
+            EntityPlayerMP mp = s.getPlayerList().getPlayerByUUID(player.getUniqueID());
+            if (mp != null) action.run(mp);
+        });
+    }
 
     @Override
     public void initGui() {
@@ -72,7 +90,7 @@ public class TotemGui extends GuiScreen {
 
     private void createTotem() {
         final String name = nameField.getText();
-        NetworkHandler.action(9, 0, 0, 0, name);
+        server(p -> Totems.create(p, name));
         nameField.setText("");
     }
 
@@ -169,20 +187,20 @@ public class TotemGui extends GuiScreen {
 
             if (mouseX >= left + 250 && mouseX <= left + 264) {
                 confirmIndex = -1;
-                NetworkHandler.action(10, i, -1, 0, "");
+                server(p -> Totems.move(p, i, -1));
             } else if (mouseX >= left + 266 && mouseX <= left + 280) {
                 confirmIndex = -1;
-                NetworkHandler.action(10, i, 1, 0, "");
+                server(p -> Totems.move(p, i, 1));
             } else if (mouseX >= left + 284) {
                 if (confirmIndex == i) {
                     confirmIndex = -1;
-                    NetworkHandler.action(11, i, 0, 0, "");
+                    server(p -> Totems.delete(p, i));
                 } else {
                     confirmIndex = i;
                 }
             } else {
                 confirmIndex = -1;
-                NetworkHandler.action(12, i, 0, 0, "");
+                server(p -> Totems.teleport(p, i));
                 mc.player.closeScreen();
             }
             return;
