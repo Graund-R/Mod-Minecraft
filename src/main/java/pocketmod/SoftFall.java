@@ -8,9 +8,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
- * Мягкое падение (пассивная способность): после ~4 блоков падения включается само,
- * замедляет падение (клиент) и гасит урон при приземлении. Каждую секунду падения списывается мана.
- * Мана кончилась в воздухе — защита пропадает, дальше обычное падение.
+ * Мягкое падение (пассивная): после N блоков падения включается само,
+ * на сервере гасит fallDistance и ограничивает скорость, при приземлении урон = 0.
  */
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public class SoftFall {
@@ -67,15 +66,22 @@ public class SoftFall {
             setActive(p, true);
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_on"), true);
         }
+        // Главный фикс: на сервере не накапливаем урон и режем скорость падения
+        p.fallDistance = 0f;
+        if (p.motionY < -PocketConfig.softFallSpeed) {
+            p.motionY = -PocketConfig.softFallSpeed;
+        }
     }
 
     @SubscribeEvent
     public static void onFall(LivingFallEvent e) {
         if (!(e.getEntityLiving() instanceof EntityPlayerMP)) return;
         EntityPlayerMP p = (EntityPlayerMP) e.getEntityLiving();
-        if (isActive(p)) {
+        if (isActive(p) || AbilityStorage.isUnlocked(p, AbilityType.SOFTFALL) && p.getEntityData().getBoolean(ACTIVE)) {
             e.setCanceled(true);
+            e.setDistance(0f);
             setActive(p, false);
+            p.fallDistance = 0f;
         }
     }
 }

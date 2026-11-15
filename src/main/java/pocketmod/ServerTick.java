@@ -27,15 +27,16 @@ public class ServerTick {
         Long prev = lastTick.put(player.getUniqueID(), now);
         long delta = prev == null ? 50L : Math.max(0L, Math.min(100L, now - prev.longValue()));
 
+        // Каждый тик — только дешёвые проверки внутри; тяжёлые сканы throttled в классах
         Abilities.tickInvisibility(player);
         Abilities.tickSlow(player);
-        Spector.tick(player);
-        Thermal.tick(player);
-        Shield.tick(player);
+        if (Spector.isActive(player)) Spector.tick(player);
+        if (Thermal.isOn(player)) Thermal.tick(player);
+        if (Shield.isOn(player)) Shield.tick(player);
         Flight.tick(player);
         SoftFall.tick(player);
         BodyEffects.tick(player);
-        Magnet.tick(player);
+        if (AbilityStorage.isUnlocked(player, AbilityType.MAGNET)) Magnet.tick(player);
         Mana.tickCredit(player, delta);
     }
 }

@@ -173,7 +173,8 @@ public class TimeSlow {
 
     public static double drainPerSec(EntityPlayer player) {
         float factor = Abilities.getSlowFactor(player);
-        return (1.0 / Math.max(0.1, factor)) * 2.0 * Mana.getPriceMultiplier(player);
+        if (factor <= 0.001f) return PocketConfig.slowZeroDrain * Mana.getPriceMultiplier(player);
+        return (1.0 / Math.max(0.1, factor)) * PocketConfig.slowDrainBase * Mana.getPriceMultiplier(player);
     }
 
     public static void tickMana(EntityPlayerMP player) {

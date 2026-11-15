@@ -8,8 +8,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 
 /**
  * Магнит: увеличенный радиус подбора предметов.
- * Уровень 1 — базовый радиус, уровень 2 — больше.
- * Предметы плавно притягиваются к игроку.
+ * Скан предметов — раз в 2 тика, чтобы не грузить мир.
  */
 public class Magnet {
 
@@ -22,29 +21,29 @@ public class Magnet {
 
     public static void tick(EntityPlayerMP p) {
         if (!AbilityStorage.isUnlocked(p, AbilityType.MAGNET)) return;
+        // раз в 2 тика достаточно для плавного притяжения
+        if ((p.ticksExisted & 1) != 0) return;
         double r = radius(p);
         if (r <= 0.0) return;
 
         AxisAlignedBB box = p.getEntityBoundingBox().grow(r, r * 0.6, r);
         List<EntityItem> items = p.world.getEntitiesWithinAABB(EntityItem.class, box);
+        if (items.isEmpty()) return;
+        double r2 = r * r;
         for (EntityItem item : items) {
             if (item.isDead || item.cannotPickup()) continue;
-            // не трогаем предметы, которые только что выпали у самого игрока (короткий grace)
-            if (item.delayBeforeCanPickup > 0) continue;
-
             double dx = p.posX - item.posX;
             double dy = (p.posY + 0.8) - item.posY;
             double dz = p.posZ - item.posZ;
-            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (dist < 0.4) {
-                // очень близко — пусть ванильный подбор сработает
-                continue;
-            }
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq > r2 || distSq < 0.16) continue;
+            double dist = Math.sqrt(distSq);
             double speed = 0.25 + (r - dist) * 0.05;
             if (speed > 0.6) speed = 0.6;
-            item.motionX += dx / dist * speed * 0.35;
-            item.motionY += dy / dist * speed * 0.25;
-            item.motionZ += dz / dist * speed * 0.35;
+            double inv = (speed * 0.35) / dist;
+            item.motionX += dx * inv;
+            item.motionY += dy * (speed * 0.25) / dist;
+            item.motionZ += dz * inv;
             item.velocityChanged = true;
         }
     }

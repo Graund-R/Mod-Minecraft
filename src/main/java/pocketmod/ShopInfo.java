@@ -82,6 +82,11 @@ public class ShopInfo {
                         : Tr.format(k, n(PocketConfig.magnetRadius2));
             case BLOODSUCKER:
                 return Tr.format(k);
+            case WAVE: {
+                int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
+                return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),
+                        n(PocketConfig.waveSlowAmp[i] + 1), n(PocketConfig.waveSlowSec[i]), n(PocketConfig.waveCost[i]));
+            }
             default:
                 return Tr.format(k);
         }

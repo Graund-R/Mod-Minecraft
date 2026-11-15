@@ -23,7 +23,7 @@ public class CommandPocketDebug extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/pocketdebug <unlock|expire|mult> [value]";
+        return "/pocketdebug <unlock|info|expire|mult> [value]";
     }
 
     @Override
@@ -47,6 +47,17 @@ public class CommandPocketDebug extends CommandBase {
                 AbilityStorage.setLevel(p, t, t.maxLevel);
             }
             sender.sendMessage(new TextComponentString("All abilities maxed"));
+        } else if ("info".equals(args[0])) {
+            StringBuilder sb = new StringBuilder();
+            for (AbilityType t : AbilityType.values()) {
+                sb.append(t.id).append('=').append(AbilityStorage.getLevel(p, t)).append(' ');
+            }
+            sender.sendMessage(new TextComponentString(sb.toString()));
+            sender.sendMessage(new TextComponentString(String.format(
+                    "mana=%.1f mult=%.2f gm=%s dim=%d spector=%s flight=%s softfall=%s invis=%s slow=%s x%.2f",
+                    Mana.get(p), Mana.getPriceMultiplier(p), p.interactionManager.getGameType(), p.dimension,
+                    Spector.isActive(p), Flight.isArmed(p), SoftFall.isActive(p), Abilities.isInvisible(p),
+                    Abilities.isSlow(p), Abilities.getSlowFactor(p))));
         } else if ("expire".equals(args[0])) {
             if (!Mana.hasCredit(p)) {
                 sender.sendMessage(new TextComponentString("No credit"));

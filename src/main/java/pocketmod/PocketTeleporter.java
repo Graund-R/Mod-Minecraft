@@ -40,6 +40,11 @@ public class PocketTeleporter implements ITeleporter {
         }
         MinecraftServer server = player.getServer();
         if (server == null) return;
+        if (player.dimension != PocketMod.DIM_ID) {
+            // вход в карман выключает полёт и Спектор
+            Spector.forceReturnIfActive(player);
+            Flight.stop(player);
+        }
         if (player.dimension == PocketMod.DIM_ID) {
             leave(player, server);
         } else {
@@ -158,7 +163,7 @@ public class PocketTeleporter implements ITeleporter {
         return null;
     }
 
-    private static boolean standable(World w, BlockPos feet) {
+    public static boolean standable(World w, BlockPos feet) {
         if (feet.getY() < 1 || feet.getY() > 250) return false;
         if (w.provider.getDimension() == -1 && feet.getY() >= 126) return false;
 

@@ -1,7 +1,9 @@
 package pocketmod;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextComponentTranslation;
 
 public class AbilityStorage {
 
@@ -31,10 +33,28 @@ public class AbilityStorage {
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
         int cur = getLevel(player, type);
         int cost = type.costForNextLevel(cur);
-        if (cost < 0) return false;
-        double real = cost * Mana.getPriceMultiplier(player);
-        if (!Mana.spend(player, real)) return false;
+        if (cost < 0) {
+            if (player instanceof EntityPlayerMP) {
+                ((EntityPlayerMP) player).sendStatusMessage(
+                        new TextComponentTranslation("pocketmod.gui.max"), true);
+            }
+            return false;
+        }
+        double real = Mana.shopPrice(player, cost);
+        if (!Mana.spend(player, real)) {
+            if (player instanceof EntityPlayerMP) {
+                ((EntityPlayerMP) player).sendStatusMessage(
+                        new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(real)), true);
+            }
+            return false;
+        }
+        Mana.consumeDiscount(player);
         setLevel(player, type, cur + 1);
+        if (player instanceof EntityPlayerMP) {
+            ((EntityPlayerMP) player).sendStatusMessage(
+                    new TextComponentTranslation("pocketmod.msg.upgraded",
+                            new TextComponentTranslation(type.titleKey()), cur + 1, type.maxLevel), true);
+        }
         return true;
     }
 }

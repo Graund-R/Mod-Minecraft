@@ -121,6 +121,8 @@ public class CommonEvents {
             if (old.dimension == PocketMod.DIM_ID) {
                 Mana.setFreeEntry(now, true);
             }
+            // Временный тотем на месте смерти (x10, до использования или следующей смерти)
+            Totems.setDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
         }
     }
 }

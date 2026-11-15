@@ -58,6 +58,7 @@ public class Totems {
             l.appendTag(c);
         }
         PlayerData.root(player).setTag(KEY, l);
+        JmHook.fire();
     }
 
     // ===== Уровни улучшений =====
@@ -169,6 +170,10 @@ public class Totems {
 
     public static void teleport(EntityPlayerMP p, int index) {
         if (!allowed(p)) return;
+        if (Spector.isActive(p)) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.teleport_spector"), true);
+            return;
+        }
         if (p.dimension == PocketMod.DIM_ID) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.totem_in_pocket"), true);
             return;
@@ -211,5 +216,66 @@ public class Totems {
 
         Vec3d to = new Vec3d(pos[0], pos[1] + 1.0, pos[2]);
         Abilities.teleportFx((WorldServer) p.world, to, to);
+    }
+
+    // ===== Временный тотем смерти (x10, до использования или следующей смерти) =====
+    private static final String DEATH_KEY = "pocketmod_death_totem";
+
+    public static void setDeathTotem(EntityPlayer p, int dim, double x, double y, double z) {
+        NBTTagCompound c = new NBTTagCompound();
+        c.setInteger("dim", dim);
+        c.setDouble("x", x);
+        c.setDouble("y", y);
+        c.setDouble("z", z);
+        PlayerData.root(p).setTag(DEATH_KEY, c);
+    }
+
+    public static void clearDeathTotem(EntityPlayer p) {
+        PlayerData.root(p).removeTag(DEATH_KEY);
+    }
+
+    public static boolean hasDeathTotem(EntityPlayer p) {
+        return PlayerData.root(p).hasKey(DEATH_KEY, 10);
+    }
+
+    public static Totem getDeathTotem(EntityPlayer p) {
+        if (!hasDeathTotem(p)) return null;
+        NBTTagCompound c = PlayerData.root(p).getCompoundTag(DEATH_KEY);
+        return new Totem("§cСмерть", c.getInteger("dim"), c.getDouble("x"), c.getDouble("y"), c.getDouble("z"));
+    }
+
+    public static double deathTeleportCost(EntityPlayer p) {
+        Totem t = getDeathTotem(p);
+        if (t == null) return 0;
+        return teleportCost(p, t) * 10.0;
+    }
+
+    public static void teleportDeath(EntityPlayerMP p) {
+        Totem t = getDeathTotem(p);
+        if (t == null) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_death_totem"), true);
+            return;
+        }
+        double cost = deathTeleportCost(p);
+        if (!Mana.spend(p, cost)) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
+            return;
+        }
+        clearDeathTotem(p);
+        // reuse teleport logic
+        double[] pos = new double[] { t.x, t.y, t.z };
+        Vec3d from = new Vec3d(p.posX, p.posY + 1.0, p.posZ);
+        Abilities.clearMobTargets(p, 16.0);
+        p.dismountRidingEntity();
+        p.fallDistance = 0f;
+        Abilities.teleportFx((WorldServer) p.world, from, from);
+        if (p.dimension == t.dim) {
+            p.connection.setPlayerLocation(pos[0], pos[1], pos[2], p.rotationYaw, p.rotationPitch);
+        } else {
+            p.changeDimension(t.dim, new PocketTeleporter(pos[0], pos[1], pos[2]));
+        }
+        Vec3d to = new Vec3d(pos[0], pos[1] + 1.0, pos[2]);
+        Abilities.teleportFx((WorldServer) p.world, to, to);
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.death_totem_used"), true);
     }
 }

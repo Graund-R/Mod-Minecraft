@@ -1,7 +1,9 @@
 package pocketmod;
 
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.DamageSource;
@@ -40,6 +42,16 @@ public class ModEvents {
         }
     }
 
+    private static boolean isHostile(EntityLivingBase e) {
+        if (e instanceof IMob) return true;
+        if (e.isCreatureType(EnumCreatureType.MONSTER, false)) return true;
+        if (e instanceof EntityCreature) {
+            EntityLivingBase t = ((EntityCreature) e).getAttackTarget();
+            if (t instanceof EntityPlayerMP) return true;
+        }
+        return false;
+    }
+
     /**
      * Кровосися: после убийства враждебного моба в ближнем бою,
      * если у игрока < 50% HP — восстановить 25% от maxHP моба.
@@ -48,15 +60,25 @@ public class ModEvents {
     public static void onDeath(LivingDeathEvent e) {
         EntityLivingBase dead = e.getEntityLiving();
         if (dead.world.isRemote) return;
-        if (!(dead instanceof IMob)) return;
+        if (!isHostile(dead)) return;
         DamageSource src = e.getSource();
-        if (src == null || !(src.getTrueSource() instanceof EntityPlayerMP)) return;
-        EntityPlayerMP killer = (EntityPlayerMP) src.getTrueSource();
+        if (src == null) return;
+        EntityPlayerMP killer = null;
+        if (src.getTrueSource() instanceof EntityPlayerMP) {
+            killer = (EntityPlayerMP) src.getTrueSource();
+        } else if (src.getImmediateSource() instanceof EntityPlayerMP) {
+            killer = (EntityPlayerMP) src.getImmediateSource();
+        }
+        if (killer == null) return;
         if (!AbilityStorage.isUnlocked(killer, AbilityType.BLOODSUCKER)) return;
         // ближний бой: нет projectile / нет explosion
         if (src.isProjectile() || src.isExplosion()) return;
-        if (killer.getHealth() >= killer.getMaxHealth() * 0.5f) return;
-        float heal = dead.getMaxHealth() * 0.25f;
+        int bl = AbilityStorage.getLevel(killer, AbilityType.BLOODSUCKER);
+        // L1: <50% HP, 25% maxHP моба; L2: <60%, 35%; L3: <75%, 45%
+        float hpGate = bl >= 3 ? 0.75f : (bl >= 2 ? 0.60f : 0.50f);
+        float healPct = bl >= 3 ? 0.45f : (bl >= 2 ? 0.35f : 0.25f);
+        if (killer.getHealth() >= killer.getMaxHealth() * hpGate) return;
+        float heal = dead.getMaxHealth() * healPct;
         if (heal <= 0f) return;
         killer.heal(heal);
         killer.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(

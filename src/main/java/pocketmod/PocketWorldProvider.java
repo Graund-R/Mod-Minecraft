@@ -16,6 +16,12 @@ public class PocketWorldProvider extends WorldProvider {
         return new PocketChunkGenerator(world);
     }
 
+    /** Карман не выгружается, пока в него никто не зашёл: печки и т.п. продолжают работать. */
+    @Override
+    public boolean canDropChunk(int x, int z) {
+        return false;
+    }
+
     @Override
     public boolean canRespawnHere() {
         return false;
@@ -23,6 +29,12 @@ public class PocketWorldProvider extends WorldProvider {
 
     @Override
     public boolean isSurfaceWorld() {
+        return false;
+    }
+
+    /** Нет неба как источника — яркость задаём таблицей (всегда день). */
+    @Override
+    public boolean hasSkyLight() {
         return false;
     }
 

@@ -51,6 +51,20 @@ public class Mana {
         return spend(player, baseAmount * getPriceMultiplier(player));
     }
 
+    // ===== Скидка из лутки (на следующую покупку в магазине) =====
+    public static double getDiscount(EntityPlayer player) {
+        return Math.max(0.0, Math.min(0.9, data(player).getDouble("pocketmod_discount")));
+    }
+
+    public static void consumeDiscount(EntityPlayer player) {
+        data(player).setDouble("pocketmod_discount", 0.0);
+    }
+
+    /** Цена в магазине: база × множитель цен × (1 − скидка). */
+    public static double shopPrice(EntityPlayer player, double base) {
+        return base * getPriceMultiplier(player) * (1.0 - getDiscount(player));
+    }
+
     // ===== Множитель цен =====
     public static double getPriceMultiplier(EntityPlayer player) {
         double m = data(player).getDouble(KEY_MULT);
@@ -160,6 +174,7 @@ public class Mana {
 
     /** Смерть, пробивающая броню, тотем бессмертия, творческий режим и сопротивление. */
     private static void killAbsolute(EntityPlayerMP player) {
+        Spector.forceReturnIfActive(player);
         player.removePotionEffect(MobEffects.RESISTANCE);
         player.setAbsorptionAmount(0.0F);
         player.hurtResistantTime = 0;
