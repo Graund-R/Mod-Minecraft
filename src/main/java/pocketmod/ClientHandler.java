@@ -198,10 +198,10 @@ public class ClientHandler {
         if (g == EV_HOLD) {
             // удержание G — тотем смерти (если есть), иначе последний обычный тотем
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(13, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TELEPORT_LAST_TOTEM, 0, 0, 0, "");
         } else if (g == EV_TAP) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(14, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TELEPORT_LOOK, 0, 0, 0, "");
         }
 
         int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
@@ -209,7 +209,7 @@ public class ClientHandler {
             mc.displayGuiScreen(new ShopGui(mc.player));
         } else if (v == EV_TAP) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(15, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_INVISIBILITY, 0, 0, 0, "");
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);
@@ -218,7 +218,7 @@ public class ClientHandler {
                 zWheelUsed = false; // крутили колесо при зажатой Z — это не тап
             } else {
                 EntityPlayer p = mc.player;
-                if (p != null) NetworkHandler.action(16, 0, 0, 0, "");
+                if (p != null) NetworkHandler.action(NetAction.TOGGLE_SLOW, 0, 0, 0, "");
             }
         } else if (!keySlow.isKeyDown()) {
             zWheelUsed = false;
@@ -244,9 +244,9 @@ public class ClientHandler {
             final boolean doPhase = phaseRequest || (shiftDown && (specActive || specClient));
             if (doPhase) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_try"), true);
-                NetworkHandler.action(18, 0, 0, 0, "");
+                NetworkHandler.action(NetAction.PHASE_STEP, 0, 0, 0, "");
             } else {
-                NetworkHandler.action(17, 0, 0, 0, "");
+                NetworkHandler.action(NetAction.TOGGLE_SPECTOR, 0, 0, 0, "");
             }
         }
         xWas = xPhys;
@@ -257,16 +257,16 @@ public class ClientHandler {
         boolean jDown = mc.gameSettings.keyBindJump.isKeyDown();
         if (jDown && !jWas && shiftDown && !specActive) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(19, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.SHOCKWAVE, 0, 0, 0, "");
         }
 
         if (keyThermal.isPressed()) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(20, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_THERMAL, 0, 0, 0, "");
         }
         if (keyShield.isPressed()) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(21, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
         }
 
         // Полёт: двойной пробел в воздухе (без Shift)
@@ -274,7 +274,7 @@ public class ClientHandler {
             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
                     && !mc.player.isRiding() && !mc.player.isInWater()) {
                 EntityPlayer p = mc.player;
-                if (p != null) NetworkHandler.action(22, 0, 0, 0, "");
+                if (p != null) NetworkHandler.action(NetAction.START_FLIGHT, 0, 0, 0, "");
                 lastJump = 0L;
             } else {
                 lastJump = now;
@@ -284,7 +284,7 @@ public class ClientHandler {
 
         if (keyPocket.isPressed()) {
             EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(23, 0, 0, 0, "");
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_POCKET, 0, 0, 0, "");
         }
     }
 
@@ -453,7 +453,7 @@ public class ClientHandler {
         float cur = Abilities.getSlowFactor(player);
         float raw = Math.round((cur + (wheel > 0 ? 0.05f : -0.05f)) * 100f) / 100f;
         float next = Math.max(Abilities.minSlowFactor(player), Math.min(0.75f, raw));
-        NetworkHandler.action(24, 0, 0, next, "");
+        NetworkHandler.action(NetAction.SET_SLOW_FACTOR, 0, 0, next, "");
     }
 
     /** Длина шкалы: цена самого дорогого уже открытого действия (пока ничего нет — hudBarScale, по умолчанию 100). */
