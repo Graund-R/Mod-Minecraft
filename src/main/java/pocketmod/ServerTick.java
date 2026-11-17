@@ -32,7 +32,7 @@ public class ServerTick {
         Abilities.tickSlow(player);
         if (Spector.isActive(player)) Spector.tick(player);
         if (Thermal.isOn(player)) Thermal.tick(player);
-        if (Shield.isOn(player)) Shield.tick(player);
+        Shield.tick(player);
         Flight.tick(player);
         SoftFall.tick(player);
         BodyEffects.tick(player);

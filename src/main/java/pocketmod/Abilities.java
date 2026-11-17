@@ -223,6 +223,7 @@ public class Abilities {
             d += TimeSlow.drainPerSec(player);
         }
         if (Thermal.isOn(player)) d += Thermal.drainPerSec(player);
+        if (Shield.isOn(player)) d += Shield.upkeepPerSec(player);
         if (Spector.isActive(player)) d += Spector.drainPerSec(player);
         if (Flight.isArmed(player) && player.capabilities.isFlying) d += Flight.drainPerSec(player);
         if (SoftFall.isActive(player)) d += SoftFall.drainPerSec(player);
@@ -383,11 +384,19 @@ public class Abilities {
             return;
         }
         int wl = Math.max(1, Math.min(AbilityType.WAVE.maxLevel, AbilityStorage.getLevel(p, AbilityType.WAVE))) - 1;
+        long nowTick = p.world.getTotalWorldTime();
+        long readyTick = p.getEntityData().getLong("pm_wave_ready");
+        if (nowTick < readyTick) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.wave_cooldown",
+                    (int) Math.ceil((readyTick - nowTick) / 20.0)), true);
+            return;
+        }
         double cost = PocketConfig.waveCost[wl] * Mana.getPriceMultiplier(p);
         if (!Mana.spend(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
+        p.getEntityData().setLong("pm_wave_ready", nowTick + Math.round(PocketConfig.waveCooldown[wl] * 20.0));
         double r = PocketConfig.waveRadius[wl];
         float dmg = (float) PocketConfig.waveDamage[wl];
         double knock = PocketConfig.waveKnock[wl];

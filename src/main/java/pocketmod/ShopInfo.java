@@ -32,7 +32,7 @@ public class ShopInfo {
             case SPECTOR:
                 return Tr.format(k, ClientHandler.keyName("spector"), ClientHandler.keyName("spector"));
             case THERMAL:
-                return Tr.format(k, ClientHandler.keyName("thermal"));
+                return Tr.format(k, ClientHandler.keyName("thermal"), ClientHandler.keyName("scanner"), ClientHandler.keyName("thermal"));
             case SHIELD:
                 return Tr.format(k, ClientHandler.keyName("shield"));
             case TOTEM:
@@ -64,11 +64,17 @@ public class ShopInfo {
             case DECOY:
                 return Tr.format(k, PocketConfig.decoyMaxSec, PocketConfig.decoyCost);
             case THERMAL:
+                if (lvl >= 3) {
+                    return Tr.format(k, n(PocketConfig.oreScannerRadius[Math.min(1, PocketConfig.oreScannerRadius.length - 1)]),
+                            n(PocketConfig.oreScannerDrain), PocketConfig.oreScannerVertical);
+                }
                 return lvl == 1
                         ? Tr.format(k, n(PocketConfig.thermalRadius1), n(PocketConfig.thermalDrain1))
                         : Tr.format(k, n(PocketConfig.thermalRadius2), n(PocketConfig.thermalDrain2));
             case SHIELD:
-                return Tr.format(k, n(PocketConfig.shieldManaPerDamage * (lvl >= 2 ? PocketConfig.shieldL2Factor : 1.0)));
+                return Tr.format(k, n(PocketConfig.shieldManaPerDamage * (lvl >= 2 ? PocketConfig.shieldL2Factor : 1.0)),
+                        n(PocketConfig.shieldUpkeepBase), n(PocketConfig.shieldUpkeepRamp),
+                        n(PocketConfig.shieldUpkeepBase * 30 + PocketConfig.shieldUpkeepRamp * 450));
             case FLIGHT: {
                 int i = Math.max(0, Math.min(2, lvl - 1));
                 return Tr.format(k, PocketConfig.flightHeight[i], n(PocketConfig.flightSpeed[i] / 0.05));
@@ -95,7 +101,8 @@ public class ShopInfo {
             case WAVE: {
                 int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
                 return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),
-                        n(PocketConfig.waveSlowAmp[i] + 1), n(PocketConfig.waveSlowSec[i]), n(PocketConfig.waveCost[i]));
+                        n(PocketConfig.waveSlowAmp[i] + 1), n(PocketConfig.waveSlowSec[i]), n(PocketConfig.waveCost[i]),
+                        n(PocketConfig.waveCooldown[i]));
             }
             default:
                 return Tr.format(k);

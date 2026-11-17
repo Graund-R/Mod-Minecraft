@@ -45,7 +45,6 @@ public class ClientHandler {
     private static boolean phWas;
     private static KeyBinding keyThermal;
     private static KeyBinding keyShield;
-    private static KeyBinding keyOreScanner;
 
     private static boolean phaseLatch;
     private static boolean xWas, xWait, shiftWas, jWas, zWheelUsed;
@@ -60,10 +59,12 @@ public class ClientHandler {
         return Keyboard.isKeyDown(c);
     }
     private static long lastJump;
+    private static boolean cWas;
     private static ResourceLocation vignetteTex;
 
     /** Название клавиши для окон (с учётом переназначения). */
     public static String keyName(String id) {
+        if ("scanner".equals(id)) return "Shift+" + keyName("thermal");
         KeyBinding k = null;
         if ("pocket".equals(id)) k = keyPocket;
         else if ("teleport".equals(id)) k = keyTeleport;
@@ -72,7 +73,6 @@ public class ClientHandler {
         else if ("spector".equals(id)) k = keySpector;
         else if ("thermal".equals(id)) k = keyThermal;
         else if ("shield".equals(id)) k = keyShield;
-        else if ("scanner".equals(id)) k = keyOreScanner;
         return k == null ? "?" : k.getDisplayName();
     }
     private static boolean slowShaderOn;
@@ -101,18 +101,18 @@ public class ClientHandler {
         keyPhase    = new KeyBinding("key.pocketmod.phase",    Keyboard.KEY_R, "key.categories.pocketmod");
         keyThermal  = new KeyBinding("key.pocketmod.thermal",  Keyboard.KEY_C, "key.categories.pocketmod");
         keyShield   = new KeyBinding("key.pocketmod.shield",   Keyboard.KEY_B, "key.categories.pocketmod");
-        keyOreScanner = new KeyBinding("key.pocketmod.scanner", Keyboard.KEY_O, "key.categories.pocketmod");
         ClientRegistry.registerKeyBinding(keySpector);
         ClientRegistry.registerKeyBinding(keyPhase);
         ClientRegistry.registerKeyBinding(keyThermal);
         ClientRegistry.registerKeyBinding(keyShield);
-        ClientRegistry.registerKeyBinding(keyOreScanner);
         ClientRegistry.registerKeyBinding(keyPocket);
         ClientRegistry.registerKeyBinding(keyTeleport);
         ClientRegistry.registerKeyBinding(keyInvis);
         ClientRegistry.registerKeyBinding(keySlow);
         MinecraftForge.EVENT_BUS.register(new ClientHandler());
         MinecraftForge.EVENT_BUS.register(new ConfigButton());
+        MinecraftForge.EVENT_BUS.register(new ClientTimeSlow());
+        MinecraftForge.EVENT_BUS.register(new WarehouseOverlay());
     }
 
     public static void registerRenderers() {
@@ -266,17 +266,25 @@ public class ClientHandler {
             if (p != null) NetworkHandler.action(NetAction.SHOCKWAVE, 0, 0, 0, "");
         }
 
-        if (keyThermal.isPressed()) {
-            EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(NetAction.TOGGLE_THERMAL, 0, 0, 0, "");
+        // C: тепловизор; Shift+C: сканер руд (режим тепловизора); Ctrl+C: выбор руд для сканера
+        boolean cDown = raw(keyThermal);
+        while (keyThermal.isPressed()) {
+            // сбросить счётчик нажатий, чтобы клавиша не срабатывала дважды
         }
+        if (cDown && !cWas && mc.player != null) {
+            if (GuiScreen.isCtrlKeyDown()) {
+                if (OreScanner.available(mc.player)) mc.displayGuiScreen(new ScannerGui(mc.player));
+                else mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_need"), true);
+            } else if (GuiScreen.isShiftKeyDown()) {
+                NetworkHandler.action(NetAction.TOGGLE_ORE_SCANNER, 0, 0, 0, "");
+            } else {
+                NetworkHandler.action(NetAction.TOGGLE_THERMAL, 0, 0, 0, "");
+            }
+        }
+        cWas = cDown;
         if (keyShield.isPressed()) {
             EntityPlayer p = mc.player;
             if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
-        }
-        if (keyOreScanner.isPressed()) {
-            EntityPlayer p = mc.player;
-            if (p != null) NetworkHandler.action(NetAction.TOGGLE_ORE_SCANNER, 0, 0, 0, "");
         }
 
         // Полёт: двойной пробел в воздухе (без Shift)
@@ -486,6 +494,7 @@ public class ClientHandler {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player == null || mc.gameSettings.hideGUI) return;
+        OreScannerClient.drawHud(mc);
 
         try {
             EntityPlayer sp = mc.player;

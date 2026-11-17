@@ -40,8 +40,35 @@ public class Shield {
         p.getEntityData().setBoolean(KEY, false);
     }
 
+    private static final String HEAT = "pm_shield_heat";
+
+    /** Сколько секунд щит уже «нагрет» непрерывной работой (остывает, когда он выключен). */
+    public static double heat(EntityPlayer p) {
+        return p.getEntityData().getDouble(HEAT);
+    }
+
+    /**
+     * Расход маны в секунду, пока щит включён: база + рост за каждую секунду работы.
+     * Щит аварийный: долго держать его нельзя, чем дольше включён, тем дороже.
+     */
+    public static double upkeepPerSec(EntityPlayer p) {
+        return (PocketConfig.shieldUpkeepBase + PocketConfig.shieldUpkeepRamp * heat(p)) * Mana.getPriceMultiplier(p);
+    }
+
+    /** Вызывается каждый тик: расход маны и нагрев, пока щит включён, остывание, когда выключен. */
     public static void tick(EntityPlayerMP p) {
-        if (!isOn(p) || p.ticksExisted % 4 != 0) return;
+        double heat = heat(p);
+        if (!isOn(p)) {
+            if (heat > 0.0) p.getEntityData().setDouble(HEAT, Math.max(0.0, heat - PocketConfig.shieldHeatDecay / 20.0));
+            return;
+        }
+        if (!Mana.spend(p, upkeepPerSec(p) / 20.0)) {
+            off(p);
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.shield_broke"), true);
+            return;
+        }
+        p.getEntityData().setDouble(HEAT, heat + 1.0 / 20.0);
+        if (p.ticksExisted % 4 != 0) return;
         WorldServer ws = (WorldServer) p.world;
         double a = p.ticksExisted * 0.15;
         for (int i = 0; i < 3; i++) {

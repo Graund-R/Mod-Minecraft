@@ -4,10 +4,20 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.text.TextComponentTranslation;
 
-/** Серверная часть сканера: состояние и расход маны. */
+/**
+ * Сканер руд: режим тепловизора (Shift+C), а не отдельная способность. Открывается на 3 уровне тепловизора.
+ * Игроки, купившие прежнюю отдельную способность, сохраняют её. Серверная часть: состояние, расход маны, выбор целей.
+ */
 public final class OreScanner {
     private static final String KEY = "pm_ore_scan";
+    /** Битовая маска ОТКЛЮЧЁННЫХ целей (хранится в постоянных данных игрока). */
+    private static final String MASK = "pm_scan_off";
     private OreScanner() {}
+
+    public static boolean available(EntityPlayer player) {
+        return AbilityStorage.getLevel(player, AbilityType.THERMAL) >= 3
+                || AbilityStorage.isUnlocked(player, AbilityType.ORE_SCANNER);
+    }
 
     public static boolean isOn(EntityPlayer player) {
         return player != null && player.getEntityData().getBoolean(KEY);
@@ -18,13 +28,24 @@ public final class OreScanner {
     }
 
     public static int radius(EntityPlayer player) {
-        int level = Math.max(1, Math.min(3, AbilityStorage.getLevel(player, AbilityType.ORE_SCANNER)));
+        int level = AbilityStorage.getLevel(player, AbilityType.ORE_SCANNER);
+        if (level <= 0) level = 2; // доступ через тепловизор 3 уровня
+        level = Math.max(1, Math.min(3, level));
         return PocketConfig.oreScannerRadius[Math.min(PocketConfig.oreScannerRadius.length - 1, level - 1)];
     }
 
+    public static int disabledMask(EntityPlayer player) {
+        return PlayerData.root(player).getInteger(MASK);
+    }
+
+    public static void toggleTarget(EntityPlayerMP player, int index) {
+        if (index < 0 || index >= 31 || index >= PocketConfig.oreScannerTargets.length) return;
+        PlayerData.root(player).setInteger(MASK, disabledMask(player) ^ (1 << index));
+    }
+
     public static void toggle(EntityPlayerMP player) {
-        if (!AbilityStorage.isUnlocked(player, AbilityType.ORE_SCANNER)) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        if (!available(player)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_need"), true);
             return;
         }
         boolean next = !isOn(player);
@@ -40,8 +61,7 @@ public final class OreScanner {
 
     public static void tick(EntityPlayerMP player) {
         if (!isOn(player)) return;
-        if (!AbilityStorage.isUnlocked(player, AbilityType.ORE_SCANNER)
-                || !Mana.spend(player, drainPerSec(player) / 20.0)) {
+        if (!available(player) || !Mana.spend(player, drainPerSec(player) / 20.0)) {
             player.getEntityData().setBoolean(KEY, false);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_empty"), true);
         }

@@ -8,7 +8,7 @@ public enum AbilityType {
     SLOW("slow", 200, 500, 1000),
     DECOY("decoy", 250),
     SPECTOR("spector", 300),
-    THERMAL("thermal", 180, 450),
+    THERMAL("thermal", 180, 450, 800),
     SHIELD("shield", 220, 550),
     FLIGHT("flight", 400, 800, 1500),
     TOTEM("totem", 150, 350, 700),

@@ -81,6 +81,12 @@ public class PocketConfig {
     // Щит
     public static float shieldManaPerDamage = 15f;
     public static float shieldL2Factor = 0.7f;
+    /** Расход щита (мана/сек) сразу после включения, даже если урона нет. */
+    public static float shieldUpkeepBase = 3.0f;
+    /** Прирост расхода щита за каждую секунду, пока он включён. */
+    public static float shieldUpkeepRamp = 0.4f;
+    /** Остывание щита: сколько секунд «нагрева» уходит за секунду, пока щит выключен. */
+    public static float shieldHeatDecay = 0.5f;
 
     // Полёт
     public static float flightDrain = 1.5f;
@@ -102,6 +108,8 @@ public class PocketConfig {
     public static double[] waveNauseaSec = { 3, 4, 5, 6, 6 };
     public static double[] waveWeakSec = { 0, 0, 0, 6, 8 };
     public static double[] waveCost = { 25, 30, 35, 45, 60 };
+    /** Перезарядка волны по уровням, секунды (дольше, чем длится замедление). */
+    public static double[] waveCooldown = { 10, 11, 12, 13, 15 };
 
     // Тело: сердца, скорость, сила, огнестойкость, дыхание
     public static int[] bodyPermCost = { 300, 500, 600, 150, 150, 1200 };
@@ -252,6 +260,9 @@ public class PocketConfig {
 
         shieldManaPerDamage = cfg.getFloat("shieldManaPerDamage", "щит", 15f, 0f, 10000f, "Mana per 1 damage");
         shieldL2Factor = cfg.getFloat("shieldL2Factor", "щит", 0.7f, 0.01f, 1f, "Cost factor at shield level 2");
+        shieldUpkeepBase = cfg.getFloat("shieldUpkeepBase", "щит", 3.0f, 0f, 10000f, "Mana/sec the active shield costs right after switching on, even without damage");
+        shieldUpkeepRamp = cfg.getFloat("shieldUpkeepRamp", "щит", 0.4f, 0f, 10000f, "Extra mana/sec for every second the shield stays on");
+        shieldHeatDecay = cfg.getFloat("shieldHeatDecay", "щит", 0.5f, 0f, 1000f, "Seconds of shield heat that cool off per second while it is off");
 
         flightDrain = cfg.getFloat("flightDrain", "полёт", 1.5f, 0f, 1000f, "Mana/sec while flying");
         flightGraceSec = cfg.getInt("flightGraceSec", "полёт", 5, 0, 60, "Soft hover seconds at zero mana");
@@ -270,6 +281,7 @@ public class PocketConfig {
         waveNauseaSec = arr(cfg, "nauseaSeconds", "волна", waveNauseaSec, "Длительность тошноты (сек), 0 = нет");
         waveWeakSec = arr(cfg, "weaknessSeconds", "волна", waveWeakSec, "Длительность слабости (сек), 0 = нет");
         waveCost = arr(cfg, "manaCost", "волна", waveCost, "Мана за волну по уровням");
+        waveCooldown = arr(cfg, "cooldownSeconds", "волна", waveCooldown, "Wave cooldown in seconds by level 1..5");
 
         int[] bp = cfg.get("тело", "permCosts", new int[] { 300, 500, 600, 150, 150, 1200 }, "Permanent price: hearts, speed, strength, fire resistance, water breathing, regeneration").getIntList();
         if (bp.length >= 6) bodyPermCost = bp;

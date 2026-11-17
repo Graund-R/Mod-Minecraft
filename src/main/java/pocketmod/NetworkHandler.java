@@ -162,6 +162,8 @@ public final class NetworkHandler {
                 break;
             case TOGGLE_ORE_SCANNER: OreScanner.toggle(p); break;
             case TOGGLE_POCKET: PocketTeleporter.toggle(p); break;
+            case TOGGLE_SCAN_TARGET: OreScanner.toggleTarget(p, m.a); break;
+            case WAREHOUSE_CLICK: WarehouseSlots.click(p, m.a, m.b); break;
             case SET_SLOW_FACTOR:
                 float factor = (float) Math.max(Abilities.minSlowFactor(p), Math.min(0.75, m.value));
                 Abilities.setSlowFactor(p, factor);
