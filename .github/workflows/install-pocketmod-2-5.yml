@@ -1,0 +1,44 @@
+name: Install PocketMod 2.5 sources
+
+on:
+  push:
+    branches:
+      - architecture-stages-3-4
+    paths:
+      - .github/workflows/install-pocketmod-2-5.yml
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: architecture-stages-3-4
+          fetch-depth: 0
+      - name: Merge 2.5 source files into the existing project
+        run: |
+          set -euo pipefail
+          test -f pocketmod-2.5-ready-to-upload.zip
+          tmp="$(mktemp -d)"
+          unzip -q pocketmod-2.5-ready-to-upload.zip -d "$tmp"
+          test -f "$tmp/version.txt"
+          test -f "$tmp/CHANGELOG.md"
+          test -d "$tmp/src"
+          cp -a "$tmp/src/." src/
+          cp "$tmp/version.txt" version.txt
+          cp "$tmp/CHANGELOG.md" CHANGELOG.md
+          rm -f .github/workflows/install-pocketmod-2-5.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src version.txt CHANGELOG.md .github/workflows/install-pocketmod-2-5.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Install PocketMod 2.5 sources"
+          git push origin HEAD:architecture-stages-3-4
+      - name: Start the normal build workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build.yml --ref architecture-stages-3-4
