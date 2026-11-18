@@ -58,13 +58,17 @@ public class PocketConfig {
     public static int slowMaxBubbles = 8;
 
     // Рывок
-    public static double dashCost = 12.0;
-    public static int dashCharges = 2;
-    public static double dashRechargeSec = 3.0;
-    public static double dashDamage = 4.0;
-    public static double dashSpeed = 1.6;
-    public static int dashTicks = 5;
-    public static int dashReflectTicks = 8;
+    // По уровням 1..4. Дальность = скорость x тики: на 2 уровне она уже максимальная (8 блоков), дальше растут
+    // скорость (рывок короче по времени), число зарядов, перезарядка, урон, отражение и бонусы.
+    public static double[] dashCost = { 14, 12, 10, 8 };
+    public static double[] dashCharges = { 1, 2, 2, 3 };
+    public static double[] dashRechargeSec = { 6.0, 3.0, 2.2, 1.5 };
+    public static double[] dashDamage = { 0, 4, 6, 8 };
+    public static double[] dashSpeed = { 1.1, 1.6, 2.0, 2.7 };
+    public static double[] dashTicks = { 5, 5, 4, 3 };
+    public static double[] dashReflectTicks = { 0, 8, 10, 14 };
+    public static double[] dashGraceTicks = { 0, 0, 6, 12 };
+    public static double[] dashRefund = { 0, 0, 0, 1 };
     public static int totemDeleteCost = 10;
     public static int totemTeleportBase = 20;
     public static float totemTeleportPerBlock = 0.02f;
@@ -141,6 +145,10 @@ public class PocketConfig {
     public static float oreScannerDrain = 3.0f;
     public static int[] oreScannerRadius = { 16, 24, 32 };
     public static int oreScannerVertical = 12;
+    /** Добавлять в сканер все руды из OreDictionary (oreXxx), в том числе из других модов. */
+    public static boolean oreScannerAuto = true;
+    private static boolean oreTargetsReady = false;
+    private static String[] oreScannerBase = new String[0];
     public static String[] oreScannerTargets = { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" };
     public static float pocketTickCost = 0.0f;
 
@@ -239,13 +247,15 @@ public class PocketConfig {
         slowFluidRadius = cfg.getInt("slowFluidRadius", "замедление", 48, 8, 96, "Radius (blocks) in which fluids are slowed");
         slowBubbleRadius = cfg.getInt("slowBubbleRadius", "замедление", 48, 8, 128, "Radius of the slow-time bubble around each player");
         slowMaxBubbles = cfg.getInt("slowMaxBubbles", "замедление", 8, 1, 64, "How many slow-time bubbles the server processes at once");
-        dashCost = cfg.getFloat("cost", "рывок", 12.0f, 0f, 100000f, "Mana per dash");
-        dashCharges = cfg.getInt("charges", "рывок", 2, 1, 10, "How many dashes can be chained");
-        dashRechargeSec = cfg.getFloat("rechargeSeconds", "рывок", 3.0f, 0.5f, 600f, "Seconds to recover one dash charge");
-        dashDamage = cfg.getFloat("damage", "рывок", 4.0f, 0f, 1000f, "Damage to each enemy hit by the dash");
-        dashSpeed = cfg.getFloat("speed", "рывок", 1.6f, 0.4f, 4f, "Dash speed in blocks per tick (distance = speed x ticks)");
-        dashTicks = cfg.getInt("ticks", "рывок", 5, 2, 20, "Dash duration in ticks (20 = 1 second)");
-        dashReflectTicks = cfg.getInt("reflectTicks", "рывок", 8, 0, 40, "Projectile reflection window in ticks (0 = off)");
+        dashCost = arr(cfg, "levelCost", "рывок", dashCost, "Мана за рывок по уровням 1..4");
+        dashCharges = arr(cfg, "levelCharges", "рывок", dashCharges, "Сколько рывков подряд по уровням");
+        dashRechargeSec = arr(cfg, "levelRechargeSec", "рывок", dashRechargeSec, "Секунд на восстановление одного заряда по уровням");
+        dashDamage = arr(cfg, "levelDamage", "рывок", dashDamage, "Урон врагам на пути по уровням (0 = рывок не бьёт)");
+        dashSpeed = arr(cfg, "levelSpeed", "рывок", dashSpeed, "Скорость рывка, блоков за тик, по уровням");
+        dashTicks = arr(cfg, "levelTicks", "рывок", dashTicks, "Длительность рывка в тиках по уровням (дальность = скорость x тики)");
+        dashReflectTicks = arr(cfg, "levelReflectTicks", "рывок", dashReflectTicks, "Окно отражения снарядов в тиках по уровням (0 = нет)");
+        dashGraceTicks = arr(cfg, "levelGraceTicks", "рывок", dashGraceTicks, "Неуязвимость после рывка в тиках по уровням");
+        dashRefund = arr(cfg, "levelRefund", "рывок", dashRefund, "1 = сбитый рывком враг возвращает заряд (по уровням)");
         totemDeleteCost = cfg.getInt("totemDeleteCost", "тотемы", 10, 0, 1000000, "Mana to delete a totem");
         totemTeleportBase = cfg.getInt("totemTeleportBase", "тотемы", 20, 0, 1000000, "Base mana for a totem teleport");
         totemTeleportPerBlock = cfg.getFloat("totemTeleportPerBlock", "тотемы", 0.02f, 0f, 1000f, "Mana per block of distance (same dimension)");
@@ -330,9 +340,13 @@ public class PocketConfig {
         oreScannerPeriodTicks = cfg.getInt("oreScannerPeriodTicks", "сканер", 100, 20, 600, "Ticks between scanner pulses (found ores stay on screen until the next pulse, like a sonar).");
         int[] osr = cfg.get("сканер", "radii", new int[] { 16, 24, 32 }, "Ore scan radius by level.").getIntList();
         if (osr.length >= 3) oreScannerRadius = osr;
-        oreScannerTargets = cfg.getStringList("targets", "сканер",
+        oreScannerBase = cfg.getStringList("targets", "сканер",
                 new String[] { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" },
                 "OreDictionary names (oreDiamond) or registry IDs (minecraft:diamond_ore) to highlight.");
+        oreScannerAuto = cfg.getBoolean("autoTargets", "сканер", true,
+                "Also scan every other ore registered in OreDictionary (oreCopper, oreTin, ... from other mods).");
+        oreScannerTargets = oreScannerBase;
+        if (oreTargetsReady) finishOreTargets();
 
         int[] ls = cfg.get("удача", "stakes", new int[] { 50, 150, 400 }, "Spin prices (3 tiers)").getIntList();
         if (ls.length >= 3) lootStakes = ls;
@@ -397,6 +411,42 @@ public class PocketConfig {
                 p.setComment(row[1] + (i >= 0 ? old.substring(i) : ""));
             }
         }
+    }
+
+    /**
+     * Сканер руд: к списку из конфига добавляются все остальные руды из OreDictionary (имена oreXxx), чтобы сканер
+     * видел не только ванильные руды, но и руды других модов. Порядок добавленных фиксирован (по алфавиту), поэтому
+     * на клиенте и на сервере список одинаковый. Вызывается после загрузки всех модов и при перечитывании конфига.
+     */
+    public static void finishOreTargets() {
+        oreTargetsReady = true;
+        if (!oreScannerAuto) {
+            oreScannerTargets = oreScannerBase;
+            return;
+        }
+        java.util.List<String> list = new java.util.ArrayList<String>();
+        java.util.Set<String> have = new java.util.HashSet<String>();
+        for (String s : oreScannerBase) {
+            if (s == null || s.trim().isEmpty()) continue;
+            list.add(s.trim());
+            have.add(s.trim().toLowerCase());
+        }
+        java.util.List<String> extra = new java.util.ArrayList<String>();
+        try {
+            for (String name : net.minecraftforge.oredict.OreDictionary.getOreNames()) {
+                if (name == null || name.length() <= 3 || !name.startsWith("ore")) continue;
+                if (!Character.isUpperCase(name.charAt(3))) continue;
+                if (have.contains(name.toLowerCase())) continue;
+                extra.add(name);
+            }
+        } catch (Throwable ignored) {
+        }
+        java.util.Collections.sort(extra);
+        for (String name : extra) {
+            if (list.size() >= 31) break;
+            list.add(name);
+        }
+        oreScannerTargets = list.toArray(new String[0]);
     }
 
     private static double[] arr(Configuration cfg, String name, String cat, double[] def, String comment) {

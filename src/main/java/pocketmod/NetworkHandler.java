@@ -163,6 +163,7 @@ public final class NetworkHandler {
             case TOGGLE_THERMAL: Thermal.toggle(p); break;
             case TOGGLE_SHIELD: Shield.toggle(p); break;
             case START_FLIGHT: Flight.start(p); break;
+            case SOFTFALL_TOGGLE: SoftFall.toggleByPlayer(p); break;
             case OPEN_WAREHOUSE:
                 if (AbilityStorage.isUnlocked(p, AbilityType.WAREHOUSE)) p.openGui(PocketMod.instance, PocketMod.GUI_WAREHOUSE, p.world, 0, 0, 0);
                 else p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);

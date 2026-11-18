@@ -43,6 +43,7 @@ public final class Dash {
     private static final String CHARGES = "pm_dash_c";
     private static final String STAMP = "pm_dash_t";
     private static final String LOCK = "pm_tp_lock";
+    private static final String GRACE_UNTIL = "pm_dash_grace";
 
     private static final class State {
         int age;
@@ -77,18 +78,55 @@ public final class Dash {
                 && !isDashing(p);
     }
 
-    private static int maxCharges() {
-        return Math.max(1, PocketConfig.dashCharges);
+    // ----- параметры по уровню (1..4); читаются и сервером, и клиентом -----
+    public static int level(EntityPlayer p) {
+        return Math.max(1, Math.min(AbilityType.DASH.maxLevel, AbilityStorage.getLevel(p, AbilityType.DASH)));
     }
 
-    private static int rechargeTicks() {
-        return Math.max(1, (int) Math.round(PocketConfig.dashRechargeSec * 20.0));
+    private static double pick(double[] a, EntityPlayer p) {
+        return a[Math.min(a.length - 1, level(p) - 1)];
+    }
+
+    public static double speed(EntityPlayer p) {
+        return Math.max(0.2, pick(PocketConfig.dashSpeed, p));
+    }
+
+    public static int ticks(EntityPlayer p) {
+        return Math.max(1, (int) Math.round(pick(PocketConfig.dashTicks, p)));
+    }
+
+    public static double distance(EntityPlayer p) {
+        return speed(p) * ticks(p);
+    }
+
+    public static double cost(EntityPlayer p) {
+        return pick(PocketConfig.dashCost, p);
+    }
+
+    public static int chargesMax(EntityPlayer p) {
+        return Math.max(1, (int) Math.round(pick(PocketConfig.dashCharges, p)));
+    }
+
+    public static double rechargeSec(EntityPlayer p) {
+        return pick(PocketConfig.dashRechargeSec, p);
+    }
+
+    public static double damage(EntityPlayer p) {
+        return pick(PocketConfig.dashDamage, p);
+    }
+
+    private static int maxCharges(EntityPlayer p) {
+        return chargesMax(p);
+    }
+
+    private static int rechargeTicks(EntityPlayer p) {
+        return Math.max(1, (int) Math.round(rechargeSec(p) * 20.0));
     }
 
     /** Текущее число зарядов с учётом восстановления. */
     private static int charges(EntityPlayer p, long now) {
         NBTTagCompound e = p.getEntityData();
-        int max = maxCharges();
+        int max = maxCharges(p);
         if (!e.hasKey(CHARGES)) {
             e.setInteger(CHARGES, max);
             e.setLong(STAMP, now);
@@ -97,10 +135,10 @@ public final class Dash {
         if (c >= max) return max;
         long stamp = e.getLong(STAMP);
         if (now < stamp) stamp = now;
-        long gained = (now - stamp) / rechargeTicks();
+        long gained = (now - stamp) / rechargeTicks(p);
         if (gained > 0) {
             c = (int) Math.min((long) max, c + gained);
-            stamp += gained * rechargeTicks();
+            stamp += gained * rechargeTicks(p);
             e.setInteger(CHARGES, c);
             e.setLong(STAMP, c >= max ? now : stamp);
         }
@@ -109,7 +147,7 @@ public final class Dash {
 
     private static int secondsToNextCharge(EntityPlayer p, long now) {
         long stamp = p.getEntityData().getLong(STAMP);
-        long left = rechargeTicks() - Math.max(0L, now - stamp);
+        long left = rechargeTicks(p) - Math.max(0L, now - stamp);
         return (int) Math.max(1L, (left + 19L) / 20L);
     }
 
@@ -127,13 +165,13 @@ public final class Dash {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.dash_cooldown", secondsToNextCharge(p, now)), true);
             return;
         }
-        double cost = PocketConfig.dashCost * Mana.getPriceMultiplier(p);
+        double cost = cost(p) * Mana.getPriceMultiplier(p);
         if (!Mana.spend(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
         NBTTagCompound e = p.getEntityData();
-        if (c >= maxCharges()) e.setLong(STAMP, now);
+        if (c >= maxCharges(p)) e.setLong(STAMP, now);
         e.setInteger(CHARGES, c - 1);
 
         double yaw = Math.toRadians(p.rotationYaw);
@@ -179,20 +217,29 @@ public final class Dash {
         }
         st.age++;
         NBTTagCompound e = p.getEntityData();
+        int dashTicks = ticks(p);
+        double dmg = damage(p);
 
-        if (st.age <= PocketConfig.dashTicks + 1) {
+        if (dmg > 0.0 && st.age <= dashTicks + 1) {
             double dx = e.getFloat(DX);
             double dz = e.getFloat(DZ);
             AxisAlignedBB box = p.getEntityBoundingBox().grow(0.8, 0.3, 0.8);
             for (EntityLivingBase t : p.world.getEntitiesWithinAABB(EntityLivingBase.class, box)) {
                 if (t == p || st.hit.contains(Integer.valueOf(t.getEntityId())) || !isEnemy(p, t)) continue;
                 st.hit.add(Integer.valueOf(t.getEntityId()));
-                t.attackEntityFrom(DamageSource.causePlayerDamage(p), (float) PocketConfig.dashDamage);
+                t.attackEntityFrom(DamageSource.causePlayerDamage(p), (float) dmg);
                 t.knockBack(p, 0.9F, -dx, -dz);
+                // высший уровень: каждый сбитый враг возвращает заряд
+                if (pick(PocketConfig.dashRefund, p) >= 1.0) {
+                    int max = maxCharges(p);
+                    long now = p.world.getTotalWorldTime();
+                    e.setInteger(CHARGES, Math.min(max, charges(p, now) + 1));
+                }
             }
         }
 
-        if (st.age <= PocketConfig.dashReflectTicks) {
+        int reflect = (int) Math.round(pick(PocketConfig.dashReflectTicks, p));
+        if (reflect > 0 && st.age <= reflect) {
             AxisAlignedBB rb = p.getEntityBoundingBox().grow(2.5);
             for (Entity pr : p.world.getEntitiesWithinAABB(Entity.class, rb)) {
                 if (!(pr instanceof IProjectile) || ownedBy(pr, p)) continue;
@@ -214,7 +261,12 @@ public final class Dash {
             }
         }
 
-        if (st.age > PocketConfig.dashTicks + 2) ACTIVE.remove(p.getUniqueID());
+        if (st.age > dashTicks + 2) {
+            ACTIVE.remove(p.getUniqueID());
+            // короткая неуязвимость после рывка (с 3 уровня), чтобы выйти из схватки
+            int grace = (int) Math.round(pick(PocketConfig.dashGraceTicks, p));
+            if (grace > 0) e.setLong(GRACE_UNTIL, p.world.getTotalWorldTime() + grace);
+        }
     }
 
     /** Неуязвимость на время рывка (кроме падения в бездну). */
@@ -222,6 +274,7 @@ public final class Dash {
     public static void onAttack(LivingAttackEvent event) {
         if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
         if (event.getSource() == DamageSource.OUT_OF_WORLD) return;
-        if (isDashing((EntityPlayer) event.getEntityLiving())) event.setCanceled(true);
+        EntityPlayer pl = (EntityPlayer) event.getEntityLiving();
+        if (isDashing(pl) || pl.world.getTotalWorldTime() < pl.getEntityData().getLong(GRACE_UNTIL)) event.setCanceled(true);
     }
 }

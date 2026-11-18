@@ -136,7 +136,7 @@ public class Lang {
         m.put("pocketmod.info.slow.l2", "Замедление до x%s.");
         m.put("pocketmod.info.slow.l3", "Полный стоп времени (x0). Расход на нуле %s/с.");
         m.put("pocketmod.info.softfall.desc", "Пассивно: после нескольких блоков падения падение замедляется и урон гасится. Мана тратится, пока падаешь; мана кончилась - падение обычное.");
-        m.put("pocketmod.info.softfall.key", "Включается само");
+        m.put("pocketmod.info.softfall.key", "Включается само; пробел в падении — выключить / включить");
         m.put("pocketmod.info.softfall.l1", "С %s блоков. Расход %s/с в падении.");
         m.put("pocketmod.info.softfall.l2", "С %s блоков. Расход %s/с в падении.");
         m.put("pocketmod.info.magnet.desc", "Увеличивает радиус подбора предметов. Предметы притягиваются к тебе.");
@@ -222,6 +222,8 @@ public class Lang {
         m.put("pocketmod.msg.slow_stop", "Стоп времени (x0)");
         m.put("pocketmod.msg.softfall_empty", "Мана кончилась: падение снова обычное");
         m.put("pocketmod.msg.softfall_on", "Мягкое падение");
+        m.put("pocketmod.msg.softfall_off", "Мягкое падение выключено (пробел — включить)");
+        m.put("pocketmod.msg.softfall_resumed", "Мягкое падение включено");
         m.put("pocketmod.msg.scanner_on", "Сканер руд включён");
         m.put("pocketmod.msg.scanner_off", "Сканер руд выключен");
         m.put("pocketmod.msg.scanner_empty", "Мана кончилась: сканер выключен");
@@ -239,7 +241,10 @@ public class Lang {
         m.put("pocketmod.ability.dash", "Рывок");
         m.put("pocketmod.info.dash.desc", "Быстрое перемещение на несколько блоков вдоль выбранного направления: враги на пути отбрасываются, на время рывка урон не проходит, а снаряды отражаются. Недоступен в облике духа (Спектор) и во время телепорта; в полёте работает.");
         m.put("pocketmod.info.dash.key", "Двойное нажатие W/A/S/D");
-        m.put("pocketmod.info.dash.l1", "Рывок около 8 блоков за 0,25 с. Цена %s маны, зарядов %s, восстановление заряда %s с, урон врагам %s.");
+        m.put("pocketmod.info.dash.l1", "Короткий рывок: около %s бл. за %s с. Мана %s, зарядов %s, восстановление заряда %s с. Врагов не задевает, снаряды не отражает.");
+        m.put("pocketmod.info.dash.l2", "Дальний рывок: около %s бл. за %s с (максимальная дальность). Мана %s, зарядов %s, восстановление %s с. Сбитые враги получают %s урона, снаряды отражаются.");
+        m.put("pocketmod.info.dash.l3", "Быстрее и чаще: то же расстояние (около %s бл.), но за %s с. Мана %s, зарядов %s, восстановление %s с, урон %s; после рывка ещё короткая неуязвимость, окно отражения снарядов длиннее.");
+        m.put("pocketmod.info.dash.l4", "Мастер рывка: около %s бл. за %s с. Мана %s, зарядов %s, восстановление %s с, урон %s; каждый сбитый враг возвращает заряд, неуязвимость после рывка дольше.");
         m.put("pocketmod.msg.dash_cooldown", "Рывок перезаряжается: %s с");
         m.put("pocketmod.msg.dash_blocked", "Сейчас рывок недоступен");
         m.put("pocketmod.gui.death_totem_title", "Ты погиб");
@@ -401,7 +406,7 @@ public class Lang {
         m.put("pocketmod.info.slow.l2", "Slowdown down to x%s.");
         m.put("pocketmod.info.slow.l3", "Full time stop (x0). Cost at zero %s/s.");
         m.put("pocketmod.info.softfall.desc", "Passive: after a few blocks of falling the fall slows down and damage is absorbed. Costs mana while falling; out of mana - a normal fall.");
-        m.put("pocketmod.info.softfall.key", "Activates by itself");
+        m.put("pocketmod.info.softfall.key", "Activates by itself; Space while falling toggles it off / on");
         m.put("pocketmod.info.softfall.l1", "From %s blocks. Cost %s/s while falling.");
         m.put("pocketmod.info.softfall.l2", "From %s blocks. Cost %s/s while falling.");
         m.put("pocketmod.info.magnet.desc", "Increases item pickup radius. Items are pulled toward you.");
@@ -487,6 +492,8 @@ public class Lang {
         m.put("pocketmod.msg.slow_stop", "Time stop (x0)");
         m.put("pocketmod.msg.softfall_empty", "Out of mana: the fall is normal again");
         m.put("pocketmod.msg.softfall_on", "Soft fall");
+        m.put("pocketmod.msg.softfall_off", "Soft fall off (Space to turn it back on)");
+        m.put("pocketmod.msg.softfall_resumed", "Soft fall on");
         m.put("pocketmod.msg.scanner_on", "Ore scanner on");
         m.put("pocketmod.msg.scanner_off", "Ore scanner off");
         m.put("pocketmod.msg.scanner_empty", "Out of mana: ore scanner off");
@@ -504,7 +511,10 @@ public class Lang {
         m.put("pocketmod.ability.dash", "Dash");
         m.put("pocketmod.info.dash.desc", "A quick burst of movement in the chosen direction: enemies in the way are knocked back, you take no damage during the dash and projectiles are reflected. Not available in spirit form (Spector) or during a teleport; works in flight.");
         m.put("pocketmod.info.dash.key", "Double-tap W/A/S/D");
-        m.put("pocketmod.info.dash.l1", "Dash of about 8 blocks in 0.25 s. Costs %s mana, %s charges, %s s to recover a charge, %s damage to enemies.");
+        m.put("pocketmod.info.dash.l1", "Short dash: about %s blocks in %s s. Costs %s mana, %s charges, %s s to recover a charge. Does not hit enemies or reflect projectiles.");
+        m.put("pocketmod.info.dash.l2", "Long dash: about %s blocks in %s s (maximum distance). Costs %s mana, %s charges, %s s to recover. Enemies hit take %s damage, projectiles are reflected.");
+        m.put("pocketmod.info.dash.l3", "Faster and more often: same distance (about %s blocks) in only %s s. Costs %s mana, %s charges, %s s to recover, %s damage; a short invulnerability after the dash and a longer projectile-reflect window.");
+        m.put("pocketmod.info.dash.l4", "Dash master: about %s blocks in %s s. Costs %s mana, %s charges, %s s to recover, %s damage; every enemy hit refunds a charge and the post-dash invulnerability lasts longer.");
         m.put("pocketmod.msg.dash_cooldown", "Dash is recharging: %s s");
         m.put("pocketmod.msg.dash_blocked", "Dash is not available right now");
         m.put("pocketmod.gui.death_totem_title", "You died");

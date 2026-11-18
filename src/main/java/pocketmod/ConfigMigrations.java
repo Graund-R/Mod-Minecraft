@@ -22,7 +22,7 @@ import net.minecraftforge.common.config.Property;
 public class ConfigMigrations {
 
     /** Текущая версия формата конфига. */
-    public static final int CURRENT = 3;
+    public static final int CURRENT = 4;
 
     /** Служебная категория (скрыта в экране настроек). */
     public static final String META = "служебное";
@@ -127,6 +127,7 @@ public class ConfigMigrations {
         if (from < 1) step1LegacyCategories(cfg);
         if (from < 2) step2ZeroPrices(cfg);
         if (from < 3) step3Rebalance(cfg);
+        if (from < 4) step4DashLevels(cfg);
         pv.set(CURRENT);
         cfg.save();
         System.out.println("[PocketMod] config migrated: v" + from + " -> v" + CURRENT);
@@ -196,6 +197,16 @@ public class ConfigMigrations {
         replaceIfEqual(cfg, "prices", "warehouseLevel3", "1500", "700");
         replaceIfEqual(cfg, "склад", "warehouseDeathCost", "100", "50");
         replaceIfEqual(cfg, "волна", "cooldownSeconds", "10,11,12,13,15", "4,5,5,6,7");
+    }
+
+    /** Шаг 4 (2.9): рывок получил 4 уровня, прежние одиночные ключи (cost, charges, ...) заменены списками по уровням. */
+    private static void step4DashLevels(Configuration cfg) {
+        if (!cfg.hasCategory("рывок")) return;
+        ConfigCategory c = cfg.getCategory("рывок");
+        String[] old = { "cost", "charges", "rechargeSeconds", "damage", "speed", "ticks", "reflectTicks" };
+        for (String k : old) {
+            if (c.containsKey(k)) c.remove(k);
+        }
     }
 
     private static void replaceIfEqual(Configuration cfg, String cat, String key, String oldVal, String newVal) {

@@ -52,7 +52,7 @@ public final class OreScannerClient {
     }
 
     private static final int MAX_TARGETS = 31;
-    private static final int MAX_MARKS = 600;
+    private static final int MAX_MARKS = 1000;
     private static final int CHUNKS_PER_TICK = 2;
 
     private static List<Hit> ores = new ArrayList<Hit>();
@@ -228,6 +228,8 @@ public final class OreScannerClient {
     private static int computeIndex(IBlockState state) {
         Block b = state.getBlock();
         if (b == Blocks.AIR) return -1;
+        // светящаяся (активированная) редстоуновая руда не имеет своего предмета и в OreDictionary не записана
+        if (b == Blocks.LIT_REDSTONE_ORE) return computeIndex(Blocks.REDSTONE_ORE.getDefaultState());
         String[] targets = PocketConfig.oreScannerTargets;
         int n = Math.min(targets.length, MAX_TARGETS);
         ResourceLocation key = b.getRegistryName();
@@ -240,12 +242,27 @@ public final class OreScannerClient {
         // у воды, лавы, огня и т.п. нет предмета: пустой ItemStack делает OreDictionary.getOreIDs исключением
         Item item = Item.getItemFromBlock(b);
         if (item == null || item == Items.AIR) return -1;
-        ItemStack stack = new ItemStack(item, 1, b.damageDropped(state));
-        if (stack.isEmpty()) return -1;
-        for (int id : OreDictionary.getOreIDs(stack)) {
-            String name = OreDictionary.getOreName(id);
-            for (int i = 0; i < n; i++) {
-                if (targets[i] != null && targets[i].trim().equalsIgnoreCase(name)) return i;
+        // damageDropped() у ряда руд (например, лазурита) возвращает метаданные ВЫПАДАЮЩЕГО предмета (краситель, 4),
+        // а в OreDictionary руда записана с метаданными самого блока. Поэтому пробуем и метаданные состояния блока.
+        int meta1 = 0;
+        try {
+            meta1 = b.getMetaFromState(state);
+        } catch (Throwable ignored) {
+        }
+        int meta2 = 0;
+        try {
+            meta2 = b.damageDropped(state);
+        } catch (Throwable ignored) {
+        }
+        int[] metas = meta1 == meta2 ? new int[] { meta1, 0 } : new int[] { meta1, meta2, 0 };
+        for (int meta : metas) {
+            ItemStack stack = new ItemStack(item, 1, meta);
+            if (stack.isEmpty()) continue;
+            for (int id : OreDictionary.getOreIDs(stack)) {
+                String name = OreDictionary.getOreName(id);
+                for (int i = 0; i < n; i++) {
+                    if (targets[i] != null && targets[i].trim().equalsIgnoreCase(name)) return i;
+                }
             }
         }
         return -1;
@@ -266,7 +283,10 @@ public final class OreScannerClient {
         if (p.contains("tin")) return 0xB8C8D8;
         if (p.contains("silver")) return 0xDADAF0;
         if (p.contains("lead")) return 0x7080B0;
-        return 0xFF55FF;
+        // неизвестная руда (из другого мода): устойчивый цвет по названию, чтобы разные руды отличались
+        int h = p.hashCode();
+        float hue = ((h & 0x7FFFFFFF) % 360) / 360.0F;
+        return java.awt.Color.HSBtoRGB(hue, 0.75F, 1.0F) & 0xFFFFFF;
     }
 
     /** Читаемое название цели: из перевода pocketmod.ore.<имя> или само имя без приставки ore. */
@@ -316,23 +336,35 @@ public final class OreScannerClient {
     public static void render(Minecraft mc) {
         if (mc.world == null || mc.player == null || !OreScanner.isOn(mc.player) || ores.isEmpty()) return;
         RenderManager manager = mc.getRenderManager();
+        // добытая руда пропадает сразу, не дожидаясь пересчёта
+        List<Hit> visible = new ArrayList<Hit>(ores.size());
+        for (Hit h : ores) {
+            if (indexOf(mc.world.getBlockState(h.pos)) == h.idx) visible.add(h);
+        }
+        if (visible.isEmpty()) return;
         GlStateManager.pushMatrix();
         GlStateManager.disableTexture2D();
         GlStateManager.disableDepth();
         GlStateManager.disableLighting();
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-        GL11.glLineWidth(2.0F);
-        for (Hit h : ores) {
-            // добытая руда пропадает сразу, не дожидаясь пересчёта
-            if (indexOf(mc.world.getBlockState(h.pos)) != h.idx) continue;
+        // Двойная рамка, как контур мобов: цветная линия поверх более толстой чёрной, поэтому рамка видна
+        // на любом фоне (светлом, тёмном, пёстром), а цвет по-прежнему показывает тип руды.
+        GL11.glLineWidth(6.0F);
+        for (Hit h : visible) {
+            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.004)
+                    .offset(-manager.viewerPosX, -manager.viewerPosY, -manager.viewerPosZ);
+            RenderGlobal.drawSelectionBoundingBox(box, 0.0F, 0.0F, 0.0F, 1.0F);
+        }
+        GL11.glLineWidth(2.5F);
+        for (Hit h : visible) {
             int c = colorOf(h.idx);
             float r = ((c >> 16) & 255) / 255.0F;
             float g = ((c >> 8) & 255) / 255.0F;
             float b = (c & 255) / 255.0F;
-            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.003)
+            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.004)
                     .offset(-manager.viewerPosX, -manager.viewerPosY, -manager.viewerPosZ);
-            RenderGlobal.drawSelectionBoundingBox(box, r, g, b, 0.95F);
+            RenderGlobal.drawSelectionBoundingBox(box, r, g, b, 1.0F);
         }
         GL11.glLineWidth(1.0F);
         GlStateManager.enableDepth();

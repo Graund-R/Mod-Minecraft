@@ -175,7 +175,7 @@ pocketmod.info.totem.l1=%s slots.
 pocketmod.info.totem.l2=%s slots, teleport %s%% cheaper.
 pocketmod.info.totem.l3=%s slots, teleport %s%% cheaper.
 pocketmod.info.softfall.desc=Passive: after a few blocks of falling the fall slows down and damage is absorbed. Costs mana while falling; out of mana - a normal fall.
-pocketmod.info.softfall.key=Activates by itself
+pocketmod.info.softfall.key=Activates by itself; Space while falling toggles it off / on
 pocketmod.info.softfall.l1=Cost %s/s while falling.
 pocketmod.info.softfall.l2=Cost %s/s while falling.
 pocketmod.msg.invis_broken=Invisibility broken by your hit for %s s (no mana is spent)
@@ -382,6 +382,8 @@ pocketmod.cfg.19.radii=Радиус по уровням
 pocketmod.cfg.19.radii.tooltip=Три числа: уровни 1, 2, 3.
 pocketmod.cfg.19.targets=Какие руды подсвечивать
 pocketmod.cfg.19.targets.tooltip=OreDictionary-имена (oreDiamond) или id блоков (minecraft:diamond_ore).
+pocketmod.cfg.19.autoTargets=Все руды из других модов
+pocketmod.cfg.19.autoTargets.tooltip=Добавлять в сканер все руды из OreDictionary (oreCopper, oreTin и т.д.), а не только список выше.
 pocketmod.cfg.20.warehouseDeathCost=Цена сохранения слота при смерти
 pocketmod.cfg.20.warehouseDeathCost.tooltip=Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.
 pocketmod.cfg.12.lootPity=Гарантия выигрыша
@@ -420,20 +422,6 @@ pocketmod.cfg.15.slowDrainBase=Базовый расход замедления
 pocketmod.cfg.15.slowDrainBase.tooltip=Расход = база / коэффициент замедления.
 pocketmod.cfg.16.hidePotionIcons=Скрывать значки зелий
 pocketmod.cfg.16.hidePotionIcons.tooltip=Оставить на экране только шкалу маны.
-pocketmod.cfg.21.cost=Цена рывка
-pocketmod.cfg.21.cost.tooltip=Мана за один рывок.
-pocketmod.cfg.21.charges=Число зарядов
-pocketmod.cfg.21.charges.tooltip=Сколько рывков можно сделать подряд.
-pocketmod.cfg.21.rechargeSeconds=Восстановление заряда, сек
-pocketmod.cfg.21.rechargeSeconds.tooltip=За сколько секунд восстанавливается один заряд рывка.
-pocketmod.cfg.21.damage=Урон врагам
-pocketmod.cfg.21.damage.tooltip=Урон каждому врагу, которого задел рывок.
-pocketmod.cfg.21.speed=Скорость рывка
-pocketmod.cfg.21.speed.tooltip=Блоков за тик; дальность = скорость x число тиков (1,6 x 5 = 8 блоков).
-pocketmod.cfg.21.ticks=Длительность, тики
-pocketmod.cfg.21.ticks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
-pocketmod.cfg.21.reflectTicks=Окно отражения снарядов, тики
-pocketmod.cfg.21.reflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = выключено).
 pocketmod.cfg.17.radius=Радиус по уровням
 pocketmod.cfg.17.radius.tooltip=Пять чисел: уровни 1-5.
 pocketmod.cfg.17.damage=Урон по уровням
@@ -538,3 +526,29 @@ pocketmod.cfg.18.warehouseLevel3=Цена: Карманный склад, ур. 
 pocketmod.cfg.18.warehouseLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
 pocketmod.cfg.18.dashLevel1=Цена: Рывок, ур. 1
 pocketmod.cfg.18.dashLevel1.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.cfg.18.dashLevel2=Цена: Рывок, ур. 2
+pocketmod.cfg.18.dashLevel2.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.cfg.18.dashLevel3=Цена: Рывок, ур. 3
+pocketmod.cfg.18.dashLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.cfg.18.dashLevel4=Цена: Рывок, ур. 4
+pocketmod.cfg.18.dashLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.msg.softfall_off=Soft fall off (Space to turn it back on)
+pocketmod.msg.softfall_resumed=Soft fall on
+pocketmod.cfg.21.levelCost=Цена рывка по уровням
+pocketmod.cfg.21.levelCost.tooltip=Мана за один рывок, четыре числа: уровни 1-4.
+pocketmod.cfg.21.levelCharges=Число зарядов по уровням
+pocketmod.cfg.21.levelCharges.tooltip=Сколько рывков подряд, по уровням 1-4.
+pocketmod.cfg.21.levelRechargeSec=Восстановление заряда, сек
+pocketmod.cfg.21.levelRechargeSec.tooltip=Секунд на один заряд, по уровням 1-4.
+pocketmod.cfg.21.levelDamage=Урон врагам по уровням
+pocketmod.cfg.21.levelDamage.tooltip=Урон каждому врагу на пути (0 = рывок не бьёт), по уровням 1-4.
+pocketmod.cfg.21.levelSpeed=Скорость рывка по уровням
+pocketmod.cfg.21.levelSpeed.tooltip=Блоков за тик; дальность = скорость x тики (на 2 уровне 1,6 x 5 = 8 блоков).
+pocketmod.cfg.21.levelTicks=Длительность по уровням, тики
+pocketmod.cfg.21.levelTicks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
+pocketmod.cfg.21.levelReflectTicks=Отражение снарядов, тики
+pocketmod.cfg.21.levelReflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = нет), по уровням 1-4.
+pocketmod.cfg.21.levelGraceTicks=Неуязвимость после рывка, тики
+pocketmod.cfg.21.levelGraceTicks.tooltip=Сколько тиков после рывка урон не проходит, по уровням 1-4.
+pocketmod.cfg.21.levelRefund=Возврат заряда за врага
+pocketmod.cfg.21.levelRefund.tooltip=1 = сбитый рывком враг возвращает заряд, по уровням 1-4.

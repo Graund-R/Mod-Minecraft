@@ -125,7 +125,9 @@ public class CommonEvents {
             }
             // Тотем смерти: прежний исчезает со следующей смертью, новый создаётся только если игрок согласится
             Totems.clearDeathTotem(now);
-            Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+            if (AbilityStorage.isUnlocked(now, AbilityType.TOTEM)) {
+                Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+            }
         }
     }
 }

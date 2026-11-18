@@ -80,7 +80,7 @@ public class ClientDash {
         }
         if (id != lastId) {
             lastId = id;
-            ticksLeft = PocketConfig.dashTicks;
+            ticksLeft = Dash.ticks(p);
             dx = p.getEntityData().getFloat(Dash.DX);
             dz = p.getEntityData().getFloat(Dash.DZ);
         }
@@ -89,8 +89,9 @@ public class ClientDash {
             ticksLeft = 0;
             return;
         }
-        p.motionX = dx * PocketConfig.dashSpeed;
-        p.motionZ = dz * PocketConfig.dashSpeed;
+        double spd = Dash.speed(p);
+        p.motionX = dx * spd;
+        p.motionZ = dz * spd;
         ticksLeft--;
     }
 }

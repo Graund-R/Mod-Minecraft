@@ -263,6 +263,11 @@ public class Totems {
     /** Показать игроку вопрос «создать тотем смерти?», если он ещё не отвечал. */
     public static void promptIfPending(EntityPlayerMP p) {
         if (!hasPendingDeathTotem(p)) return;
+        // способность «Тотемы» не куплена: вопрос не показываем и ждать ответа нечего
+        if (!AbilityStorage.isUnlocked(p, AbilityType.TOTEM)) {
+            PlayerData.root(p).removeTag(PENDING_KEY);
+            return;
+        }
         NetworkHandler.sendPrompt(p, 1, pendingTeleportCost(p), deathTotemCreateFee(p));
     }
 
@@ -270,6 +275,7 @@ public class Totems {
     public static void resolvePendingDeathTotem(EntityPlayerMP p, boolean create) {
         if (!hasPendingDeathTotem(p)) return;
         NBTTagCompound c = PlayerData.root(p).getCompoundTag(PENDING_KEY).copy();
+        if (create && !AbilityStorage.isUnlocked(p, AbilityType.TOTEM)) create = false;
         if (create) {
             double fee = deathTotemCreateFee(p);
             if (fee > 0.0 && !Mana.spend(p, fee)) {

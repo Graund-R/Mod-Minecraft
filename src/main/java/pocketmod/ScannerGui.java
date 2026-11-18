@@ -14,10 +14,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class ScannerGui extends GuiScreen {
 
     private static final int BTN_CLOSE = 1000;
-    private static final int W = 150;
+    private int W = 150;
     private static final int H = 20;
     private static final int GAP = 6;
-    private static final int COLS = 2;
+    private int COLS = 2;
 
     private final EntityPlayer player;
 
@@ -40,6 +40,9 @@ public class ScannerGui extends GuiScreen {
     public void initGui() {
         buttonList.clear();
         int n = count();
+        // руд может быть много (в том числе из других модов): тогда три колонки поуже
+        COLS = n > 16 ? 3 : 2;
+        W = n > 16 ? 120 : 150;
         int startX = width / 2 - (COLS * W + GAP) / 2;
         for (int i = 0; i < n; i++) {
             int col = i % COLS;

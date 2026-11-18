@@ -31,7 +31,8 @@ public enum NetAction {
     TOGGLE_SCAN_TARGET(27),
     WAREHOUSE_CLICK(28),
     DEATH_TOTEM_CHOICE(29),
-    DASH(30);
+    DASH(30),
+    SOFTFALL_TOGGLE(31);
 
     public final int id;
     NetAction(int id) { this.id = id; }

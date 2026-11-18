@@ -7,6 +7,7 @@ import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
@@ -48,6 +49,12 @@ public class PocketMod {
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         proxy.init();
+    }
+
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        // к этому моменту все моды уже зарегистрировали свои руды в OreDictionary
+        PocketConfig.finishOreTargets();
     }
 
     @Mod.EventHandler

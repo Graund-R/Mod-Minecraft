@@ -288,6 +288,14 @@ public class ClientHandler {
             if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
         }
 
+        // Мягкое падение: пробел в воздухе выключает его, повторный пробел включает обратно
+        // (быстрый двойной пробел при этом по-прежнему запускает полёт)
+        if (jDown && !jWas && !shiftDown && !specActive && mc.player != null && !mc.player.onGround
+                && !mc.player.capabilities.isFlying && !mc.player.isRiding()
+                && AbilityStorage.isUnlocked(mc.player, AbilityType.SOFTFALL)) {
+            NetworkHandler.action(NetAction.SOFTFALL_TOGGLE, 0, 0, 0, "");
+        }
+
         // Полёт: двойной пробел в воздухе (без Shift)
         if (jDown && !jWas && !shiftDown) {
             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
@@ -307,6 +315,20 @@ public class ClientHandler {
         }
     }
 
+    /**
+     * Полная невидимость для онлайна: ванильное зелье прячет только тело, а броня, предметы в руках, элитры и
+     * ник остаются висеть в воздухе. Поэтому игрока с флагом невидимости не рисуем вообще (ни тело, ни броню, ни ник).
+     * Спектаторы по-прежнему видят невидимых, как в ваниле.
+     */
+    @SubscribeEvent
+    public void onRenderPlayerPre(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
+        EntityPlayer ep = event.getEntityPlayer();
+        if (ep == null || !ep.isInvisible()) return;
+        EntityPlayer viewer = Minecraft.getMinecraft().player;
+        if (viewer != null && viewer.isSpectator()) return;
+        event.setCanceled(true);
+    }
+
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) { OreScannerClient.render(Minecraft.getMinecraft()); }
 
@@ -324,8 +346,10 @@ public class ClientHandler {
         net.minecraft.scoreboard.ScorePlayerTeam t = sb.getTeam(TEAM_HOT);
         if (t == null) {
             t = sb.createTeam(TEAM_HOT);
-            t.setColor(net.minecraft.util.text.TextFormatting.RED);
         }
+        // в 1.12.2 цвет контура свечения берётся из префикса команды (§c), а не из setColor
+        t.setColor(net.minecraft.util.text.TextFormatting.RED);
+        if (!"\u00a7c".equals(t.getPrefix())) t.setPrefix("\u00a7c");
         return t;
     }
 
