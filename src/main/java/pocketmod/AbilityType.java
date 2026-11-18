@@ -18,7 +18,7 @@ public enum AbilityType {
     WAVE("wave", 280, 450, 700, 1000, 1500),
     ORE_SCANNER("scanner", 250, 500, 900),
     WAREHOUSE("warehouse", 200, 400, 700),
-    DASH("dash", 300);
+    DASH("dash", 300, 550, 900, 1400);
 
     public final String id;
     public final int[] levelCosts;
