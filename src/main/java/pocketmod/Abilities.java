@@ -215,21 +215,12 @@ public class Abilities {
     }
 
     public static double totalDrainPerSec(EntityPlayer player) {
-        double d = 0.0;
-        if (isInvisible(player)) {
-            d += invisDrain(player) * Mana.getPriceMultiplier(player);
-        }
-        if (isSlow(player)) {
-            d += TimeSlow.drainPerSec(player);
-        }
-        if (Thermal.isOn(player)) d += Thermal.drainPerSec(player);
-        if (Shield.isOn(player)) d += Shield.upkeepPerSec(player);
-        if (Spector.isActive(player)) d += Spector.drainPerSec(player);
-        if (Flight.isArmed(player) && player.capabilities.isFlying) d += Flight.drainPerSec(player);
-        if (SoftFall.isActive(player)) d += SoftFall.drainPerSec(player);
-        d += BodyEffects.totalRentDrain(player);
-        if (OreScanner.isOn(player)) d += OreScanner.drainPerSec(player);
-        return d;
+        return ActiveAbilities.totalDrainPerSec(player);
+    }
+
+    /** Расход невидимости в секунду (для суммы в магазине). */
+    public static double invisDrainPerSec(EntityPlayer player) {
+        return invisDrain(player) * Mana.getPriceMultiplier(player);
     }
 
     /** Минимальный множитель времени: 0.1, а на уровне 3 замедление доходит до полного нуля (стоп). */
@@ -305,6 +296,7 @@ public class Abilities {
         clearMobTargets(player, 16.0);
         player.dismountRidingEntity();
         player.fallDistance = 0f;
+        Dash.onTeleport(player);
         player.connection.setPlayerLocation(land.getX() + 0.5, land.getY(), land.getZ() + 0.5,
                 player.rotationYaw, player.rotationPitch);
         teleportFx((WorldServer) world, from, to);

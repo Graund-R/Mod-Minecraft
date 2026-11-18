@@ -29,7 +29,7 @@ public class ShopGui extends GuiScreen {
 
     private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
     private static final AbilityType[][] TAB_ABIL = {
-            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER },
+            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER, AbilityType.DASH },
             { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW, AbilityType.WAREHOUSE },
             { AbilityType.SPECTOR, AbilityType.THERMAL },
             { AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD },

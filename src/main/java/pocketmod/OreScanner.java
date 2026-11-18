@@ -59,11 +59,14 @@ public final class OreScanner {
                 next ? "pocketmod.msg.scanner_on" : "pocketmod.msg.scanner_off"), true);
     }
 
+    /** Ману списывает реестр способностей; здесь только выключение, если сканер перестал быть доступен. */
     public static void tick(EntityPlayerMP player) {
-        if (!isOn(player)) return;
-        if (!available(player) || !Mana.spend(player, drainPerSec(player) / 20.0)) {
-            player.getEntityData().setBoolean(KEY, false);
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_empty"), true);
-        }
+        if (isOn(player) && !available(player)) onManaExhausted(player);
+    }
+
+    /** Мана кончилась (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP player) {
+        player.getEntityData().setBoolean(KEY, false);
+        player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_empty"), true);
     }
 }

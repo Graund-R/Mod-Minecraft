@@ -14,6 +14,12 @@ public class CommonProxy {
                 NetworkHandler.SyncMessage.class, 0, net.minecraftforge.fml.relauncher.Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(IgnorePocketSyncHandler.class,
                 NetworkHandler.PocketSyncMessage.class, 2, net.minecraftforge.fml.relauncher.Side.CLIENT);
+        NetworkHandler.CHANNEL_INSTANCE.registerMessage(IgnorePromptHandler.class,
+                NetworkHandler.PromptMessage.class, 3, net.minecraftforge.fml.relauncher.Side.CLIENT);
+    }
+
+    public static class IgnorePromptHandler implements IMessageHandler<NetworkHandler.PromptMessage, IMessage> {
+        @Override public IMessage onMessage(NetworkHandler.PromptMessage message, MessageContext ctx) { return null; }
     }
 
     public static class IgnoreSyncHandler implements IMessageHandler<NetworkHandler.SyncMessage, IMessage> {

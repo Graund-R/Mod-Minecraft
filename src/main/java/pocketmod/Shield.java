@@ -55,16 +55,17 @@ public class Shield {
         return (PocketConfig.shieldUpkeepBase + PocketConfig.shieldUpkeepRamp * heat(p)) * Mana.getPriceMultiplier(p);
     }
 
-    /** Вызывается каждый тик: расход маны и нагрев, пока щит включён, остывание, когда выключен. */
+    /** Мана кончилась (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        off(p);
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.shield_broke"), true);
+    }
+
+    /** Каждый тик: нагрев и частицы, пока щит включён, остывание, когда выключен. Ману списывает реестр до вызова. */
     public static void tick(EntityPlayerMP p) {
         double heat = heat(p);
         if (!isOn(p)) {
             if (heat > 0.0) p.getEntityData().setDouble(HEAT, Math.max(0.0, heat - PocketConfig.shieldHeatDecay / 20.0));
-            return;
-        }
-        if (!Mana.spend(p, upkeepPerSec(p) / 20.0)) {
-            off(p);
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.shield_broke"), true);
             return;
         }
         p.getEntityData().setDouble(HEAT, heat + 1.0 / 20.0);

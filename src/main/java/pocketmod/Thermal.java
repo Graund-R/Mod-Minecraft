@@ -45,14 +45,16 @@ public class Thermal {
         p.sendStatusMessage(new TextComponentTranslation(now ? "pocketmod.msg.thermal_on" : "pocketmod.msg.thermal_switched_off"), true);
     }
 
+    /** Мана кончилась (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        p.getEntityData().setBoolean(KEY, false);
+        clearGlow(p);
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.thermal_off"), true);
+    }
+
+    /** Подсветка существ. Ману списывает реестр способностей до вызова. */
     public static void tick(EntityPlayerMP p) {
         if (!isOn(p)) return;
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
-            p.getEntityData().setBoolean(KEY, false);
-            clearGlow(p);
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.thermal_off"), true);
-            return;
-        }
         // Подсветка не каждый тик: раз в 5 тиков (~4 раза/сек) — сильно дешевле AABB-скан
         if (p.ticksExisted % 5 != 0) return;
 

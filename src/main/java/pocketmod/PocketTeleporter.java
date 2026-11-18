@@ -101,6 +101,7 @@ public class PocketTeleporter implements ITeleporter {
             }
         }
 
+        Dash.onTeleport(player);
         player.changeDimension(PocketMod.DIM_ID, new PocketTeleporter(ix, iy, iz));
     }
 
@@ -131,6 +132,7 @@ public class PocketTeleporter implements ITeleporter {
         WorldServer target = server.getWorld(dim);
         double[] safe = findSafeExit(target, rx, ry, rz);
 
+        Dash.onTeleport(player);
         player.changeDimension(dim, new PocketTeleporter(safe[0], safe[1], safe[2]));
 
         // Мобы вокруг точки выхода теряют цель

@@ -28,15 +28,8 @@ public class ServerTick {
         long delta = prev == null ? 50L : Math.max(0L, Math.min(100L, now - prev.longValue()));
 
         // Каждый тик — только дешёвые проверки внутри; тяжёлые сканы throttled в классах
-        Abilities.tickInvisibility(player);
-        Abilities.tickSlow(player);
-        if (Spector.isActive(player)) Spector.tick(player);
-        if (Thermal.isOn(player)) Thermal.tick(player);
-        Shield.tick(player);
-        Flight.tick(player);
-        SoftFall.tick(player);
-        BodyEffects.tick(player);
-        OreScanner.tick(player);
+        // Непрерывные способности: оплата, выключение при нуле маны и tick — в одном цикле реестра
+        ActiveAbilities.tick(player);
         if (player.dimension == PocketMod.DIM_ID && PocketConfig.pocketTickCost > 0 && player.ticksExisted % 20 == 0) {
             double fee = PocketConfig.pocketTickCost * Mana.getPriceMultiplier(player);
             if (!Mana.spend(player, fee)) {

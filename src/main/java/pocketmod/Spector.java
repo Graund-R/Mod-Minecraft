@@ -218,14 +218,21 @@ public class Spector {
         }
     }
 
+    /** Дух платит ману, только пока цело тело (вызывает реестр способностей). */
+    public static boolean isPaying(EntityPlayer p) {
+        return isActive(p) && body(p) != null;
+    }
+
+    /** Мана кончилась (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_off"), true);
+        end(p, true);
+    }
+
+    /** Каждый тик: проверка тела и частицы. Ману списывает реестр до вызова. */
     public static void tick(EntityPlayerMP p) {
         if (!isActive(p)) return;
         if (body(p) == null) {
-            end(p, true);
-            return;
-        }
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_off"), true);
             end(p, true);
             return;
         }

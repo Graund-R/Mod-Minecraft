@@ -22,7 +22,7 @@ import net.minecraftforge.common.config.Property;
 public class ConfigMigrations {
 
     /** Текущая версия формата конфига. */
-    public static final int CURRENT = 2;
+    public static final int CURRENT = 3;
 
     /** Служебная категория (скрыта в экране настроек). */
     public static final String META = "служебное";
@@ -126,6 +126,7 @@ public class ConfigMigrations {
         backup(cfg, from);
         if (from < 1) step1LegacyCategories(cfg);
         if (from < 2) step2ZeroPrices(cfg);
+        if (from < 3) step3Rebalance(cfg);
         pv.set(CURRENT);
         cfg.save();
         System.out.println("[PocketMod] config migrated: v" + from + " -> v" + CURRENT);
@@ -182,6 +183,29 @@ public class ConfigMigrations {
                     p.set(t.defaultCosts[i]);
                 }
             }
+        }
+    }
+
+    /**
+     * Шаг 3 (2.7): склад подешевел (500/900/1500 -> 200/400/700, плата при смерти 100 -> 50), перезарядка волны
+     * 10..15 с -> 4..7 с. Меняем только значения, которые игрок не трогал (равны прежним умолчаниям).
+     */
+    private static void step3Rebalance(Configuration cfg) {
+        replaceIfEqual(cfg, "prices", "warehouseLevel1", "500", "200");
+        replaceIfEqual(cfg, "prices", "warehouseLevel2", "900", "400");
+        replaceIfEqual(cfg, "prices", "warehouseLevel3", "1500", "700");
+        replaceIfEqual(cfg, "склад", "warehouseDeathCost", "100", "50");
+        replaceIfEqual(cfg, "волна", "cooldownSeconds", "10,11,12,13,15", "4,5,5,6,7");
+    }
+
+    private static void replaceIfEqual(Configuration cfg, String cat, String key, String oldVal, String newVal) {
+        if (!cfg.hasCategory(cat)) return;
+        ConfigCategory c = cfg.getCategory(cat);
+        if (!c.containsKey(key)) return;
+        Property p = c.get(key);
+        if (isOldDefault(p, oldVal)) {
+            if (p.isList()) p.set(newVal.split(","));
+            else p.set(newVal);
         }
     }
 

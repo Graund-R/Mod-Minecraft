@@ -36,15 +36,7 @@ public final class NetworkHandler {
 
     public static void sync(EntityPlayerMP player) {
         NBTTagCompound snapshot = PlayerData.root(player).copy();
-        snapshot.setBoolean("pm_sync_slow", player.getEntityData().getBoolean("pocketmod_slow"));
-        snapshot.setBoolean("pm_sync_invis", player.getEntityData().getBoolean("pocketmod_invis"));
-        snapshot.setBoolean("pm_sync_thermal", player.getEntityData().getBoolean("pm_thermal"));
-        snapshot.setBoolean("pm_sync_spector", player.getEntityData().getBoolean("pm_spec"));
-        snapshot.setBoolean("pm_sync_softfall", player.getEntityData().getBoolean("pm_softfall"));
-        snapshot.setBoolean("pm_sync_flight", player.getEntityData().getBoolean("pm_flight"));
-        snapshot.setBoolean("pm_sync_shield", player.getEntityData().getBoolean("pm_shield"));
-        snapshot.setBoolean("pm_sync_ore_scan", player.getEntityData().getBoolean("pm_ore_scan"));
-        snapshot.setFloat("pm_sync_slow_factor", player.getEntityData().getFloat("pocketmod_slow_factor"));
+        SyncedState.write(player, snapshot);
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
     }
 
@@ -60,6 +52,21 @@ public final class NetworkHandler {
         for (net.minecraft.entity.player.EntityPlayer player : world.playerEntities) {
             if (player instanceof EntityPlayerMP) syncPocket((EntityPlayerMP) player);
         }
+    }
+
+    /** Вопрос игроку (пока один вид: 1 = создать тотем смерти). a и b: числа для текста (цена телепорта, плата). */
+    public static class PromptMessage implements IMessage {
+        public int kind;
+        public double a;
+        public double b;
+        public PromptMessage() {}
+        public PromptMessage(int kind, double a, double b) { this.kind = kind; this.a = a; this.b = b; }
+        @Override public void fromBytes(ByteBuf buf) { kind = buf.readInt(); a = buf.readDouble(); b = buf.readDouble(); }
+        @Override public void toBytes(ByteBuf buf) { buf.writeInt(kind); buf.writeDouble(a); buf.writeDouble(b); }
+    }
+
+    public static void sendPrompt(EntityPlayerMP player, int kind, double a, double b) {
+        CHANNEL_INSTANCE.sendTo(new PromptMessage(kind, a, b), player);
     }
 
     public static class SyncMessage implements IMessage {
@@ -162,6 +169,8 @@ public final class NetworkHandler {
                 break;
             case TOGGLE_ORE_SCANNER: OreScanner.toggle(p); break;
             case TOGGLE_POCKET: PocketTeleporter.toggle(p); break;
+            case DASH: if (m.a >= 0 && m.a < 4) Dash.request(p, m.a); break;
+            case DEATH_TOTEM_CHOICE: Totems.resolvePendingDeathTotem(p, m.a == 1); break;
             case TOGGLE_SCAN_TARGET: OreScanner.toggleTarget(p, m.a); break;
             case WAREHOUSE_CLICK: WarehouseSlots.click(p, m.a, m.b); break;
             case SET_SLOW_FACTOR:

@@ -112,6 +112,7 @@ public class ClientHandler {
         MinecraftForge.EVENT_BUS.register(new ClientHandler());
         MinecraftForge.EVENT_BUS.register(new ConfigButton());
         MinecraftForge.EVENT_BUS.register(new ClientTimeSlow());
+        MinecraftForge.EVENT_BUS.register(new ClientDash());
         MinecraftForge.EVENT_BUS.register(new WarehouseOverlay());
     }
 

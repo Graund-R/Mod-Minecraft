@@ -1,5 +1,6 @@
 package pocketmod;
 
+import com.google.common.base.Optional;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,10 +12,18 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.datasync.DataParameter;
+import net.minecraft.network.datasync.DataSerializers;
+import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.world.World;
 
 /** Приманка-клон (body=false) или оставленное тело при Спекторе (body=true). Не сохраняется на диск. */
 public class EntityDecoy extends EntityCreature {
+
+    private static final DataParameter<Optional<UUID>> OWNER =
+            EntityDataManager.<Optional<UUID>>createKey(EntityDecoy.class, DataSerializers.OPTIONAL_UNIQUE_ID);
+    private static final DataParameter<Boolean> BODY =
+            EntityDataManager.<Boolean>createKey(EntityDecoy.class, DataSerializers.BOOLEAN);
 
     public UUID ownerId;
     public boolean body;
@@ -25,6 +34,23 @@ public class EntityDecoy extends EntityCreature {
         setSize(0.6F, 1.8F);
         setNoAI(true);
         enablePersistence();
+    }
+
+    @Override
+    protected void entityInit() {
+        super.entityInit();
+        dataManager.register(OWNER, Optional.<UUID>absent());
+        dataManager.register(BODY, Boolean.FALSE);
+    }
+
+    /** Владелец (синхронизируется клиенту: по нему берётся скин и решается, показывать ли призрачно). */
+    public UUID getOwnerUuid() {
+        return dataManager.get(OWNER).orNull();
+    }
+
+    /** true: оставленное тело при Спекторе, false: приманка. Синхронизируется клиенту. */
+    public boolean isBody() {
+        return dataManager.get(BODY).booleanValue();
     }
 
     @Override
@@ -56,6 +82,8 @@ public class EntityDecoy extends EntityCreature {
     public void onUpdate() {
         super.onUpdate();
         if (world.isRemote) return;
+        if (ownerId != null && !ownerId.equals(getOwnerUuid())) dataManager.set(OWNER, Optional.of(ownerId));
+        if (isBody() != body) dataManager.set(BODY, Boolean.valueOf(body));
         if (ownerId == null) {
             setDead();
             return;

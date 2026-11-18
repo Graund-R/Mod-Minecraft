@@ -29,7 +29,9 @@ public enum NetAction {
     OPEN_WAREHOUSE(25),
     TOGGLE_ORE_SCANNER(26),
     TOGGLE_SCAN_TARGET(27),
-    WAREHOUSE_CLICK(28);
+    WAREHOUSE_CLICK(28),
+    DEATH_TOTEM_CHOICE(29),
+    DASH(30);
 
     public final int id;
     NetAction(int id) { this.id = id; }

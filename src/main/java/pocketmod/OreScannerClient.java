@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -53,7 +54,6 @@ public final class OreScannerClient {
     private static final int MAX_TARGETS = 31;
     private static final int MAX_MARKS = 600;
     private static final int CHUNKS_PER_TICK = 2;
-    private static final int PERIOD_TICKS = 40;
 
     private static List<Hit> ores = new ArrayList<Hit>();
     private static final List<Hit> pending = new ArrayList<Hit>();
@@ -109,7 +109,7 @@ public final class OreScannerClient {
         }
         int mask = OreScanner.disabledMask(mc.player);
         long now = mc.world.getTotalWorldTime();
-        if (!scanning && (mask != lastMask || now < lastScanTime || now - lastScanTime >= PERIOD_TICKS)) {
+        if (!scanning && (mask != lastMask || now < lastScanTime || now - lastScanTime >= PocketConfig.oreScannerPeriodTicks)) {
             startScan(mc, mask);
         }
         if (!scanning) return;
@@ -148,6 +148,8 @@ public final class OreScannerClient {
             }
         });
         scanning = true;
+        // импульс сонара: тихий сигнал; найденное остаётся на экране до следующего импульса
+        mc.player.playSound(SoundEvents.BLOCK_NOTE_PLING, 0.25F, 0.6F);
     }
 
     private static void scanChunk(Minecraft mc, int cx, int cz) {
@@ -288,6 +290,13 @@ public final class OreScannerClient {
         int y = 26;
         mc.fontRenderer.drawStringWithShadow(Tr.format("pocketmod.hud.scanner"), x, y, 0xFFFFFF);
         y += 11;
+        if (!scanning && mc.world != null && lastScanTime > -100000L) {
+            long left = PocketConfig.oreScannerPeriodTicks - (mc.world.getTotalWorldTime() - lastScanTime);
+            if (left > 0) {
+                mc.fontRenderer.drawStringWithShadow(Tr.format("pocketmod.hud.scanner_next", (int) Math.ceil(left / 20.0)), x, y, 0x7F8A96);
+                y += 10;
+            }
+        }
         boolean any = false;
         for (int i = 0; i < t.length && i < MAX_TARGETS; i++) {
             if ((mask & (1 << i)) != 0) continue;

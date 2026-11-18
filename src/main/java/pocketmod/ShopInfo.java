@@ -98,6 +98,8 @@ public class ShopInfo {
             }
             case WAREHOUSE:
                 return Tr.format(k, lvl);
+            case DASH:
+                return Tr.format(k, n(PocketConfig.dashCost), PocketConfig.dashCharges, n(PocketConfig.dashRechargeSec), n(PocketConfig.dashDamage));
             case WAVE: {
                 int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
                 return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),

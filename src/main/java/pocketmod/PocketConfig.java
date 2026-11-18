@@ -45,6 +45,26 @@ public class PocketConfig {
 
     // Тотемы
     public static int totemCreateCost = 30;
+    /** Плата за создание тотема смерти после возрождения (0 = бесплатно; траты только на телепорт x10). */
+    public static int deathTotemCreateCost = 0;
+    /** Период импульса сканера руд в тиках (найденные руды остаются на экране до следующего импульса). */
+    public static int oreScannerPeriodTicks = 100;
+    /** Замедлять ли текущую воду и лаву (отложенные обновления жидкостей) рядом с игроком. */
+    public static boolean slowFluids = true;
+    public static int slowFluidRadius = 48;
+    /** Радиус пузыря замедления вокруг каждого игрока (блоков). */
+    public static int slowBubbleRadius = 48;
+    /** Сколько пузырей замедления одновременно обрабатывает сервер (нагрузка). */
+    public static int slowMaxBubbles = 8;
+
+    // Рывок
+    public static double dashCost = 12.0;
+    public static int dashCharges = 2;
+    public static double dashRechargeSec = 3.0;
+    public static double dashDamage = 4.0;
+    public static double dashSpeed = 1.6;
+    public static int dashTicks = 5;
+    public static int dashReflectTicks = 8;
     public static int totemDeleteCost = 10;
     public static int totemTeleportBase = 20;
     public static float totemTeleportPerBlock = 0.02f;
@@ -109,7 +129,7 @@ public class PocketConfig {
     public static double[] waveWeakSec = { 0, 0, 0, 6, 8 };
     public static double[] waveCost = { 25, 30, 35, 45, 60 };
     /** Перезарядка волны по уровням, секунды (дольше, чем длится замедление). */
-    public static double[] waveCooldown = { 10, 11, 12, 13, 15 };
+    public static double[] waveCooldown = { 4, 5, 5, 6, 7 };
 
     // Тело: сердца, скорость, сила, огнестойкость, дыхание
     public static int[] bodyPermCost = { 300, 500, 600, 150, 150, 1200 };
@@ -117,7 +137,7 @@ public class PocketConfig {
     public static int heartsMaxBuys = 5;
     public static int heartsRent = 2;
     public static int regenMaxBuys = 3;
-    public static int warehouseDeathCost = 100;
+    public static int warehouseDeathCost = 50;
     public static float oreScannerDrain = 3.0f;
     public static int[] oreScannerRadius = { 16, 24, 32 };
     public static int oreScannerVertical = 12;
@@ -214,6 +234,18 @@ public class PocketConfig {
         teleportCostPerBlock = cfg.getFloat("teleportCostPerBlock", "способности", 0.4f, 0f, 1000f, "Mana per block of teleport distance");
 
         totemCreateCost = cfg.getInt("totemCreateCost", "тотемы", 30, 0, 1000000, "Mana to create a totem");
+        deathTotemCreateCost = cfg.getInt("deathTotemCreateCost", "тотемы", 0, 0, 1000000, "Mana to create the death totem after respawn (0 = free; only the x10 teleport costs mana)");
+        slowFluids = cfg.getBoolean("slowFluids", "замедление", true, "Also slow flowing water and lava near the player");
+        slowFluidRadius = cfg.getInt("slowFluidRadius", "замедление", 48, 8, 96, "Radius (blocks) in which fluids are slowed");
+        slowBubbleRadius = cfg.getInt("slowBubbleRadius", "замедление", 48, 8, 128, "Radius of the slow-time bubble around each player");
+        slowMaxBubbles = cfg.getInt("slowMaxBubbles", "замедление", 8, 1, 64, "How many slow-time bubbles the server processes at once");
+        dashCost = cfg.getFloat("cost", "рывок", 12.0f, 0f, 100000f, "Mana per dash");
+        dashCharges = cfg.getInt("charges", "рывок", 2, 1, 10, "How many dashes can be chained");
+        dashRechargeSec = cfg.getFloat("rechargeSeconds", "рывок", 3.0f, 0.5f, 600f, "Seconds to recover one dash charge");
+        dashDamage = cfg.getFloat("damage", "рывок", 4.0f, 0f, 1000f, "Damage to each enemy hit by the dash");
+        dashSpeed = cfg.getFloat("speed", "рывок", 1.6f, 0.4f, 4f, "Dash speed in blocks per tick (distance = speed x ticks)");
+        dashTicks = cfg.getInt("ticks", "рывок", 5, 2, 20, "Dash duration in ticks (20 = 1 second)");
+        dashReflectTicks = cfg.getInt("reflectTicks", "рывок", 8, 0, 40, "Projectile reflection window in ticks (0 = off)");
         totemDeleteCost = cfg.getInt("totemDeleteCost", "тотемы", 10, 0, 1000000, "Mana to delete a totem");
         totemTeleportBase = cfg.getInt("totemTeleportBase", "тотемы", 20, 0, 1000000, "Base mana for a totem teleport");
         totemTeleportPerBlock = cfg.getFloat("totemTeleportPerBlock", "тотемы", 0.02f, 0f, 1000f, "Mana per block of distance (same dimension)");
@@ -292,9 +324,10 @@ public class PocketConfig {
         heartsMaxBuys = cfg.getInt("heartsMaxBuys", "тело", 5, 1, 50, "Max permanent heart purchases (+1 heart each)");
         heartsRent = cfg.getInt("heartsRent", "тело", 2, 1, 50, "Extra hearts while renting");
         regenMaxBuys = cfg.getInt("regenMaxBuys", "тело", 3, 1, 3, "Maximum permanent regeneration levels");
-        warehouseDeathCost = cfg.getInt("warehouseDeathCost", "склад", 100, 0, 1000000, "Mana per occupied warehouse slot on death.");
+        warehouseDeathCost = cfg.getInt("warehouseDeathCost", "склад", 50, 0, 1000000, "Mana per occupied warehouse slot on death.");
         oreScannerDrain = cfg.getFloat("oreScannerDrain", "сканер", 3.0f, 0f, 10000f, "Mana per second while scanning.");
         oreScannerVertical = cfg.getInt("oreScannerVertical", "сканер", 12, 4, 64, "Vertical scan distance.");
+        oreScannerPeriodTicks = cfg.getInt("oreScannerPeriodTicks", "сканер", 100, 20, 600, "Ticks between scanner pulses (found ores stay on screen until the next pulse, like a sonar).");
         int[] osr = cfg.get("сканер", "radii", new int[] { 16, 24, 32 }, "Ore scan radius by level.").getIntList();
         if (osr.length >= 3) oreScannerRadius = osr;
         oreScannerTargets = cfg.getStringList("targets", "сканер",

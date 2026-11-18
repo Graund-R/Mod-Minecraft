@@ -89,6 +89,14 @@ public class ModEvents {
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent e) {
         if (e.player instanceof EntityPlayerMP) {
             Spector.recoverOnLogin((EntityPlayerMP) e.player);
+            Totems.promptIfPending((EntityPlayerMP) e.player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent e) {
+        if (e.player instanceof EntityPlayerMP) {
+            Totems.promptIfPending((EntityPlayerMP) e.player);
         }
     }
 }

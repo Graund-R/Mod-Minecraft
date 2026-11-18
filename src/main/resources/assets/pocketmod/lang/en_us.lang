@@ -227,6 +227,7 @@ pocketmod.cfg.cat.17=Волна
 pocketmod.cfg.cat.18=Цены способностей в магазине
 pocketmod.cfg.cat.19=Сканер руд
 pocketmod.cfg.cat.20=Карманный склад
+pocketmod.cfg.cat.21=Рывок
 pocketmod.cfg.0.valueIron=Мана за железный слиток
 pocketmod.cfg.0.valueIron.tooltip=Сколько маны даёт один железный слиток.
 pocketmod.cfg.0.valueGold=Мана за золотой слиток
@@ -303,6 +304,8 @@ pocketmod.cfg.5.totemSlots2=Слоты тотемов, ур. 2
 pocketmod.cfg.5.totemSlots2.tooltip=Сколько тотемов можно держать.
 pocketmod.cfg.5.totemSlots3=Слоты тотемов, ур. 3
 pocketmod.cfg.5.totemSlots3.tooltip=Сколько тотемов можно держать.
+pocketmod.cfg.5.deathTotemCreateCost=Создание тотема смерти
+pocketmod.cfg.5.deathTotemCreateCost.tooltip=Мана за создание тотема смерти после возрождения (0 = бесплатно; тратится только на телепорт к нему, x10).
 pocketmod.cfg.5.totemDiscount2=Скидка на телепорт, ур. 2
 pocketmod.cfg.5.totemDiscount2.tooltip=Доля скидки (0.25 = 25%).
 pocketmod.cfg.5.totemDiscount3=Скидка на телепорт, ур. 3
@@ -371,6 +374,8 @@ pocketmod.cfg.11.regenMaxBuys=Макс. уровень регенерации
 pocketmod.cfg.11.regenMaxBuys.tooltip=До трёх уровней: регенерация I–III.
 pocketmod.cfg.19.oreScannerDrain=Расход маны в секунду
 pocketmod.cfg.19.oreScannerDrain.tooltip=Пока сканер включён.
+pocketmod.cfg.19.oreScannerPeriodTicks=Период импульса, тики
+pocketmod.cfg.19.oreScannerPeriodTicks.tooltip=Как часто сканер делает импульс (20 тиков = 1 сек). Найденные руды остаются на экране до следующего импульса, как на сонаре.
 pocketmod.cfg.19.oreScannerVertical=Высота сканирования
 pocketmod.cfg.19.oreScannerVertical.tooltip=Блоков вверх и вниз от игрока.
 pocketmod.cfg.19.radii=Радиус по уровням
@@ -397,6 +402,14 @@ pocketmod.cfg.14.magnetRadius1=Радиус магнита, ур. 1
 pocketmod.cfg.14.magnetRadius1.tooltip=Радиус притяжения предметов в блоках.
 pocketmod.cfg.14.magnetRadius2=Радиус магнита, ур. 2
 pocketmod.cfg.14.magnetRadius2.tooltip=Радиус притяжения предметов в блоках.
+pocketmod.cfg.15.slowFluids=Замедлять воду и лаву
+pocketmod.cfg.15.slowFluids.tooltip=Текущая вода и лава рядом с игроком тоже замедляются вместе со временем.
+pocketmod.cfg.15.slowFluidRadius=Радиус замедления жидкостей
+pocketmod.cfg.15.slowFluidRadius.tooltip=В каком радиусе (блоков) замедляется течение воды и лавы.
+pocketmod.cfg.15.slowBubbleRadius=Радиус пузыря замедления
+pocketmod.cfg.15.slowBubbleRadius.tooltip=Радиус вокруг каждого игрока, внутри которого замедляется время (блоков). Игроки не замедляются.
+pocketmod.cfg.15.slowMaxBubbles=Макс. число пузырей
+pocketmod.cfg.15.slowMaxBubbles.tooltip=Сколько пузырей замедления одновременно обрабатывает сервер (ограничение нагрузки).
 pocketmod.cfg.15.slowZeroDrain=Расход при полной остановке
 pocketmod.cfg.15.slowZeroDrain.tooltip=Мана в секунду при остановке времени (ур. 3).
 pocketmod.cfg.15.slowVisual=Виньетка при замедлении
@@ -407,6 +420,20 @@ pocketmod.cfg.15.slowDrainBase=Базовый расход замедления
 pocketmod.cfg.15.slowDrainBase.tooltip=Расход = база / коэффициент замедления.
 pocketmod.cfg.16.hidePotionIcons=Скрывать значки зелий
 pocketmod.cfg.16.hidePotionIcons.tooltip=Оставить на экране только шкалу маны.
+pocketmod.cfg.21.cost=Цена рывка
+pocketmod.cfg.21.cost.tooltip=Мана за один рывок.
+pocketmod.cfg.21.charges=Число зарядов
+pocketmod.cfg.21.charges.tooltip=Сколько рывков можно сделать подряд.
+pocketmod.cfg.21.rechargeSeconds=Восстановление заряда, сек
+pocketmod.cfg.21.rechargeSeconds.tooltip=За сколько секунд восстанавливается один заряд рывка.
+pocketmod.cfg.21.damage=Урон врагам
+pocketmod.cfg.21.damage.tooltip=Урон каждому врагу, которого задел рывок.
+pocketmod.cfg.21.speed=Скорость рывка
+pocketmod.cfg.21.speed.tooltip=Блоков за тик; дальность = скорость x число тиков (1,6 x 5 = 8 блоков).
+pocketmod.cfg.21.ticks=Длительность, тики
+pocketmod.cfg.21.ticks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
+pocketmod.cfg.21.reflectTicks=Окно отражения снарядов, тики
+pocketmod.cfg.21.reflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = выключено).
 pocketmod.cfg.17.radius=Радиус по уровням
 pocketmod.cfg.17.radius.tooltip=Пять чисел: уровни 1-5.
 pocketmod.cfg.17.damage=Урон по уровням
@@ -509,3 +536,5 @@ pocketmod.cfg.18.warehouseLevel2=Цена: Карманный склад, ур. 
 pocketmod.cfg.18.warehouseLevel2.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
 pocketmod.cfg.18.warehouseLevel3=Цена: Карманный склад, ур. 3
 pocketmod.cfg.18.warehouseLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.cfg.18.dashLevel1=Цена: Рывок, ур. 1
+pocketmod.cfg.18.dashLevel1.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.

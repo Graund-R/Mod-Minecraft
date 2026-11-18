@@ -81,6 +81,19 @@ public class Flight {
         }
     }
 
+    /** Полёт платит ману только в полёте, не в креативе и не во время мягкого парения (вызывает реестр способностей). */
+    public static boolean paying(EntityPlayer p) {
+        return isArmed(p) && !p.isCreative() && !p.isSpectator()
+                && p.getEntityData().getInteger(GRACE) <= 0 && p.capabilities.isFlying;
+    }
+
+    /** Мана кончилась: мягкое парение без расхода (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        p.getEntityData().setInteger(GRACE, Math.max(1, PocketConfig.flightGraceSec * 20));
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.flight_empty"), true);
+    }
+
+    /** Каждый тик: парение, потолок высоты, частицы. Ману списывает реестр до вызова. */
     public static void tick(EntityPlayerMP p) {
         if (p.getEntityData().getBoolean(NOFALL) && p.onGround) {
             p.getEntityData().setBoolean(NOFALL, false);
@@ -103,11 +116,6 @@ public class Flight {
         }
         if (!p.capabilities.isFlying) {
             if (p.onGround) disarm(p);
-            return;
-        }
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
-            p.getEntityData().setInteger(GRACE, Math.max(1, PocketConfig.flightGraceSec * 20));
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.flight_empty"), true);
             return;
         }
         p.fallDistance = 0f;

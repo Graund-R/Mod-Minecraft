@@ -17,7 +17,8 @@ public enum AbilityType {
     MAGNET("magnet", 200, 500),
     WAVE("wave", 280, 450, 700, 1000, 1500),
     ORE_SCANNER("scanner", 250, 500, 900),
-    WAREHOUSE("warehouse", 500, 900, 1500);
+    WAREHOUSE("warehouse", 200, 400, 700),
+    DASH("dash", 300);
 
     public final String id;
     public final int[] levelCosts;

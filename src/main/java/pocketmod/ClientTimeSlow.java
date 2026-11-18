@@ -20,7 +20,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class ClientTimeSlow {
 
-    private static final double RADIUS = 96.0;
 
     private double acc;
     private boolean skip;
@@ -61,7 +60,7 @@ public class ClientTimeSlow {
             return; // этот тик мир живёт нормально
         }
         skip = true;
-        double r2 = RADIUS * RADIUS;
+        double r2 = (double) PocketConfig.slowBubbleRadius * PocketConfig.slowBubbleRadius;
         for (Entity e : mc.world.loadedEntityList) {
             if (!(e instanceof EntityLivingBase) || e instanceof EntityPlayer) continue;
             if (e.getDistanceSq(mc.player) > r2) continue;

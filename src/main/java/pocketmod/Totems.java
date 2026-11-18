@@ -208,6 +208,7 @@ public class Totems {
         p.fallDistance = 0f;
         Abilities.teleportFx((WorldServer) p.world, from, from);
 
+        Dash.onTeleport(p);
         if (p.dimension == t.dim) {
             p.connection.setPlayerLocation(pos[0], pos[1], pos[2], p.rotationYaw, p.rotationPitch);
         } else {
@@ -228,6 +229,61 @@ public class Totems {
         c.setDouble("y", y);
         c.setDouble("z", z);
         PlayerData.root(p).setTag(DEATH_KEY, c);
+    }
+
+    // ----- выбор после возрождения: тотем создаётся только с согласия игрока -----
+    private static final String PENDING_KEY = "pocketmod_death_pending";
+
+    public static void setPendingDeathTotem(EntityPlayer p, int dim, double x, double y, double z) {
+        NBTTagCompound c = new NBTTagCompound();
+        c.setInteger("dim", dim);
+        c.setDouble("x", x);
+        c.setDouble("y", y);
+        c.setDouble("z", z);
+        PlayerData.root(p).setTag(PENDING_KEY, c);
+    }
+
+    public static boolean hasPendingDeathTotem(EntityPlayer p) {
+        return PlayerData.root(p).hasKey(PENDING_KEY, 10);
+    }
+
+    /** Примерная цена телепорта к будущему тотему смерти (x10). */
+    public static double pendingTeleportCost(EntityPlayer p) {
+        if (!hasPendingDeathTotem(p)) return 0.0;
+        NBTTagCompound c = PlayerData.root(p).getCompoundTag(PENDING_KEY);
+        Totem t = new Totem("", c.getInteger("dim"), c.getDouble("x"), c.getDouble("y"), c.getDouble("z"));
+        return teleportCost(p, t) * 10.0;
+    }
+
+    /** Плата за создание тотема смерти (по умолчанию 0). */
+    public static double deathTotemCreateFee(EntityPlayer p) {
+        return PocketConfig.deathTotemCreateCost * Mana.getPriceMultiplier(p);
+    }
+
+    /** Показать игроку вопрос «создать тотем смерти?», если он ещё не отвечал. */
+    public static void promptIfPending(EntityPlayerMP p) {
+        if (!hasPendingDeathTotem(p)) return;
+        NetworkHandler.sendPrompt(p, 1, pendingTeleportCost(p), deathTotemCreateFee(p));
+    }
+
+    /** Ответ игрока: создать тотем смерти или нет. Мана тратится только при согласии (и только если задана плата). */
+    public static void resolvePendingDeathTotem(EntityPlayerMP p, boolean create) {
+        if (!hasPendingDeathTotem(p)) return;
+        NBTTagCompound c = PlayerData.root(p).getCompoundTag(PENDING_KEY).copy();
+        if (create) {
+            double fee = deathTotemCreateFee(p);
+            if (fee > 0.0 && !Mana.spend(p, fee)) {
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(fee)), true);
+                PlayerData.root(p).removeTag(PENDING_KEY);
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.death_totem_declined"), true);
+                return;
+            }
+            setDeathTotem(p, c.getInteger("dim"), c.getDouble("x"), c.getDouble("y"), c.getDouble("z"));
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.death_totem_created"), true);
+        } else {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.death_totem_declined"), true);
+        }
+        PlayerData.root(p).removeTag(PENDING_KEY);
     }
 
     public static void clearDeathTotem(EntityPlayer p) {
@@ -269,6 +325,7 @@ public class Totems {
         p.dismountRidingEntity();
         p.fallDistance = 0f;
         Abilities.teleportFx((WorldServer) p.world, from, from);
+        Dash.onTeleport(p);
         if (p.dimension == t.dim) {
             p.connection.setPlayerLocation(pos[0], pos[1], pos[2], p.rotationYaw, p.rotationPitch);
         } else {
