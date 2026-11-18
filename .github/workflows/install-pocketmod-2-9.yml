@@ -1,6 +1,11 @@
 name: Install PocketMod 2.9 sources
 
 on:
+  push:
+    branches:
+      - architecture-stages-3-4
+    paths:
+      - .github/workflows/install-pocketmod-2-9.yml
   workflow_dispatch:
 
 permissions:
@@ -36,7 +41,7 @@ jobs:
           git rm -q -f --ignore-unmatch pocketmod-*.zip
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A src docs version.txt CHANGELOG.md README.md
+          git add -A src docs version.txt CHANGELOG.md README.md .github/workflows
           git diff --cached --quiet && exit 0
           git commit -m "Install PocketMod 2.9 sources"
           git push origin HEAD:architecture-stages-3-4
