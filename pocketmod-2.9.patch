@@ -1,0 +1,1051 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index cc428a6..3bb9030 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,15 @@
+ # История версий
+ 
++## Версия 2.9 (пробная)
++
++- **Тотем смерти только после покупки «Тотемов»**: пока способность не открыта, вопрос «Создать тотем смерти?» не появляется (и ожидающее решение не копится)
++- **Сканер (тепловизор): враги красные.** Причина была в том, что в Minecraft 1.12.2 цвет контура берётся из префикса команды, а не из её цвета; теперь враги (всё, что относится к IMob, и злые волки) обводятся красным, остальные существа белым
++- **Сканер руд видит все руды**: к списку из конфига автоматически добавляются все руды из OreDictionary (`oreXxx`, в том числе из других модов), порядок по алфавиту; отключается `autoTargets=false` в разделе сканера. Починены лазурит (брались метаданные выпадающего предмета) и светящаяся редстоуновая руда. Руды из других модов получают устойчивый цвет по названию. Предел увеличен до 1000 меток; в окне Ctrl+C при многих рудах три колонки
++- **Рамка руд читается на любом фоне**: цветная линия поверх более толстой чёрной (как контур мобов), цвет по-прежнему показывает тип руды
++- **Мягкое падение переключается пробелом**: пока оно работает, пробел в воздухе выключает его (падение обычное, пролетенное расстояние засчитывается в урон, мана не тратится), повторный пробел включает обратно; быстрый двойной пробел по-прежнему запускает полёт. Сбрасывается на земле
++- **Полная невидимость**: невидимого игрока не рисуют вовсе, ни тело, ни броню, ни предметы в руках, ни элитры, ни ник (спектаторы видят, как в ваниле). Действует и для ванильного зелья невидимости
++- **Рывок получил 4 уровня** (цены 300 / 550 / 900 / 1400): 1) короткий, ~5,5 блока, 1 заряд, не бьёт; 2) прежний рывок: 8 блоков (это максимальная дальность), 2 заряда, урон 4, отражение; 3) то же расстояние за 4 тика вместо 5, перезарядка 2,2 с, урон 6, после рывка 0,3 с неуязвимости; 4) за 3 тика, 3 заряда, перезарядка 1,5 с, мана 8, урон 8, каждый сбитый враг возвращает заряд, 0,6 с неуязвимости после рывка. Все числа по уровням в конфиге, раздел «Рывок» (ключи `level...`); старые одиночные ключи удаляются миграцией конфига (шаг 4). Кто уже купил рывок, остаётся на 1 уровне (дальше докупается)
++
+ ## Версия 2.8 (пробная)
+ 
+ - **Рывок (dash)**: двойное нажатие W/A/S/D. Около 8 блоков за 0,25 с вдоль выбранного направления; на время рывка урон не проходит, враги на пути отбрасываются и получают урон, снаряды отражаются (первые 0,4 с). Цена 12 маны, 2 заряда, заряд восстанавливается 3 с. Магазин: вкладка «Движение», 300. Работает в теле на земле и в полёте; **недоступен в облике духа (Спектор), в режиме наблюдателя и во время телепорта** (после любого телепорта рывок блокируется на полсекунды, идущий рывок прерывается). Движение выполняет клиент, сервер проверяет и выдаёт неуязвимость, поэтому стрелы игрока летят строго по взгляду. Параметры в конфиге, раздел «Рывок»
+diff --git a/docs/regression-checklist.md b/docs/regression-checklist.md
+index 2783c94..1f55c41 100644
+--- a/docs/regression-checklist.md
++++ b/docs/regression-checklist.md
+@@ -38,6 +38,18 @@
+ | Выстрел из лука во время рывка | выстрелить во время рывка | стрела летит точно по взгляду |
+ | Пузырь замедления | включить замедление (Z) | мобы замедлены в радиусе ~48 блоков; дальше мир идёт нормально |
+ 
++Версия 2.9 (пробная), дополнительно проверить:
++
++| Что | Как проверить | Что должно быть |
++| --- | --- | --- |
++| Тотем смерти без покупки | умереть, не имея «Тотемов» | вопроса нет; после покупки «Тотемов» и новой смерти вопрос появляется |
++| Красные враги | C рядом с зомби и коровой | зомби и другие враги красные, корова белая |
++| Сканер руд | Shift+C, рядом руды разных видов | видны все виды (в том числе лазурит и редстоун), в Ctrl+C больше пунктов, если стоят моды с рудами |
++| Рамка руд | Shift+C у светлой и тёмной породы | рамка цветная с чёрной окантовкой, не сливается с фоном |
++| Мягкое падение | упасть с высоты, в падении нажать пробел | сообщение «выключено», падение ускоряется; второй пробел включает обратно; двойной пробел запускает полёт |
++| Полная невидимость | V; смотреть второму игроку или в F5 | не видно ни тела, ни брони, ни предметов в руках, ни ника |
++| Рывок, уровни | магазин, «Движение» | 4 уровня с описанием; на 1 уровне рывок короче и не бьёт, на 4 уровне три заряда и возврат заряда за врага |
++
+ Синхронизация с клиентом: после включения способности визуальные эффекты (рамки сканера, свечение, шейдер замедления, значок полёта) должны появляться сразу, а не через секунду.
+ 
+ Если что-то из этого не работает, пришли название способности и что именно произошло.
+diff --git a/src/main/java/pocketmod/AbilityType.java b/src/main/java/pocketmod/AbilityType.java
+index f0d3879..1b4f15f 100644
+--- a/src/main/java/pocketmod/AbilityType.java
++++ b/src/main/java/pocketmod/AbilityType.java
+@@ -18,7 +18,7 @@ public enum AbilityType {
+     WAVE("wave", 280, 450, 700, 1000, 1500),
+     ORE_SCANNER("scanner", 250, 500, 900),
+     WAREHOUSE("warehouse", 200, 400, 700),
+-    DASH("dash", 300);
++    DASH("dash", 300, 550, 900, 1400);
+ 
+     public final String id;
+     public final int[] levelCosts;
+diff --git a/src/main/java/pocketmod/ClientDash.java b/src/main/java/pocketmod/ClientDash.java
+index cada3ca..6d8259b 100644
+--- a/src/main/java/pocketmod/ClientDash.java
++++ b/src/main/java/pocketmod/ClientDash.java
+@@ -80,7 +80,7 @@ public class ClientDash {
+         }
+         if (id != lastId) {
+             lastId = id;
+-            ticksLeft = PocketConfig.dashTicks;
++            ticksLeft = Dash.ticks(p);
+             dx = p.getEntityData().getFloat(Dash.DX);
+             dz = p.getEntityData().getFloat(Dash.DZ);
+         }
+@@ -89,8 +89,9 @@ public class ClientDash {
+             ticksLeft = 0;
+             return;
+         }
+-        p.motionX = dx * PocketConfig.dashSpeed;
+-        p.motionZ = dz * PocketConfig.dashSpeed;
++        double spd = Dash.speed(p);
++        p.motionX = dx * spd;
++        p.motionZ = dz * spd;
+         ticksLeft--;
+     }
+ }
+diff --git a/src/main/java/pocketmod/ClientHandler.java b/src/main/java/pocketmod/ClientHandler.java
+index b6a2318..b76d4e9 100644
+--- a/src/main/java/pocketmod/ClientHandler.java
++++ b/src/main/java/pocketmod/ClientHandler.java
+@@ -288,6 +288,14 @@ public class ClientHandler {
+             if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
+         }
+ 
++        // Мягкое падение: пробел в воздухе выключает его, повторный пробел включает обратно
++        // (быстрый двойной пробел при этом по-прежнему запускает полёт)
++        if (jDown && !jWas && !shiftDown && !specActive && mc.player != null && !mc.player.onGround
++                && !mc.player.capabilities.isFlying && !mc.player.isRiding()
++                && AbilityStorage.isUnlocked(mc.player, AbilityType.SOFTFALL)) {
++            NetworkHandler.action(NetAction.SOFTFALL_TOGGLE, 0, 0, 0, "");
++        }
++
+         // Полёт: двойной пробел в воздухе (без Shift)
+         if (jDown && !jWas && !shiftDown) {
+             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
+@@ -307,6 +315,20 @@ public class ClientHandler {
+         }
+     }
+ 
++    /**
++     * Полная невидимость для онлайна: ванильное зелье прячет только тело, а броня, предметы в руках, элитры и
++     * ник остаются висеть в воздухе. Поэтому игрока с флагом невидимости не рисуем вообще (ни тело, ни броню, ни ник).
++     * Спектаторы по-прежнему видят невидимых, как в ваниле.
++     */
++    @SubscribeEvent
++    public void onRenderPlayerPre(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
++        EntityPlayer ep = event.getEntityPlayer();
++        if (ep == null || !ep.isInvisible()) return;
++        EntityPlayer viewer = Minecraft.getMinecraft().player;
++        if (viewer != null && viewer.isSpectator()) return;
++        event.setCanceled(true);
++    }
++
+     @SubscribeEvent
+     public void onRenderWorldLast(RenderWorldLastEvent event) { OreScannerClient.render(Minecraft.getMinecraft()); }
+ 
+@@ -324,8 +346,10 @@ public class ClientHandler {
+         net.minecraft.scoreboard.ScorePlayerTeam t = sb.getTeam(TEAM_HOT);
+         if (t == null) {
+             t = sb.createTeam(TEAM_HOT);
+-            t.setColor(net.minecraft.util.text.TextFormatting.RED);
+         }
++        // в 1.12.2 цвет контура свечения берётся из префикса команды (§c), а не из setColor
++        t.setColor(net.minecraft.util.text.TextFormatting.RED);
++        if (!"\u00a7c".equals(t.getPrefix())) t.setPrefix("\u00a7c");
+         return t;
+     }
+ 
+diff --git a/src/main/java/pocketmod/CommonEvents.java b/src/main/java/pocketmod/CommonEvents.java
+index db045d9..5fc069b 100644
+--- a/src/main/java/pocketmod/CommonEvents.java
++++ b/src/main/java/pocketmod/CommonEvents.java
+@@ -125,7 +125,9 @@ public class CommonEvents {
+             }
+             // Тотем смерти: прежний исчезает со следующей смертью, новый создаётся только если игрок согласится
+             Totems.clearDeathTotem(now);
+-            Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
++            if (AbilityStorage.isUnlocked(now, AbilityType.TOTEM)) {
++                Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
++            }
+         }
+     }
+ }
+diff --git a/src/main/java/pocketmod/ConfigLang.java b/src/main/java/pocketmod/ConfigLang.java
+index 55663c0..55a1cc3 100644
+--- a/src/main/java/pocketmod/ConfigLang.java
++++ b/src/main/java/pocketmod/ConfigLang.java
+@@ -124,6 +124,7 @@ public class ConfigLang {
+         r("сканер", "oreScannerPeriodTicks", "Период импульса, тики", "Как часто сканер делает импульс (20 тиков = 1 сек). Найденные руды остаются на экране до следующего импульса, как на сонаре.");
+         r("сканер", "oreScannerVertical", "Высота сканирования", "Блоков вверх и вниз от игрока.");
+         r("сканер", "radii", "Радиус по уровням", "Три числа: уровни 1, 2, 3.");
++        r("сканер", "autoTargets", "Все руды из других модов", "Добавлять в сканер все руды из OreDictionary (oreCopper, oreTin и т.д.), а не только список выше.");
+         r("сканер", "targets", "Какие руды подсвечивать", "OreDictionary-имена (oreDiamond) или id блоков (minecraft:diamond_ore).");
+         r("склад", "warehouseDeathCost", "Цена сохранения слота при смерти", "Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.");
+ 
+@@ -150,13 +151,15 @@ public class ConfigLang {
+ 
+         r("интерфейс", "hidePotionIcons", "Скрывать значки зелий", "Оставить на экране только шкалу маны.");
+ 
+-        r("рывок", "cost", "Цена рывка", "Мана за один рывок.");
+-        r("рывок", "charges", "Число зарядов", "Сколько рывков можно сделать подряд.");
+-        r("рывок", "rechargeSeconds", "Восстановление заряда, сек", "За сколько секунд восстанавливается один заряд рывка.");
+-        r("рывок", "damage", "Урон врагам", "Урон каждому врагу, которого задел рывок.");
+-        r("рывок", "speed", "Скорость рывка", "Блоков за тик; дальность = скорость x число тиков (1,6 x 5 = 8 блоков).");
+-        r("рывок", "ticks", "Длительность, тики", "Сколько тиков длится рывок (20 тиков = 1 секунда).");
+-        r("рывок", "reflectTicks", "Окно отражения снарядов, тики", "Сколько тиков с начала рывка снаряды отражаются (0 = выключено).");
++        r("рывок", "levelCost", "Цена рывка по уровням", "Мана за один рывок, четыре числа: уровни 1-4.");
++        r("рывок", "levelCharges", "Число зарядов по уровням", "Сколько рывков подряд, по уровням 1-4.");
++        r("рывок", "levelRechargeSec", "Восстановление заряда, сек", "Секунд на один заряд, по уровням 1-4.");
++        r("рывок", "levelDamage", "Урон врагам по уровням", "Урон каждому врагу на пути (0 = рывок не бьёт), по уровням 1-4.");
++        r("рывок", "levelSpeed", "Скорость рывка по уровням", "Блоков за тик; дальность = скорость x тики (на 2 уровне 1,6 x 5 = 8 блоков).");
++        r("рывок", "levelTicks", "Длительность по уровням, тики", "Сколько тиков длится рывок (20 тиков = 1 секунда).");
++        r("рывок", "levelReflectTicks", "Отражение снарядов, тики", "Сколько тиков с начала рывка снаряды отражаются (0 = нет), по уровням 1-4.");
++        r("рывок", "levelGraceTicks", "Неуязвимость после рывка, тики", "Сколько тиков после рывка урон не проходит, по уровням 1-4.");
++        r("рывок", "levelRefund", "Возврат заряда за врага", "1 = сбитый рывком враг возвращает заряд, по уровням 1-4.");
+         r("волна", "radius", "Радиус по уровням", "Пять чисел: уровни 1-5.");
+         r("волна", "damage", "Урон по уровням", "Пять чисел: уровни 1-5.");
+         r("волна", "knockback", "Откид по уровням", "Пять чисел: уровни 1-5.");
+diff --git a/src/main/java/pocketmod/ConfigMigrations.java b/src/main/java/pocketmod/ConfigMigrations.java
+index af7f1f5..0641b0e 100644
+--- a/src/main/java/pocketmod/ConfigMigrations.java
++++ b/src/main/java/pocketmod/ConfigMigrations.java
+@@ -22,7 +22,7 @@ import net.minecraftforge.common.config.Property;
+ public class ConfigMigrations {
+ 
+     /** Текущая версия формата конфига. */
+-    public static final int CURRENT = 3;
++    public static final int CURRENT = 4;
+ 
+     /** Служебная категория (скрыта в экране настроек). */
+     public static final String META = "служебное";
+@@ -127,6 +127,7 @@ public class ConfigMigrations {
+         if (from < 1) step1LegacyCategories(cfg);
+         if (from < 2) step2ZeroPrices(cfg);
+         if (from < 3) step3Rebalance(cfg);
++        if (from < 4) step4DashLevels(cfg);
+         pv.set(CURRENT);
+         cfg.save();
+         System.out.println("[PocketMod] config migrated: v" + from + " -> v" + CURRENT);
+@@ -198,6 +199,16 @@ public class ConfigMigrations {
+         replaceIfEqual(cfg, "волна", "cooldownSeconds", "10,11,12,13,15", "4,5,5,6,7");
+     }
+ 
++    /** Шаг 4 (2.9): рывок получил 4 уровня, прежние одиночные ключи (cost, charges, ...) заменены списками по уровням. */
++    private static void step4DashLevels(Configuration cfg) {
++        if (!cfg.hasCategory("рывок")) return;
++        ConfigCategory c = cfg.getCategory("рывок");
++        String[] old = { "cost", "charges", "rechargeSeconds", "damage", "speed", "ticks", "reflectTicks" };
++        for (String k : old) {
++            if (c.containsKey(k)) c.remove(k);
++        }
++    }
++
+     private static void replaceIfEqual(Configuration cfg, String cat, String key, String oldVal, String newVal) {
+         if (!cfg.hasCategory(cat)) return;
+         ConfigCategory c = cfg.getCategory(cat);
+diff --git a/src/main/java/pocketmod/Dash.java b/src/main/java/pocketmod/Dash.java
+index 6d9194b..5b080bf 100644
+--- a/src/main/java/pocketmod/Dash.java
++++ b/src/main/java/pocketmod/Dash.java
+@@ -43,6 +43,7 @@ public final class Dash {
+     private static final String CHARGES = "pm_dash_c";
+     private static final String STAMP = "pm_dash_t";
+     private static final String LOCK = "pm_tp_lock";
++    private static final String GRACE_UNTIL = "pm_dash_grace";
+ 
+     private static final class State {
+         int age;
+@@ -77,18 +78,55 @@ public final class Dash {
+                 && !isDashing(p);
+     }
+ 
+-    private static int maxCharges() {
+-        return Math.max(1, PocketConfig.dashCharges);
++    // ----- параметры по уровню (1..4); читаются и сервером, и клиентом -----
++    public static int level(EntityPlayer p) {
++        return Math.max(1, Math.min(AbilityType.DASH.maxLevel, AbilityStorage.getLevel(p, AbilityType.DASH)));
+     }
+ 
+-    private static int rechargeTicks() {
+-        return Math.max(1, (int) Math.round(PocketConfig.dashRechargeSec * 20.0));
++    private static double pick(double[] a, EntityPlayer p) {
++        return a[Math.min(a.length - 1, level(p) - 1)];
++    }
++
++    public static double speed(EntityPlayer p) {
++        return Math.max(0.2, pick(PocketConfig.dashSpeed, p));
++    }
++
++    public static int ticks(EntityPlayer p) {
++        return Math.max(1, (int) Math.round(pick(PocketConfig.dashTicks, p)));
++    }
++
++    public static double distance(EntityPlayer p) {
++        return speed(p) * ticks(p);
++    }
++
++    public static double cost(EntityPlayer p) {
++        return pick(PocketConfig.dashCost, p);
++    }
++
++    public static int chargesMax(EntityPlayer p) {
++        return Math.max(1, (int) Math.round(pick(PocketConfig.dashCharges, p)));
++    }
++
++    public static double rechargeSec(EntityPlayer p) {
++        return pick(PocketConfig.dashRechargeSec, p);
++    }
++
++    public static double damage(EntityPlayer p) {
++        return pick(PocketConfig.dashDamage, p);
++    }
++
++    private static int maxCharges(EntityPlayer p) {
++        return chargesMax(p);
++    }
++
++    private static int rechargeTicks(EntityPlayer p) {
++        return Math.max(1, (int) Math.round(rechargeSec(p) * 20.0));
+     }
+ 
+     /** Текущее число зарядов с учётом восстановления. */
+     private static int charges(EntityPlayer p, long now) {
+         NBTTagCompound e = p.getEntityData();
+-        int max = maxCharges();
++        int max = maxCharges(p);
+         if (!e.hasKey(CHARGES)) {
+             e.setInteger(CHARGES, max);
+             e.setLong(STAMP, now);
+@@ -97,10 +135,10 @@ public final class Dash {
+         if (c >= max) return max;
+         long stamp = e.getLong(STAMP);
+         if (now < stamp) stamp = now;
+-        long gained = (now - stamp) / rechargeTicks();
++        long gained = (now - stamp) / rechargeTicks(p);
+         if (gained > 0) {
+             c = (int) Math.min((long) max, c + gained);
+-            stamp += gained * rechargeTicks();
++            stamp += gained * rechargeTicks(p);
+             e.setInteger(CHARGES, c);
+             e.setLong(STAMP, c >= max ? now : stamp);
+         }
+@@ -109,7 +147,7 @@ public final class Dash {
+ 
+     private static int secondsToNextCharge(EntityPlayer p, long now) {
+         long stamp = p.getEntityData().getLong(STAMP);
+-        long left = rechargeTicks() - Math.max(0L, now - stamp);
++        long left = rechargeTicks(p) - Math.max(0L, now - stamp);
+         return (int) Math.max(1L, (left + 19L) / 20L);
+     }
+ 
+@@ -127,13 +165,13 @@ public final class Dash {
+             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.dash_cooldown", secondsToNextCharge(p, now)), true);
+             return;
+         }
+-        double cost = PocketConfig.dashCost * Mana.getPriceMultiplier(p);
++        double cost = cost(p) * Mana.getPriceMultiplier(p);
+         if (!Mana.spend(p, cost)) {
+             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
+             return;
+         }
+         NBTTagCompound e = p.getEntityData();
+-        if (c >= maxCharges()) e.setLong(STAMP, now);
++        if (c >= maxCharges(p)) e.setLong(STAMP, now);
+         e.setInteger(CHARGES, c - 1);
+ 
+         double yaw = Math.toRadians(p.rotationYaw);
+@@ -179,20 +217,29 @@ public final class Dash {
+         }
+         st.age++;
+         NBTTagCompound e = p.getEntityData();
++        int dashTicks = ticks(p);
++        double dmg = damage(p);
+ 
+-        if (st.age <= PocketConfig.dashTicks + 1) {
++        if (dmg > 0.0 && st.age <= dashTicks + 1) {
+             double dx = e.getFloat(DX);
+             double dz = e.getFloat(DZ);
+             AxisAlignedBB box = p.getEntityBoundingBox().grow(0.8, 0.3, 0.8);
+             for (EntityLivingBase t : p.world.getEntitiesWithinAABB(EntityLivingBase.class, box)) {
+                 if (t == p || st.hit.contains(Integer.valueOf(t.getEntityId())) || !isEnemy(p, t)) continue;
+                 st.hit.add(Integer.valueOf(t.getEntityId()));
+-                t.attackEntityFrom(DamageSource.causePlayerDamage(p), (float) PocketConfig.dashDamage);
++                t.attackEntityFrom(DamageSource.causePlayerDamage(p), (float) dmg);
+                 t.knockBack(p, 0.9F, -dx, -dz);
++                // высший уровень: каждый сбитый враг возвращает заряд
++                if (pick(PocketConfig.dashRefund, p) >= 1.0) {
++                    int max = maxCharges(p);
++                    long now = p.world.getTotalWorldTime();
++                    e.setInteger(CHARGES, Math.min(max, charges(p, now) + 1));
++                }
+             }
+         }
+ 
+-        if (st.age <= PocketConfig.dashReflectTicks) {
++        int reflect = (int) Math.round(pick(PocketConfig.dashReflectTicks, p));
++        if (reflect > 0 && st.age <= reflect) {
+             AxisAlignedBB rb = p.getEntityBoundingBox().grow(2.5);
+             for (Entity pr : p.world.getEntitiesWithinAABB(Entity.class, rb)) {
+                 if (!(pr instanceof IProjectile) || ownedBy(pr, p)) continue;
+@@ -214,7 +261,12 @@ public final class Dash {
+             }
+         }
+ 
+-        if (st.age > PocketConfig.dashTicks + 2) ACTIVE.remove(p.getUniqueID());
++        if (st.age > dashTicks + 2) {
++            ACTIVE.remove(p.getUniqueID());
++            // короткая неуязвимость после рывка (с 3 уровня), чтобы выйти из схватки
++            int grace = (int) Math.round(pick(PocketConfig.dashGraceTicks, p));
++            if (grace > 0) e.setLong(GRACE_UNTIL, p.world.getTotalWorldTime() + grace);
++        }
+     }
+ 
+     /** Неуязвимость на время рывка (кроме падения в бездну). */
+@@ -222,6 +274,7 @@ public final class Dash {
+     public static void onAttack(LivingAttackEvent event) {
+         if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
+         if (event.getSource() == DamageSource.OUT_OF_WORLD) return;
+-        if (isDashing((EntityPlayer) event.getEntityLiving())) event.setCanceled(true);
++        EntityPlayer pl = (EntityPlayer) event.getEntityLiving();
++        if (isDashing(pl) || pl.world.getTotalWorldTime() < pl.getEntityData().getLong(GRACE_UNTIL)) event.setCanceled(true);
+     }
+ }
+diff --git a/src/main/java/pocketmod/Lang.java b/src/main/java/pocketmod/Lang.java
+index cc26d24..393e40f 100644
+--- a/src/main/java/pocketmod/Lang.java
++++ b/src/main/java/pocketmod/Lang.java
+@@ -136,7 +136,7 @@ public class Lang {
+         m.put("pocketmod.info.slow.l2", "Замедление до x%s.");
+         m.put("pocketmod.info.slow.l3", "Полный стоп времени (x0). Расход на нуле %s/с.");
+         m.put("pocketmod.info.softfall.desc", "Пассивно: после нескольких блоков падения падение замедляется и урон гасится. Мана тратится, пока падаешь; мана кончилась - падение обычное.");
+-        m.put("pocketmod.info.softfall.key", "Включается само");
++        m.put("pocketmod.info.softfall.key", "Включается само; пробел в падении — выключить / включить");
+         m.put("pocketmod.info.softfall.l1", "С %s блоков. Расход %s/с в падении.");
+         m.put("pocketmod.info.softfall.l2", "С %s блоков. Расход %s/с в падении.");
+         m.put("pocketmod.info.magnet.desc", "Увеличивает радиус подбора предметов. Предметы притягиваются к тебе.");
+@@ -222,6 +222,8 @@ public class Lang {
+         m.put("pocketmod.msg.slow_stop", "Стоп времени (x0)");
+         m.put("pocketmod.msg.softfall_empty", "Мана кончилась: падение снова обычное");
+         m.put("pocketmod.msg.softfall_on", "Мягкое падение");
++        m.put("pocketmod.msg.softfall_off", "Мягкое падение выключено (пробел — включить)");
++        m.put("pocketmod.msg.softfall_resumed", "Мягкое падение включено");
+         m.put("pocketmod.msg.scanner_on", "Сканер руд включён");
+         m.put("pocketmod.msg.scanner_off", "Сканер руд выключен");
+         m.put("pocketmod.msg.scanner_empty", "Мана кончилась: сканер выключен");
+@@ -239,7 +241,10 @@ public class Lang {
+         m.put("pocketmod.ability.dash", "Рывок");
+         m.put("pocketmod.info.dash.desc", "Быстрое перемещение на несколько блоков вдоль выбранного направления: враги на пути отбрасываются, на время рывка урон не проходит, а снаряды отражаются. Недоступен в облике духа (Спектор) и во время телепорта; в полёте работает.");
+         m.put("pocketmod.info.dash.key", "Двойное нажатие W/A/S/D");
+-        m.put("pocketmod.info.dash.l1", "Рывок около 8 блоков за 0,25 с. Цена %s маны, зарядов %s, восстановление заряда %s с, урон врагам %s.");
++        m.put("pocketmod.info.dash.l1", "Короткий рывок: около %s бл. за %s с. Мана %s, зарядов %s, восстановление заряда %s с. Врагов не задевает, снаряды не отражает.");
++        m.put("pocketmod.info.dash.l2", "Дальний рывок: около %s бл. за %s с (максимальная дальность). Мана %s, зарядов %s, восстановление %s с. Сбитые враги получают %s урона, снаряды отражаются.");
++        m.put("pocketmod.info.dash.l3", "Быстрее и чаще: то же расстояние (около %s бл.), но за %s с. Мана %s, зарядов %s, восстановление %s с, урон %s; после рывка ещё короткая неуязвимость, окно отражения снарядов длиннее.");
++        m.put("pocketmod.info.dash.l4", "Мастер рывка: около %s бл. за %s с. Мана %s, зарядов %s, восстановление %s с, урон %s; каждый сбитый враг возвращает заряд, неуязвимость после рывка дольше.");
+         m.put("pocketmod.msg.dash_cooldown", "Рывок перезаряжается: %s с");
+         m.put("pocketmod.msg.dash_blocked", "Сейчас рывок недоступен");
+         m.put("pocketmod.gui.death_totem_title", "Ты погиб");
+@@ -401,7 +406,7 @@ public class Lang {
+         m.put("pocketmod.info.slow.l2", "Slowdown down to x%s.");
+         m.put("pocketmod.info.slow.l3", "Full time stop (x0). Cost at zero %s/s.");
+         m.put("pocketmod.info.softfall.desc", "Passive: after a few blocks of falling the fall slows down and damage is absorbed. Costs mana while falling; out of mana - a normal fall.");
+-        m.put("pocketmod.info.softfall.key", "Activates by itself");
++        m.put("pocketmod.info.softfall.key", "Activates by itself; Space while falling toggles it off / on");
+         m.put("pocketmod.info.softfall.l1", "From %s blocks. Cost %s/s while falling.");
+         m.put("pocketmod.info.softfall.l2", "From %s blocks. Cost %s/s while falling.");
+         m.put("pocketmod.info.magnet.desc", "Increases item pickup radius. Items are pulled toward you.");
+@@ -487,6 +492,8 @@ public class Lang {
+         m.put("pocketmod.msg.slow_stop", "Time stop (x0)");
+         m.put("pocketmod.msg.softfall_empty", "Out of mana: the fall is normal again");
+         m.put("pocketmod.msg.softfall_on", "Soft fall");
++        m.put("pocketmod.msg.softfall_off", "Soft fall off (Space to turn it back on)");
++        m.put("pocketmod.msg.softfall_resumed", "Soft fall on");
+         m.put("pocketmod.msg.scanner_on", "Ore scanner on");
+         m.put("pocketmod.msg.scanner_off", "Ore scanner off");
+         m.put("pocketmod.msg.scanner_empty", "Out of mana: ore scanner off");
+@@ -504,7 +511,10 @@ public class Lang {
+         m.put("pocketmod.ability.dash", "Dash");
+         m.put("pocketmod.info.dash.desc", "A quick burst of movement in the chosen direction: enemies in the way are knocked back, you take no damage during the dash and projectiles are reflected. Not available in spirit form (Spector) or during a teleport; works in flight.");
+         m.put("pocketmod.info.dash.key", "Double-tap W/A/S/D");
+-        m.put("pocketmod.info.dash.l1", "Dash of about 8 blocks in 0.25 s. Costs %s mana, %s charges, %s s to recover a charge, %s damage to enemies.");
++        m.put("pocketmod.info.dash.l1", "Short dash: about %s blocks in %s s. Costs %s mana, %s charges, %s s to recover a charge. Does not hit enemies or reflect projectiles.");
++        m.put("pocketmod.info.dash.l2", "Long dash: about %s blocks in %s s (maximum distance). Costs %s mana, %s charges, %s s to recover. Enemies hit take %s damage, projectiles are reflected.");
++        m.put("pocketmod.info.dash.l3", "Faster and more often: same distance (about %s blocks) in only %s s. Costs %s mana, %s charges, %s s to recover, %s damage; a short invulnerability after the dash and a longer projectile-reflect window.");
++        m.put("pocketmod.info.dash.l4", "Dash master: about %s blocks in %s s. Costs %s mana, %s charges, %s s to recover, %s damage; every enemy hit refunds a charge and the post-dash invulnerability lasts longer.");
+         m.put("pocketmod.msg.dash_cooldown", "Dash is recharging: %s s");
+         m.put("pocketmod.msg.dash_blocked", "Dash is not available right now");
+         m.put("pocketmod.gui.death_totem_title", "You died");
+diff --git a/src/main/java/pocketmod/NetAction.java b/src/main/java/pocketmod/NetAction.java
+index fef9aba..0b15efd 100644
+--- a/src/main/java/pocketmod/NetAction.java
++++ b/src/main/java/pocketmod/NetAction.java
+@@ -31,7 +31,8 @@ public enum NetAction {
+     TOGGLE_SCAN_TARGET(27),
+     WAREHOUSE_CLICK(28),
+     DEATH_TOTEM_CHOICE(29),
+-    DASH(30);
++    DASH(30),
++    SOFTFALL_TOGGLE(31);
+ 
+     public final int id;
+     NetAction(int id) { this.id = id; }
+diff --git a/src/main/java/pocketmod/NetworkHandler.java b/src/main/java/pocketmod/NetworkHandler.java
+index e1ed197..f707bea 100644
+--- a/src/main/java/pocketmod/NetworkHandler.java
++++ b/src/main/java/pocketmod/NetworkHandler.java
+@@ -163,6 +163,7 @@ public final class NetworkHandler {
+             case TOGGLE_THERMAL: Thermal.toggle(p); break;
+             case TOGGLE_SHIELD: Shield.toggle(p); break;
+             case START_FLIGHT: Flight.start(p); break;
++            case SOFTFALL_TOGGLE: SoftFall.toggleByPlayer(p); break;
+             case OPEN_WAREHOUSE:
+                 if (AbilityStorage.isUnlocked(p, AbilityType.WAREHOUSE)) p.openGui(PocketMod.instance, PocketMod.GUI_WAREHOUSE, p.world, 0, 0, 0);
+                 else p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+diff --git a/src/main/java/pocketmod/OreScannerClient.java b/src/main/java/pocketmod/OreScannerClient.java
+index feb8815..85b12c1 100644
+--- a/src/main/java/pocketmod/OreScannerClient.java
++++ b/src/main/java/pocketmod/OreScannerClient.java
+@@ -52,7 +52,7 @@ public final class OreScannerClient {
+     }
+ 
+     private static final int MAX_TARGETS = 31;
+-    private static final int MAX_MARKS = 600;
++    private static final int MAX_MARKS = 1000;
+     private static final int CHUNKS_PER_TICK = 2;
+ 
+     private static List<Hit> ores = new ArrayList<Hit>();
+@@ -228,6 +228,8 @@ public final class OreScannerClient {
+     private static int computeIndex(IBlockState state) {
+         Block b = state.getBlock();
+         if (b == Blocks.AIR) return -1;
++        // светящаяся (активированная) редстоуновая руда не имеет своего предмета и в OreDictionary не записана
++        if (b == Blocks.LIT_REDSTONE_ORE) return computeIndex(Blocks.REDSTONE_ORE.getDefaultState());
+         String[] targets = PocketConfig.oreScannerTargets;
+         int n = Math.min(targets.length, MAX_TARGETS);
+         ResourceLocation key = b.getRegistryName();
+@@ -240,12 +242,27 @@ public final class OreScannerClient {
+         // у воды, лавы, огня и т.п. нет предмета: пустой ItemStack делает OreDictionary.getOreIDs исключением
+         Item item = Item.getItemFromBlock(b);
+         if (item == null || item == Items.AIR) return -1;
+-        ItemStack stack = new ItemStack(item, 1, b.damageDropped(state));
+-        if (stack.isEmpty()) return -1;
+-        for (int id : OreDictionary.getOreIDs(stack)) {
+-            String name = OreDictionary.getOreName(id);
+-            for (int i = 0; i < n; i++) {
+-                if (targets[i] != null && targets[i].trim().equalsIgnoreCase(name)) return i;
++        // damageDropped() у ряда руд (например, лазурита) возвращает метаданные ВЫПАДАЮЩЕГО предмета (краситель, 4),
++        // а в OreDictionary руда записана с метаданными самого блока. Поэтому пробуем и метаданные состояния блока.
++        int meta1 = 0;
++        try {
++            meta1 = b.getMetaFromState(state);
++        } catch (Throwable ignored) {
++        }
++        int meta2 = 0;
++        try {
++            meta2 = b.damageDropped(state);
++        } catch (Throwable ignored) {
++        }
++        int[] metas = meta1 == meta2 ? new int[] { meta1, 0 } : new int[] { meta1, meta2, 0 };
++        for (int meta : metas) {
++            ItemStack stack = new ItemStack(item, 1, meta);
++            if (stack.isEmpty()) continue;
++            for (int id : OreDictionary.getOreIDs(stack)) {
++                String name = OreDictionary.getOreName(id);
++                for (int i = 0; i < n; i++) {
++                    if (targets[i] != null && targets[i].trim().equalsIgnoreCase(name)) return i;
++                }
+             }
+         }
+         return -1;
+@@ -266,7 +283,10 @@ public final class OreScannerClient {
+         if (p.contains("tin")) return 0xB8C8D8;
+         if (p.contains("silver")) return 0xDADAF0;
+         if (p.contains("lead")) return 0x7080B0;
+-        return 0xFF55FF;
++        // неизвестная руда (из другого мода): устойчивый цвет по названию, чтобы разные руды отличались
++        int h = p.hashCode();
++        float hue = ((h & 0x7FFFFFFF) % 360) / 360.0F;
++        return java.awt.Color.HSBtoRGB(hue, 0.75F, 1.0F) & 0xFFFFFF;
+     }
+ 
+     /** Читаемое название цели: из перевода pocketmod.ore.<имя> или само имя без приставки ore. */
+@@ -316,23 +336,35 @@ public final class OreScannerClient {
+     public static void render(Minecraft mc) {
+         if (mc.world == null || mc.player == null || !OreScanner.isOn(mc.player) || ores.isEmpty()) return;
+         RenderManager manager = mc.getRenderManager();
++        // добытая руда пропадает сразу, не дожидаясь пересчёта
++        List<Hit> visible = new ArrayList<Hit>(ores.size());
++        for (Hit h : ores) {
++            if (indexOf(mc.world.getBlockState(h.pos)) == h.idx) visible.add(h);
++        }
++        if (visible.isEmpty()) return;
+         GlStateManager.pushMatrix();
+         GlStateManager.disableTexture2D();
+         GlStateManager.disableDepth();
+         GlStateManager.disableLighting();
+         GlStateManager.enableBlend();
+         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+-        GL11.glLineWidth(2.0F);
+-        for (Hit h : ores) {
+-            // добытая руда пропадает сразу, не дожидаясь пересчёта
+-            if (indexOf(mc.world.getBlockState(h.pos)) != h.idx) continue;
++        // Двойная рамка, как контур мобов: цветная линия поверх более толстой чёрной, поэтому рамка видна
++        // на любом фоне (светлом, тёмном, пёстром), а цвет по-прежнему показывает тип руды.
++        GL11.glLineWidth(6.0F);
++        for (Hit h : visible) {
++            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.004)
++                    .offset(-manager.viewerPosX, -manager.viewerPosY, -manager.viewerPosZ);
++            RenderGlobal.drawSelectionBoundingBox(box, 0.0F, 0.0F, 0.0F, 1.0F);
++        }
++        GL11.glLineWidth(2.5F);
++        for (Hit h : visible) {
+             int c = colorOf(h.idx);
+             float r = ((c >> 16) & 255) / 255.0F;
+             float g = ((c >> 8) & 255) / 255.0F;
+             float b = (c & 255) / 255.0F;
+-            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.003)
++            AxisAlignedBB box = new AxisAlignedBB(h.pos).grow(0.004)
+                     .offset(-manager.viewerPosX, -manager.viewerPosY, -manager.viewerPosZ);
+-            RenderGlobal.drawSelectionBoundingBox(box, r, g, b, 0.95F);
++            RenderGlobal.drawSelectionBoundingBox(box, r, g, b, 1.0F);
+         }
+         GL11.glLineWidth(1.0F);
+         GlStateManager.enableDepth();
+diff --git a/src/main/java/pocketmod/PocketConfig.java b/src/main/java/pocketmod/PocketConfig.java
+index def60fc..577bd00 100644
+--- a/src/main/java/pocketmod/PocketConfig.java
++++ b/src/main/java/pocketmod/PocketConfig.java
+@@ -58,13 +58,17 @@ public class PocketConfig {
+     public static int slowMaxBubbles = 8;
+ 
+     // Рывок
+-    public static double dashCost = 12.0;
+-    public static int dashCharges = 2;
+-    public static double dashRechargeSec = 3.0;
+-    public static double dashDamage = 4.0;
+-    public static double dashSpeed = 1.6;
+-    public static int dashTicks = 5;
+-    public static int dashReflectTicks = 8;
++    // По уровням 1..4. Дальность = скорость x тики: на 2 уровне она уже максимальная (8 блоков), дальше растут
++    // скорость (рывок короче по времени), число зарядов, перезарядка, урон, отражение и бонусы.
++    public static double[] dashCost = { 14, 12, 10, 8 };
++    public static double[] dashCharges = { 1, 2, 2, 3 };
++    public static double[] dashRechargeSec = { 6.0, 3.0, 2.2, 1.5 };
++    public static double[] dashDamage = { 0, 4, 6, 8 };
++    public static double[] dashSpeed = { 1.1, 1.6, 2.0, 2.7 };
++    public static double[] dashTicks = { 5, 5, 4, 3 };
++    public static double[] dashReflectTicks = { 0, 8, 10, 14 };
++    public static double[] dashGraceTicks = { 0, 0, 6, 12 };
++    public static double[] dashRefund = { 0, 0, 0, 1 };
+     public static int totemDeleteCost = 10;
+     public static int totemTeleportBase = 20;
+     public static float totemTeleportPerBlock = 0.02f;
+@@ -141,6 +145,10 @@ public class PocketConfig {
+     public static float oreScannerDrain = 3.0f;
+     public static int[] oreScannerRadius = { 16, 24, 32 };
+     public static int oreScannerVertical = 12;
++    /** Добавлять в сканер все руды из OreDictionary (oreXxx), в том числе из других модов. */
++    public static boolean oreScannerAuto = true;
++    private static boolean oreTargetsReady = false;
++    private static String[] oreScannerBase = new String[0];
+     public static String[] oreScannerTargets = { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" };
+     public static float pocketTickCost = 0.0f;
+ 
+@@ -239,13 +247,15 @@ public class PocketConfig {
+         slowFluidRadius = cfg.getInt("slowFluidRadius", "замедление", 48, 8, 96, "Radius (blocks) in which fluids are slowed");
+         slowBubbleRadius = cfg.getInt("slowBubbleRadius", "замедление", 48, 8, 128, "Radius of the slow-time bubble around each player");
+         slowMaxBubbles = cfg.getInt("slowMaxBubbles", "замедление", 8, 1, 64, "How many slow-time bubbles the server processes at once");
+-        dashCost = cfg.getFloat("cost", "рывок", 12.0f, 0f, 100000f, "Mana per dash");
+-        dashCharges = cfg.getInt("charges", "рывок", 2, 1, 10, "How many dashes can be chained");
+-        dashRechargeSec = cfg.getFloat("rechargeSeconds", "рывок", 3.0f, 0.5f, 600f, "Seconds to recover one dash charge");
+-        dashDamage = cfg.getFloat("damage", "рывок", 4.0f, 0f, 1000f, "Damage to each enemy hit by the dash");
+-        dashSpeed = cfg.getFloat("speed", "рывок", 1.6f, 0.4f, 4f, "Dash speed in blocks per tick (distance = speed x ticks)");
+-        dashTicks = cfg.getInt("ticks", "рывок", 5, 2, 20, "Dash duration in ticks (20 = 1 second)");
+-        dashReflectTicks = cfg.getInt("reflectTicks", "рывок", 8, 0, 40, "Projectile reflection window in ticks (0 = off)");
++        dashCost = arr(cfg, "levelCost", "рывок", dashCost, "Мана за рывок по уровням 1..4");
++        dashCharges = arr(cfg, "levelCharges", "рывок", dashCharges, "Сколько рывков подряд по уровням");
++        dashRechargeSec = arr(cfg, "levelRechargeSec", "рывок", dashRechargeSec, "Секунд на восстановление одного заряда по уровням");
++        dashDamage = arr(cfg, "levelDamage", "рывок", dashDamage, "Урон врагам на пути по уровням (0 = рывок не бьёт)");
++        dashSpeed = arr(cfg, "levelSpeed", "рывок", dashSpeed, "Скорость рывка, блоков за тик, по уровням");
++        dashTicks = arr(cfg, "levelTicks", "рывок", dashTicks, "Длительность рывка в тиках по уровням (дальность = скорость x тики)");
++        dashReflectTicks = arr(cfg, "levelReflectTicks", "рывок", dashReflectTicks, "Окно отражения снарядов в тиках по уровням (0 = нет)");
++        dashGraceTicks = arr(cfg, "levelGraceTicks", "рывок", dashGraceTicks, "Неуязвимость после рывка в тиках по уровням");
++        dashRefund = arr(cfg, "levelRefund", "рывок", dashRefund, "1 = сбитый рывком враг возвращает заряд (по уровням)");
+         totemDeleteCost = cfg.getInt("totemDeleteCost", "тотемы", 10, 0, 1000000, "Mana to delete a totem");
+         totemTeleportBase = cfg.getInt("totemTeleportBase", "тотемы", 20, 0, 1000000, "Base mana for a totem teleport");
+         totemTeleportPerBlock = cfg.getFloat("totemTeleportPerBlock", "тотемы", 0.02f, 0f, 1000f, "Mana per block of distance (same dimension)");
+@@ -330,9 +340,13 @@ public class PocketConfig {
+         oreScannerPeriodTicks = cfg.getInt("oreScannerPeriodTicks", "сканер", 100, 20, 600, "Ticks between scanner pulses (found ores stay on screen until the next pulse, like a sonar).");
+         int[] osr = cfg.get("сканер", "radii", new int[] { 16, 24, 32 }, "Ore scan radius by level.").getIntList();
+         if (osr.length >= 3) oreScannerRadius = osr;
+-        oreScannerTargets = cfg.getStringList("targets", "сканер",
++        oreScannerBase = cfg.getStringList("targets", "сканер",
+                 new String[] { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" },
+                 "OreDictionary names (oreDiamond) or registry IDs (minecraft:diamond_ore) to highlight.");
++        oreScannerAuto = cfg.getBoolean("autoTargets", "сканер", true,
++                "Also scan every other ore registered in OreDictionary (oreCopper, oreTin, ... from other mods).");
++        oreScannerTargets = oreScannerBase;
++        if (oreTargetsReady) finishOreTargets();
+ 
+         int[] ls = cfg.get("удача", "stakes", new int[] { 50, 150, 400 }, "Spin prices (3 tiers)").getIntList();
+         if (ls.length >= 3) lootStakes = ls;
+@@ -399,6 +413,42 @@ public class PocketConfig {
+         }
+     }
+ 
++    /**
++     * Сканер руд: к списку из конфига добавляются все остальные руды из OreDictionary (имена oreXxx), чтобы сканер
++     * видел не только ванильные руды, но и руды других модов. Порядок добавленных фиксирован (по алфавиту), поэтому
++     * на клиенте и на сервере список одинаковый. Вызывается после загрузки всех модов и при перечитывании конфига.
++     */
++    public static void finishOreTargets() {
++        oreTargetsReady = true;
++        if (!oreScannerAuto) {
++            oreScannerTargets = oreScannerBase;
++            return;
++        }
++        java.util.List<String> list = new java.util.ArrayList<String>();
++        java.util.Set<String> have = new java.util.HashSet<String>();
++        for (String s : oreScannerBase) {
++            if (s == null || s.trim().isEmpty()) continue;
++            list.add(s.trim());
++            have.add(s.trim().toLowerCase());
++        }
++        java.util.List<String> extra = new java.util.ArrayList<String>();
++        try {
++            for (String name : net.minecraftforge.oredict.OreDictionary.getOreNames()) {
++                if (name == null || name.length() <= 3 || !name.startsWith("ore")) continue;
++                if (!Character.isUpperCase(name.charAt(3))) continue;
++                if (have.contains(name.toLowerCase())) continue;
++                extra.add(name);
++            }
++        } catch (Throwable ignored) {
++        }
++        java.util.Collections.sort(extra);
++        for (String name : extra) {
++            if (list.size() >= 31) break;
++            list.add(name);
++        }
++        oreScannerTargets = list.toArray(new String[0]);
++    }
++
+     private static double[] arr(Configuration cfg, String name, String cat, double[] def, String comment) {
+         double[] v = cfg.get(cat, name, def, comment).getDoubleList();
+         return v.length >= def.length ? v : def;
+diff --git a/src/main/java/pocketmod/PocketMod.java b/src/main/java/pocketmod/PocketMod.java
+index 45c6223..ceb1ad2 100644
+--- a/src/main/java/pocketmod/PocketMod.java
++++ b/src/main/java/pocketmod/PocketMod.java
+@@ -7,6 +7,7 @@ import net.minecraftforge.common.DimensionManager;
+ import net.minecraftforge.fml.common.Mod;
+ import net.minecraftforge.fml.common.SidedProxy;
+ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
++import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+ 
+@@ -50,6 +51,12 @@ public class PocketMod {
+         proxy.init();
+     }
+ 
++    @Mod.EventHandler
++    public void postInit(FMLPostInitializationEvent event) {
++        // к этому моменту все моды уже зарегистрировали свои руды в OreDictionary
++        PocketConfig.finishOreTargets();
++    }
++
+     @Mod.EventHandler
+     public void serverStarting(FMLServerStartingEvent event) {
+         event.registerServerCommand(new CommandManaAdd());
+diff --git a/src/main/java/pocketmod/ScannerGui.java b/src/main/java/pocketmod/ScannerGui.java
+index d69ec51..5329148 100644
+--- a/src/main/java/pocketmod/ScannerGui.java
++++ b/src/main/java/pocketmod/ScannerGui.java
+@@ -14,10 +14,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
+ public class ScannerGui extends GuiScreen {
+ 
+     private static final int BTN_CLOSE = 1000;
+-    private static final int W = 150;
++    private int W = 150;
+     private static final int H = 20;
+     private static final int GAP = 6;
+-    private static final int COLS = 2;
++    private int COLS = 2;
+ 
+     private final EntityPlayer player;
+ 
+@@ -40,6 +40,9 @@ public class ScannerGui extends GuiScreen {
+     public void initGui() {
+         buttonList.clear();
+         int n = count();
++        // руд может быть много (в том числе из других модов): тогда три колонки поуже
++        COLS = n > 16 ? 3 : 2;
++        W = n > 16 ? 120 : 150;
+         int startX = width / 2 - (COLS * W + GAP) / 2;
+         for (int i = 0; i < n; i++) {
+             int col = i % COLS;
+diff --git a/src/main/java/pocketmod/ShopInfo.java b/src/main/java/pocketmod/ShopInfo.java
+index b519b5b..652041e 100644
+--- a/src/main/java/pocketmod/ShopInfo.java
++++ b/src/main/java/pocketmod/ShopInfo.java
+@@ -99,7 +99,16 @@ public class ShopInfo {
+             case WAREHOUSE:
+                 return Tr.format(k, lvl);
+             case DASH:
+-                return Tr.format(k, n(PocketConfig.dashCost), PocketConfig.dashCharges, n(PocketConfig.dashRechargeSec), n(PocketConfig.dashDamage));
++            {
++                int i = Math.max(0, Math.min(PocketConfig.dashCost.length - 1, lvl - 1));
++                double secs = Math.round(PocketConfig.dashTicks[Math.min(PocketConfig.dashTicks.length - 1, i)]) / 20.0;
++                double dist = PocketConfig.dashSpeed[Math.min(PocketConfig.dashSpeed.length - 1, i)]
++                        * Math.round(PocketConfig.dashTicks[Math.min(PocketConfig.dashTicks.length - 1, i)]);
++                return Tr.format(k, n(dist), n(secs), n(PocketConfig.dashCost[i]),
++                        n(PocketConfig.dashCharges[Math.min(PocketConfig.dashCharges.length - 1, i)]),
++                        n(PocketConfig.dashRechargeSec[Math.min(PocketConfig.dashRechargeSec.length - 1, i)]),
++                        n(PocketConfig.dashDamage[Math.min(PocketConfig.dashDamage.length - 1, i)]));
++            }
+             case WAVE: {
+                 int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
+                 return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),
+diff --git a/src/main/java/pocketmod/SoftFall.java b/src/main/java/pocketmod/SoftFall.java
+index 57ce557..9e272a2 100644
+--- a/src/main/java/pocketmod/SoftFall.java
++++ b/src/main/java/pocketmod/SoftFall.java
+@@ -2,6 +2,7 @@ package pocketmod;
+ 
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.entity.player.EntityPlayerMP;
++import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.util.text.TextComponentTranslation;
+ import net.minecraftforge.event.entity.living.LivingFallEvent;
+ import net.minecraftforge.fml.common.Mod;
+@@ -15,6 +16,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+ public class SoftFall {
+ 
+     private static final String ACTIVE = "pm_softfall";
++    /** Режим текущего падения: 0 — само, 1 — игрок выключил (пробел), 2 — игрок включил обратно. Сбрасывается на земле. */
++    private static final String MODE = "pm_softfall_mode";
++    /** Сколько блоков игрок на самом деле пролетел под мягким падением (чтобы после выключения урон был честным). */
++    private static final String ACC = "pm_softfall_acc";
++    private static final String LASTY = "pm_softfall_y";
+ 
+     public static boolean isActive(EntityPlayer p) {
+         return p.getEntityData().getBoolean(ACTIVE);
+@@ -42,19 +48,50 @@ public class SoftFall {
+                 && !p.isOnLadder();
+     }
+ 
++    /**
++     * Пробел в воздухе (пакет от клиента): пока мягкое падение работает, выключает его; повторное нажатие включает
++     * обратно. Быстрое двойное нажатие по-прежнему запускает полёт (клиент шлёт его отдельным пакетом).
++     */
++    public static void toggleByPlayer(EntityPlayerMP p) {
++        if (!AbilityStorage.isUnlocked(p, AbilityType.SOFTFALL) || !falling(p)) return;
++        NBTTagCompound e = p.getEntityData();
++        int mode = e.getInteger(MODE);
++        if (mode == 1) {
++            e.setInteger(MODE, 2);
++            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_resumed"), true);
++        } else if (isActive(p)) {
++            e.setInteger(MODE, 1);
++            setActive(p, false);
++            // выключили в воздухе: дальше падение обычное, и уже пролетенное расстояние засчитывается
++            p.fallDistance = Math.max(p.fallDistance, e.getFloat(ACC));
++            e.setFloat(ACC, 0f);
++            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_off"), true);
++        }
++    }
++
+     public static void tick(EntityPlayerMP p) {
++        NBTTagCompound e = p.getEntityData();
+         if (!AbilityStorage.isUnlocked(p, AbilityType.SOFTFALL)) {
+             if (isActive(p)) setActive(p, false);
++            if (e.getInteger(MODE) != 0) e.setInteger(MODE, 0);
+             return;
+         }
+         boolean act = isActive(p);
+         if (!falling(p)) {
++            if (act) setActive(p, false);
++            if (e.getInteger(MODE) != 0) e.setInteger(MODE, 0);
++            if (e.getFloat(ACC) != 0f) e.setFloat(ACC, 0f);
++            return;
++        }
++        int mode = e.getInteger(MODE);
++        if (mode == 1) {
++            // игрок выключил мягкое падение: падаем как обычно, ману не тратим
+             if (act) setActive(p, false);
+             return;
+         }
+         float minDist = AbilityStorage.getLevel(p, AbilityType.SOFTFALL) >= 2
+                 ? PocketConfig.softFallMinDistL2 : PocketConfig.softFallMinDist;
+-        if (!act && p.fallDistance < minDist) return;
++        if (!act && mode != 2 && p.fallDistance < minDist) return;
+         if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
+             if (act) {
+                 setActive(p, false);
+@@ -64,7 +101,13 @@ public class SoftFall {
+         }
+         if (!act) {
+             setActive(p, true);
+-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_on"), true);
++            e.setFloat(ACC, p.fallDistance);
++            e.setDouble(LASTY, p.posY);
++            if (mode == 0) p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_on"), true);
++        } else {
++            double ly = e.getDouble(LASTY);
++            if (ly > p.posY) e.setFloat(ACC, e.getFloat(ACC) + (float) (ly - p.posY));
++            e.setDouble(LASTY, p.posY);
+         }
+         // Главный фикс: на сервере не накапливаем урон и режем скорость падения
+         p.fallDistance = 0f;
+diff --git a/src/main/java/pocketmod/Totems.java b/src/main/java/pocketmod/Totems.java
+index 8592972..58af984 100644
+--- a/src/main/java/pocketmod/Totems.java
++++ b/src/main/java/pocketmod/Totems.java
+@@ -263,6 +263,11 @@ public class Totems {
+     /** Показать игроку вопрос «создать тотем смерти?», если он ещё не отвечал. */
+     public static void promptIfPending(EntityPlayerMP p) {
+         if (!hasPendingDeathTotem(p)) return;
++        // способность «Тотемы» не куплена: вопрос не показываем и ждать ответа нечего
++        if (!AbilityStorage.isUnlocked(p, AbilityType.TOTEM)) {
++            PlayerData.root(p).removeTag(PENDING_KEY);
++            return;
++        }
+         NetworkHandler.sendPrompt(p, 1, pendingTeleportCost(p), deathTotemCreateFee(p));
+     }
+ 
+@@ -270,6 +275,7 @@ public class Totems {
+     public static void resolvePendingDeathTotem(EntityPlayerMP p, boolean create) {
+         if (!hasPendingDeathTotem(p)) return;
+         NBTTagCompound c = PlayerData.root(p).getCompoundTag(PENDING_KEY).copy();
++        if (create && !AbilityStorage.isUnlocked(p, AbilityType.TOTEM)) create = false;
+         if (create) {
+             double fee = deathTotemCreateFee(p);
+             if (fee > 0.0 && !Mana.spend(p, fee)) {
+diff --git a/src/main/resources/assets/pocketmod/lang/en_us.lang b/src/main/resources/assets/pocketmod/lang/en_us.lang
+index 31638b1..aead00c 100644
+--- a/src/main/resources/assets/pocketmod/lang/en_us.lang
++++ b/src/main/resources/assets/pocketmod/lang/en_us.lang
+@@ -175,7 +175,7 @@ pocketmod.info.totem.l1=%s slots.
+ pocketmod.info.totem.l2=%s slots, teleport %s%% cheaper.
+ pocketmod.info.totem.l3=%s slots, teleport %s%% cheaper.
+ pocketmod.info.softfall.desc=Passive: after a few blocks of falling the fall slows down and damage is absorbed. Costs mana while falling; out of mana - a normal fall.
+-pocketmod.info.softfall.key=Activates by itself
++pocketmod.info.softfall.key=Activates by itself; Space while falling toggles it off / on
+ pocketmod.info.softfall.l1=Cost %s/s while falling.
+ pocketmod.info.softfall.l2=Cost %s/s while falling.
+ pocketmod.msg.invis_broken=Invisibility broken by your hit for %s s (no mana is spent)
+@@ -382,6 +382,8 @@ pocketmod.cfg.19.radii=Радиус по уровням
+ pocketmod.cfg.19.radii.tooltip=Три числа: уровни 1, 2, 3.
+ pocketmod.cfg.19.targets=Какие руды подсвечивать
+ pocketmod.cfg.19.targets.tooltip=OreDictionary-имена (oreDiamond) или id блоков (minecraft:diamond_ore).
++pocketmod.cfg.19.autoTargets=Все руды из других модов
++pocketmod.cfg.19.autoTargets.tooltip=Добавлять в сканер все руды из OreDictionary (oreCopper, oreTin и т.д.), а не только список выше.
+ pocketmod.cfg.20.warehouseDeathCost=Цена сохранения слота при смерти
+ pocketmod.cfg.20.warehouseDeathCost.tooltip=Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.
+ pocketmod.cfg.12.lootPity=Гарантия выигрыша
+@@ -420,20 +422,6 @@ pocketmod.cfg.15.slowDrainBase=Базовый расход замедления
+ pocketmod.cfg.15.slowDrainBase.tooltip=Расход = база / коэффициент замедления.
+ pocketmod.cfg.16.hidePotionIcons=Скрывать значки зелий
+ pocketmod.cfg.16.hidePotionIcons.tooltip=Оставить на экране только шкалу маны.
+-pocketmod.cfg.21.cost=Цена рывка
+-pocketmod.cfg.21.cost.tooltip=Мана за один рывок.
+-pocketmod.cfg.21.charges=Число зарядов
+-pocketmod.cfg.21.charges.tooltip=Сколько рывков можно сделать подряд.
+-pocketmod.cfg.21.rechargeSeconds=Восстановление заряда, сек
+-pocketmod.cfg.21.rechargeSeconds.tooltip=За сколько секунд восстанавливается один заряд рывка.
+-pocketmod.cfg.21.damage=Урон врагам
+-pocketmod.cfg.21.damage.tooltip=Урон каждому врагу, которого задел рывок.
+-pocketmod.cfg.21.speed=Скорость рывка
+-pocketmod.cfg.21.speed.tooltip=Блоков за тик; дальность = скорость x число тиков (1,6 x 5 = 8 блоков).
+-pocketmod.cfg.21.ticks=Длительность, тики
+-pocketmod.cfg.21.ticks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
+-pocketmod.cfg.21.reflectTicks=Окно отражения снарядов, тики
+-pocketmod.cfg.21.reflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = выключено).
+ pocketmod.cfg.17.radius=Радиус по уровням
+ pocketmod.cfg.17.radius.tooltip=Пять чисел: уровни 1-5.
+ pocketmod.cfg.17.damage=Урон по уровням
+@@ -538,3 +526,29 @@ pocketmod.cfg.18.warehouseLevel3=Цена: Карманный склад, ур.
+ pocketmod.cfg.18.warehouseLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+ pocketmod.cfg.18.dashLevel1=Цена: Рывок, ур. 1
+ pocketmod.cfg.18.dashLevel1.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel2=Цена: Рывок, ур. 2
++pocketmod.cfg.18.dashLevel2.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel3=Цена: Рывок, ур. 3
++pocketmod.cfg.18.dashLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel4=Цена: Рывок, ур. 4
++pocketmod.cfg.18.dashLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.msg.softfall_off=Soft fall off (Space to turn it back on)
++pocketmod.msg.softfall_resumed=Soft fall on
++pocketmod.cfg.21.levelCost=Цена рывка по уровням
++pocketmod.cfg.21.levelCost.tooltip=Мана за один рывок, четыре числа: уровни 1-4.
++pocketmod.cfg.21.levelCharges=Число зарядов по уровням
++pocketmod.cfg.21.levelCharges.tooltip=Сколько рывков подряд, по уровням 1-4.
++pocketmod.cfg.21.levelRechargeSec=Восстановление заряда, сек
++pocketmod.cfg.21.levelRechargeSec.tooltip=Секунд на один заряд, по уровням 1-4.
++pocketmod.cfg.21.levelDamage=Урон врагам по уровням
++pocketmod.cfg.21.levelDamage.tooltip=Урон каждому врагу на пути (0 = рывок не бьёт), по уровням 1-4.
++pocketmod.cfg.21.levelSpeed=Скорость рывка по уровням
++pocketmod.cfg.21.levelSpeed.tooltip=Блоков за тик; дальность = скорость x тики (на 2 уровне 1,6 x 5 = 8 блоков).
++pocketmod.cfg.21.levelTicks=Длительность по уровням, тики
++pocketmod.cfg.21.levelTicks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
++pocketmod.cfg.21.levelReflectTicks=Отражение снарядов, тики
++pocketmod.cfg.21.levelReflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = нет), по уровням 1-4.
++pocketmod.cfg.21.levelGraceTicks=Неуязвимость после рывка, тики
++pocketmod.cfg.21.levelGraceTicks.tooltip=Сколько тиков после рывка урон не проходит, по уровням 1-4.
++pocketmod.cfg.21.levelRefund=Возврат заряда за врага
++pocketmod.cfg.21.levelRefund.tooltip=1 = сбитый рывком враг возвращает заряд, по уровням 1-4.
+diff --git a/src/main/resources/assets/pocketmod/lang/ru_ru.lang b/src/main/resources/assets/pocketmod/lang/ru_ru.lang
+index af91180..08d2f6d 100644
+--- a/src/main/resources/assets/pocketmod/lang/ru_ru.lang
++++ b/src/main/resources/assets/pocketmod/lang/ru_ru.lang
+@@ -175,7 +175,7 @@ pocketmod.info.totem.l1=%s слотов.
+ pocketmod.info.totem.l2=%s слотов, телепорт дешевле на %s%%.
+ pocketmod.info.totem.l3=%s слотов, телепорт дешевле на %s%%.
+ pocketmod.info.softfall.desc=Пассивно: после нескольких блоков падения падение замедляется и урон гасится. Мана тратится, пока падаешь; мана кончилась - падение обычное.
+-pocketmod.info.softfall.key=Включается само
++pocketmod.info.softfall.key=Включается само; пробел в падении — выключить / включить
+ pocketmod.info.softfall.l1=Расход %s/с в падении.
+ pocketmod.info.softfall.l2=Расход %s/с в падении.
+ pocketmod.msg.invis_broken=Невидимость сбита ударом на %s с (мана не тратится)
+@@ -382,6 +382,8 @@ pocketmod.cfg.19.radii=Радиус по уровням
+ pocketmod.cfg.19.radii.tooltip=Три числа: уровни 1, 2, 3.
+ pocketmod.cfg.19.targets=Какие руды подсвечивать
+ pocketmod.cfg.19.targets.tooltip=OreDictionary-имена (oreDiamond) или id блоков (minecraft:diamond_ore).
++pocketmod.cfg.19.autoTargets=Все руды из других модов
++pocketmod.cfg.19.autoTargets.tooltip=Добавлять в сканер все руды из OreDictionary (oreCopper, oreTin и т.д.), а не только список выше.
+ pocketmod.cfg.20.warehouseDeathCost=Цена сохранения слота при смерти
+ pocketmod.cfg.20.warehouseDeathCost.tooltip=Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.
+ pocketmod.cfg.12.lootPity=Гарантия выигрыша
+@@ -420,20 +422,6 @@ pocketmod.cfg.15.slowDrainBase=Базовый расход замедления
+ pocketmod.cfg.15.slowDrainBase.tooltip=Расход = база / коэффициент замедления.
+ pocketmod.cfg.16.hidePotionIcons=Скрывать значки зелий
+ pocketmod.cfg.16.hidePotionIcons.tooltip=Оставить на экране только шкалу маны.
+-pocketmod.cfg.21.cost=Цена рывка
+-pocketmod.cfg.21.cost.tooltip=Мана за один рывок.
+-pocketmod.cfg.21.charges=Число зарядов
+-pocketmod.cfg.21.charges.tooltip=Сколько рывков можно сделать подряд.
+-pocketmod.cfg.21.rechargeSeconds=Восстановление заряда, сек
+-pocketmod.cfg.21.rechargeSeconds.tooltip=За сколько секунд восстанавливается один заряд рывка.
+-pocketmod.cfg.21.damage=Урон врагам
+-pocketmod.cfg.21.damage.tooltip=Урон каждому врагу, которого задел рывок.
+-pocketmod.cfg.21.speed=Скорость рывка
+-pocketmod.cfg.21.speed.tooltip=Блоков за тик; дальность = скорость x число тиков (1,6 x 5 = 8 блоков).
+-pocketmod.cfg.21.ticks=Длительность, тики
+-pocketmod.cfg.21.ticks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
+-pocketmod.cfg.21.reflectTicks=Окно отражения снарядов, тики
+-pocketmod.cfg.21.reflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = выключено).
+ pocketmod.cfg.17.radius=Радиус по уровням
+ pocketmod.cfg.17.radius.tooltip=Пять чисел: уровни 1-5.
+ pocketmod.cfg.17.damage=Урон по уровням
+@@ -538,3 +526,29 @@ pocketmod.cfg.18.warehouseLevel3=Цена: Карманный склад, ур.
+ pocketmod.cfg.18.warehouseLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+ pocketmod.cfg.18.dashLevel1=Цена: Рывок, ур. 1
+ pocketmod.cfg.18.dashLevel1.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel2=Цена: Рывок, ур. 2
++pocketmod.cfg.18.dashLevel2.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel3=Цена: Рывок, ур. 3
++pocketmod.cfg.18.dashLevel3.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.cfg.18.dashLevel4=Цена: Рывок, ур. 4
++pocketmod.cfg.18.dashLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
++pocketmod.msg.softfall_off=Мягкое падение выключено (пробел — включить)
++pocketmod.msg.softfall_resumed=Мягкое падение включено
++pocketmod.cfg.21.levelCost=Цена рывка по уровням
++pocketmod.cfg.21.levelCost.tooltip=Мана за один рывок, четыре числа: уровни 1-4.
++pocketmod.cfg.21.levelCharges=Число зарядов по уровням
++pocketmod.cfg.21.levelCharges.tooltip=Сколько рывков подряд, по уровням 1-4.
++pocketmod.cfg.21.levelRechargeSec=Восстановление заряда, сек
++pocketmod.cfg.21.levelRechargeSec.tooltip=Секунд на один заряд, по уровням 1-4.
++pocketmod.cfg.21.levelDamage=Урон врагам по уровням
++pocketmod.cfg.21.levelDamage.tooltip=Урон каждому врагу на пути (0 = рывок не бьёт), по уровням 1-4.
++pocketmod.cfg.21.levelSpeed=Скорость рывка по уровням
++pocketmod.cfg.21.levelSpeed.tooltip=Блоков за тик; дальность = скорость x тики (на 2 уровне 1,6 x 5 = 8 блоков).
++pocketmod.cfg.21.levelTicks=Длительность по уровням, тики
++pocketmod.cfg.21.levelTicks.tooltip=Сколько тиков длится рывок (20 тиков = 1 секунда).
++pocketmod.cfg.21.levelReflectTicks=Отражение снарядов, тики
++pocketmod.cfg.21.levelReflectTicks.tooltip=Сколько тиков с начала рывка снаряды отражаются (0 = нет), по уровням 1-4.
++pocketmod.cfg.21.levelGraceTicks=Неуязвимость после рывка, тики
++pocketmod.cfg.21.levelGraceTicks.tooltip=Сколько тиков после рывка урон не проходит, по уровням 1-4.
++pocketmod.cfg.21.levelRefund=Возврат заряда за врага
++pocketmod.cfg.21.levelRefund.tooltip=1 = сбитый рывком враг возвращает заряд, по уровням 1-4.
+diff --git a/version.txt b/version.txt
+index a4412fa..8c26915 100644
+--- a/version.txt
++++ b/version.txt
+@@ -1 +1 @@
+-2.8
++2.9
