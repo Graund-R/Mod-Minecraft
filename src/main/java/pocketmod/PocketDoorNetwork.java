@@ -147,6 +147,7 @@ public final class PocketDoorNetwork {
         state.setBoolean("spectorActive", Spector.isActive(player));
         state.setBoolean("slowEnabled", Abilities.isSlow(player));
         state.setFloat("slowFactor", Abilities.getSlowFactor(player));
+        state.setFloat("slowMinFactor", Abilities.minSlowFactor(player));
         state.setBoolean("thermalEnabled", Thermal.isOn(player));
         state.setBoolean("shieldEnabled", Shield.isOn(player));
         state.setBoolean("flightEnabled", Flight.isArmed(player));
