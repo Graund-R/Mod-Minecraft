@@ -44,8 +44,9 @@ public class PocketMod {
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         MorphIntegration.register();
-        PocketDoorNetwork.register();
+        PocketDoorNetwork.registerServer();
         if (event.getSide() == Side.CLIENT) {
+            PocketDoorNetwork.registerClient();
             ClientHandler.register();
         }
     }
