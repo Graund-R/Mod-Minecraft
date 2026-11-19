@@ -306,6 +306,8 @@ public class MorphIntegration {
         // Prevent Metamorph's native morph key from bypassing Pocket Mod's one-time mana charge.
         if ("mchorse.metamorph.api.events.MorphEvent$Pre".equals(eventName) && !AUTHORIZED.get()) {
             try {
+                EntityPlayer player = (EntityPlayer) event.getClass().getField("player").get(event);
+                if (player == null || player.world.isRemote) return;
                 Object morph = event.getClass().getField("morph").get(event);
                 if (morph != null) event.setCanceled(true);
             } catch (Throwable error) {
