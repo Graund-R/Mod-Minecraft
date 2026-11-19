@@ -143,7 +143,17 @@ public class PocketDoorData extends WorldSavedData {
         if (changed) markDirty();
     }
 
-    public boolean accessPaused(UUID owner) {\n        return pausedOwners.contains(owner.toString());\n    }\n\n    public void setAccessPaused(UUID owner, boolean paused) {\n        String id = owner.toString();\n        boolean changed = paused ? pausedOwners.add(id) : pausedOwners.remove(id);\n        if (changed) markDirty();\n    }\n\n    public boolean isTrusted(UUID owner, String playerName) {
+    public boolean accessPaused(UUID owner) {
+        return pausedOwners.contains(owner.toString());
+    }
+
+    public void setAccessPaused(UUID owner, boolean paused) {
+        String id = owner.toString();
+        boolean changed = paused ? pausedOwners.add(id) : pausedOwners.remove(id);
+        if (changed) markDirty();
+    }
+
+    public boolean isTrusted(UUID owner, String playerName) {
         if (playerName == null) return false;
         Set<String> names = trustedPlayers.get(owner.toString());
         if (names == null) return false;
@@ -198,7 +208,8 @@ public class PocketDoorData extends WorldSavedData {
         doorPairs.clear();
         pairOwners.clear();
         trustedPlayers.clear();
-        lockedOwners.clear();\n        pausedOwners.clear();
+        lockedOwners.clear();
+        pausedOwners.clear();
 
         NBTTagList pairs = nbt.getTagList("pairs", 10);
         for (int i = 0; i < pairs.tagCount(); i++) {
@@ -235,7 +246,12 @@ public class PocketDoorData extends WorldSavedData {
             names.add(entry.getString("name"));
         }
 
-        NBTTagList paused = nbt.getTagList("pausedAccess", 8);\n        for (int i = 0; i < paused.tagCount(); i++) {\n            pausedOwners.add(paused.getStringTagAt(i));\n        }\n\n        NBTTagList locked = nbt.getTagList("lockedKeys", 8);
+        NBTTagList paused = nbt.getTagList("pausedAccess", 8);
+        for (int i = 0; i < paused.tagCount(); i++) {
+            pausedOwners.add(paused.getStringTagAt(i));
+        }
+
+        NBTTagList locked = nbt.getTagList("lockedKeys", 8);
         for (int i = 0; i < locked.tagCount(); i++) {
             lockedOwners.add(locked.getStringTagAt(i));
         }
@@ -276,7 +292,13 @@ public class PocketDoorData extends WorldSavedData {
         for (String owner : lockedOwners) {
             locked.appendTag(new net.minecraft.nbt.NBTTagString(owner));
         }
-        nbt.setTag("lockedKeys", locked);\n\n        NBTTagList paused = new NBTTagList();\n        for (String owner : pausedOwners) {\n            paused.appendTag(new net.minecraft.nbt.NBTTagString(owner));\n        }\n        nbt.setTag("pausedAccess", paused);
+        nbt.setTag("lockedKeys", locked);
+
+        NBTTagList paused = new NBTTagList();
+        for (String owner : pausedOwners) {
+            paused.appendTag(new net.minecraft.nbt.NBTTagString(owner));
+        }
+        nbt.setTag("pausedAccess", paused);
         return nbt;
     }
 }
