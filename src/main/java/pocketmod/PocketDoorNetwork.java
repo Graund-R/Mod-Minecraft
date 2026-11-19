@@ -52,7 +52,7 @@ public final class PocketDoorNetwork {
         send(REQUEST_STATE, 0, "", "");
     }
 
-    public static void buyPair() { send(BUY_PAIR, 0, "", ""); }
+    public static void buyPair(String selectedPair) { send(BUY_PAIR, 0, selectedPair == null ? "" : selectedPair, ""); }
     public static void buyGoldKey(String pairId, boolean preserveOld) { send(BUY_GOLD_KEY, preserveOld ? 1 : 0, pairId, ""); }
     public static void buyIronKey(String pairId, boolean preserveOld) { send(BUY_IRON_KEY, preserveOld ? 1 : 0, pairId, ""); }
     public static void toggleKeys() { send(TOGGLE_KEYS, 0, "", ""); }
@@ -171,25 +171,31 @@ public final class PocketDoorNetwork {
                     deny(player);
                     break;
                 }
-                if (!data.canBuyPair(owner)) {
+                String pairId = message.pair;
+                boolean replacing = data.ownsPair(owner, pairId) && data.doorCount(pairId) < 2;
+                int doorsToIssue = replacing ? 2 - data.doorCount(pairId) : 2;
+                if (!replacing && !data.canBuyPair(owner)) {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
                     break;
                 }
-                double price = Mana.shopPrice(player, PocketConfig.doorPairPrice);
+                double basePrice = PocketConfig.doorPairPrice * (doorsToIssue / 2.0D);
+                double price = Mana.shopPrice(player, basePrice);
                 if (!Mana.spend(player, price)) {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
                             (int) Math.ceil(price)), true);
                     break;
                 }
-                String pairId = data.createPair(owner);
+                if (!replacing) pairId = data.createPair(owner);
                 if (pairId == null) {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
                     break;
                 }
                 Mana.consumeDiscount(player);
-                give(player, PocketDoorItems.createPairItem(owner, pairId));
-                give(player, PocketDoorItems.createPairItem(owner, pairId));
-                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_bought"), true);
+                for (int i = 0; i < doorsToIssue; i++) {
+                    give(player, PocketDoorItems.createPairItem(owner, pairId));
+                }
+                player.sendStatusMessage(new TextComponentTranslation(
+                        replacing ? "pocketmod.msg.door_pair_replaced" : "pocketmod.msg.door_pair_bought"), true);
                 break;
             }
             case BUY_GOLD_KEY:
