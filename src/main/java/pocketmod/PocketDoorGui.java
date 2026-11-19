@@ -226,7 +226,8 @@ public class PocketDoorGui extends GuiScreen {
                 }
             } else if (button.id == BTN_BUY_PAIR) {
                 button.displayString = "Пара дверей: " + snapshot.getInteger("pairPrice") + " (" + pairCount() + "/" + PocketDoorData.MAX_PAIRS + ")";
-                button.enabled = pairCount() < PocketDoorData.MAX_PAIRS;
+                button.enabled = pairCount() < PocketDoorData.MAX_PAIRS
+                        || (hasPair && doorCount(selectedPairId) < 2);
             } else if (button.id == BTN_BUY_KEY) {
                 button.displayString = "Золотой ключ: " + snapshot.getInteger("goldKeyPrice");
                 button.enabled = hasPair;
