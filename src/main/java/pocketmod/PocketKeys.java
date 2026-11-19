@@ -39,11 +39,21 @@ public final class PocketKeys {
     }
 
     public static ItemStack createOwnerKey(EntityPlayer player) {
+        return createKeyFor(player.getUniqueID());
+    }
+
+    public static ItemStack createKeyFor(java.util.UUID owner) {
         ItemStack stack = new ItemStack(POCKET_KEY);
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setString("pocket_owner", player.getUniqueID().toString());
+        tag.setString("pocket_owner", owner.toString());
         stack.setTagCompound(tag);
         return stack;
+    }
+
+    public static boolean opensNetwork(ItemStack stack, java.util.UUID owner) {
+        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
+        NBTTagCompound tag = stack.getTagCompound();
+        return tag != null && owner.toString().equals(tag.getString("pocket_owner"));
     }
 
     public static boolean hasOwnerKey(EntityPlayer player) {
