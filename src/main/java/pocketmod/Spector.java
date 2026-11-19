@@ -147,7 +147,7 @@ public class Spector {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_need"), true);
             return;
         }
-        if (p.world.provider.getDimension() == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(p.world.provider.getDimension())) {
             PocketData pd = PocketData.get(p.world);
             net.minecraft.util.math.BlockPos f = new net.minecraft.util.math.BlockPos(
                     net.minecraft.util.math.MathHelper.floor(x),
