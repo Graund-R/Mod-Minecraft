@@ -58,10 +58,7 @@ public final class PocketDoorEvents {
                 player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
                 return;
             }
-            net.minecraft.nbt.NBTTagCompound tag = held.getOrCreateSubCompound("PocketDoor");
-            tag.setString("pocket_pair_id", pairId);
-            tag.setString("pocket_owner", player.getUniqueID().toString());
-            // Keep tags at the root as well for items saved by the previous development build.
+            if (!held.hasTagCompound()) held.setTagCompound(new net.minecraft.nbt.NBTTagCompound());
             held.getTagCompound().setString("pocket_pair_id", pairId);
             held.getTagCompound().setString("pocket_owner", player.getUniqueID().toString());
         } else if (itemOwner == null || !player.getUniqueID().toString().equals(itemOwner)) {
@@ -103,7 +100,13 @@ public final class PocketDoorEvents {
         boolean keyAccess = data.keysEnabled(owner)
                 && PocketKeys.opensPair(event.getItemStack(), owner, pairId);
 
-        if (!ownerAccess && !trustedAccess && !keyAccess) {
+        boolean leavingOwnerPocket = false;
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
+            int ownerDimension = PocketDimensionManager.getDimensionForOwner(player.getServer(), owner);
+            leavingOwnerPocket = ownerDimension == player.dimension;
+        }
+
+        if (!leavingOwnerPocket && !ownerAccess && !trustedAccess && !keyAccess) {
             player.sendStatusMessage(new TextComponentTranslation(
                     data.keysEnabled(owner) ? "pocketmod.msg.door_locked" : "pocketmod.msg.keys_disabled"), true);
             event.setCanceled(true);
@@ -111,18 +114,21 @@ public final class PocketDoorEvents {
             return;
         }
 
-        boolean leavingPocket = PocketDimensionManager.isPocketDimension(player.dimension);
-        if (leavingPocket) {
+        if (leavingOwnerPocket) {
+            // Leaving the pocket entered through this owner's door never consumes a key.
             PocketTeleporter.toggle(player);
             event.setCanceled(true);
             event.setCancellationResult(EnumActionResult.SUCCESS);
-        } else if (PocketTeleporter.enterNetwork(player, owner)) {
-            if (keyAccess && PocketKeys.isOneTime(event.getItemStack())) {
-                ItemStack used = player.getHeldItem(event.getHand());
-                if (!used.isEmpty()) used.shrink(1);
-            }
-            event.setCanceled(true);
-            event.setCancellationResult(EnumActionResult.SUCCESS);
+            return;
+        }
+
+        boolean entered = PocketTeleporter.enterNetwork(player, owner);
+        event.setCanceled(true);
+        event.setCancellationResult(entered ? EnumActionResult.SUCCESS : EnumActionResult.FAIL);
+        boolean keyWasRequired = !ownerAccess && !trustedAccess && keyAccess;
+        if (entered && keyWasRequired && PocketKeys.isOneTime(event.getItemStack())) {
+            ItemStack used = player.getHeldItem(event.getHand());
+            if (!used.isEmpty()) used.shrink(1);
         }
     }
 }

@@ -266,7 +266,12 @@ public class PocketDoorGui extends GuiScreen {
         boolean hasPair = selectedPairId != null && data != null
                 && data.ownsPair(ownerId(), selectedPairId);
         for (GuiButton button : buttonList) {
-            if (button.id == BTN_BUY_PAIR) {
+            if (button.id >= BTN_PAIR_BASE && button.id < BTN_PAIR_BASE + PocketDoorData.MAX_PAIRS) {
+                int index = button.id - BTN_PAIR_BASE;
+                if (index < pairIds.size()) {
+                    button.displayString = "Пара " + (index + 1) + "  " + data.doorCount(pairIds.get(index)) + "/2";
+                }
+            } else if (button.id == BTN_BUY_PAIR) {
                 button.displayString = "Пара дверей: 1000 (" + (data == null ? 0 : data.pairCount(ownerId()))
                         + "/" + PocketDoorData.MAX_PAIRS + ")";
                 button.enabled = data != null && data.canBuyPair(ownerId());

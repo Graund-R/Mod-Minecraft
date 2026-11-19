@@ -51,8 +51,9 @@ public class PocketTeleporter implements ITeleporter {
     public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner) {
         MinecraftServer server = player.getServer();
         if (server == null) return false;
-        int targetId = PocketDimensionManager.getDimensionForOwner(server, owner);
-        if (targetId < 0) return false;
+        // The door owner already had to unlock the pocket ability before placing this door.
+        // Create their persistent dimension on first door entry if they have not used K yet.
+        int targetId = PocketDimensionManager.getOrCreateDimension(server, owner);
         WorldServer target = server.getWorld(targetId);
         if (target == null) {
             net.minecraftforge.common.DimensionManager.initDimension(targetId);
