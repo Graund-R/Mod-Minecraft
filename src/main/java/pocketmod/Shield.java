@@ -23,6 +23,7 @@ public class Shield {
     }
 
     public static void toggle(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.SHIELD)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -56,6 +57,10 @@ public class Shield {
     public static void onDamage(LivingDamageEvent e) {
         if (!(e.getEntityLiving() instanceof EntityPlayerMP)) return;
         EntityPlayerMP p = (EntityPlayerMP) e.getEntityLiving();
+        if (MorphIntegration.isMorphed(p)) {
+            off(p);
+            return;
+        }
         if (!isOn(p)) return;
         DamageSource s = e.getSource();
         if (s.canHarmInCreative()) return;
