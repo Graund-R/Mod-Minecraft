@@ -92,6 +92,7 @@ public class CommonEvents {
         if (world.isRemote) {
             return;
         }
+        EntityPlayer player = event.getEntityPlayer();
         ItemStack stack = event.getItemStack();
         // Тестовый выпуск личного ключа: Shift + ПКМ золотым слитком.
         // Ключ привязывается к UUID создавшего его игрока и не расходуется при входе.
@@ -109,8 +110,6 @@ public class CommonEvents {
         if (!ManaItems.isManaItem(stack)) {
             return;
         }
-        EntityPlayer player = event.getEntityPlayer();
-
         RayTraceResult hit = player.rayTrace(5.0D, 1.0F);
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
             return;
