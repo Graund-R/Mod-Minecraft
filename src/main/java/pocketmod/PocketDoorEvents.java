@@ -84,7 +84,11 @@ public final class PocketDoorEvents {
         UUID owner = data.owner(world.provider.getDimension(), pos.toLong());
         boolean ownerAccess = owner != null && owner.equals(event.getPlayer().getUniqueID());
         boolean trustedAccess = owner != null && data.isTrusted(owner, event.getPlayer().getName());
-        if (owner != null && !ownerAccess && !trustedAccess) {
+        boolean pocketBuilder = PocketDimensionManager.isPocketDimension(world.provider.getDimension())
+                && PocketAccess.canBuild(event.getPlayer(), world);
+        boolean ownerOutsideDoor = ownerAccess
+                && !PocketDimensionManager.isPocketDimension(world.provider.getDimension());
+        if (owner != null && !ownerOutsideDoor && !trustedAccess && !pocketBuilder) {
             event.setCanceled(true);
             return;
         }
