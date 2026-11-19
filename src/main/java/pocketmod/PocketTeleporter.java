@@ -61,14 +61,10 @@ public class PocketTeleporter implements ITeleporter {
         }
         if (target == null) return false;
         Pocket.buildIfNeeded(target);
-        PocketData pd = PocketData.get(target);
-        double price = entryPrice(player, pd);
-        if (!Mana.hasFreeEntry(player) && !Mana.spend(player, price)) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
-                    (int) Math.ceil(price)), true);
-            return false;
-        }
-        Mana.setFreeEntry(player, false);
+        PocketData.get(target);
+        // Door guests always enter for free. The owner's free-entry-on-death
+        // flag belongs only to the owner's own pocket and is never consumed here.
+        MorphIntegration.demorph(player);
         NBTTagCompound data = PlayerData.root(player);
         data.setInteger("pocket_return_dim", player.dimension);
         data.setDouble("pocket_return_x", player.posX);
@@ -87,7 +83,8 @@ public class PocketTeleporter implements ITeleporter {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         if (!PocketDimensionManager.isPocketDimension(player.dimension)) {
-            // вход в карман выключает полёт и Спектор
+            // Вход в карман снимает морф и отключает полёт/Спектор.
+            MorphIntegration.demorph(player);
             Spector.forceReturnIfActive(player);
             Flight.stop(player);
         }
