@@ -2,7 +2,8 @@ package pocketmod;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.init.Items;\nimport net.minecraft.block.Block;\nimport net.minecraft.block.BlockDoor;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
