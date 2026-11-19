@@ -16,25 +16,41 @@ import net.minecraftforge.client.model.ModelLoader;
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public final class PocketKeys {
     public static Item POCKET_KEY;
+    public static Item IRON_KEY;
+    public static Item GOLD_KEY;
 
     private PocketKeys() {}
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
-        POCKET_KEY = new PocketKeyItem();
-        POCKET_KEY.setRegistryName(PocketMod.MODID, "pocket_key");
-        POCKET_KEY.setUnlocalizedName(PocketMod.MODID + ".pocket_key");
-        POCKET_KEY.setMaxStackSize(1);
-        event.getRegistry().register(POCKET_KEY);
+        POCKET_KEY = register(event, "pocket_key");
+        IRON_KEY = register(event, "pocket_iron_key");
+        GOLD_KEY = register(event, "pocket_gold_key");
+    }
+
+    private static Item register(RegistryEvent.Register<Item> event, String name) {
+        Item item = new PocketKeyItem();
+        item.setRegistryName(PocketMod.MODID, name);
+        item.setUnlocalizedName(PocketMod.MODID + "." + name);
+        item.setMaxStackSize(1);
+        event.getRegistry().register(item);
+        return item;
     }
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public static void registerModels(ModelRegistryEvent event) {
-        if (POCKET_KEY != null) {
-            ModelLoader.setCustomModelResourceLocation(POCKET_KEY, 0,
+        registerModel(POCKET_KEY, "pocket_key");
+        registerModel(IRON_KEY, "pocket_iron_key");
+        registerModel(GOLD_KEY, "pocket_gold_key");
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static void registerModel(Item item, String name) {
+        if (item != null) {
+            ModelLoader.setCustomModelResourceLocation(item, 0,
                     new net.minecraft.client.renderer.block.model.ModelResourceLocation(
-                            new ResourceLocation(PocketMod.MODID, "pocket_key"), "inventory"));
+                            new ResourceLocation(PocketMod.MODID, name), "inventory"));
         }
     }
 
@@ -49,7 +65,7 @@ public final class PocketKeys {
 
     /** New key bound to one purchased door pair. */
     public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime) {
-        ItemStack stack = new ItemStack(POCKET_KEY);
+        ItemStack stack = new ItemStack(oneTime ? IRON_KEY : GOLD_KEY);
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString("pocket_owner", owner.toString());
         tag.setString("pocket_pair", pairId);
@@ -63,7 +79,7 @@ public final class PocketKeys {
     }
 
     public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId) {
-        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY || pairId == null) return false;
+        if (!isKeyItem(stack) || pairId == null) return false;
         NBTTagCompound tag = stack.getTagCompound();
         if (tag == null || !owner.toString().equals(tag.getString("pocket_owner"))) return false;
         String keyPair = tag.getString("pocket_pair");
@@ -73,14 +89,16 @@ public final class PocketKeys {
     }
 
     public static boolean isOneTime(ItemStack stack) {
-        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
+        if (stack.isEmpty()) return false;
+        if (stack.getItem() == IRON_KEY) return true;
+        if (stack.getItem() != POCKET_KEY && stack.getItem() != GOLD_KEY) return false;
         NBTTagCompound tag = stack.getTagCompound();
         return tag != null && tag.getBoolean("pocket_one_time");
     }
 
     /** Kept for older callers. */
     public static boolean opensNetwork(ItemStack stack, java.util.UUID owner) {
-        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
+        if (!isKeyItem(stack)) return false;
         NBTTagCompound tag = stack.getTagCompound();
         return tag != null && owner.toString().equals(tag.getString("pocket_owner"));
     }
@@ -95,8 +113,13 @@ public final class PocketKeys {
         return false;
     }
 
+    private static boolean isKeyItem(ItemStack stack) {
+        return !stack.isEmpty() && (stack.getItem() == POCKET_KEY || stack.getItem() == IRON_KEY
+                || stack.getItem() == GOLD_KEY);
+    }
+
     public static boolean isOwnerKey(ItemStack stack, EntityPlayer player) {
-        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
+        if (!isKeyItem(stack)) return false;
         NBTTagCompound tag = stack.getTagCompound();
         return tag != null && player.getUniqueID().toString().equals(tag.getString("pocket_owner"));
     }
