@@ -468,3 +468,6 @@ pocketmod.msg.keys_disabled=All keys are blocked.
 pocketmod.msg.trusted_added=Player added to access list: %s
 pocketmod.msg.trusted_removed=Player removed from access list: %s
 pocketmod.msg.trusted_unchanged=Access list unchanged: %s
+
+pocketmod.msg.access_paused=Access is temporarily suspended. All visitors have been ejected.
+pocketmod.msg.access_resumed=Access to the dimension is open again.
