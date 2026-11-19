@@ -33,7 +33,24 @@ public class PocketTeleporter implements ITeleporter {
         entity.fallDistance = 0;
     }
 
+    /**
+     * Единственная проверка права входа в карманное измерение.
+     * Покупка дверей/ключей сама по себе не открывает измерение:
+     * сначала игрок должен приобрести AbilityType.POCKET.
+     * Эту проверку должны использовать и будущие двери.
+     */
+    public static boolean canEnterPocket(EntityPlayerMP player) {
+        if (AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+            return true;
+        }
+        player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        return false;
+    }
+
     public static void toggle(EntityPlayerMP player) {
+        if (!PocketDimensionManager.isPocketDimension(player.dimension) && !canEnterPocket(player)) {
+            return;
+        }
         MinecraftServer server = player.getServer();
         if (server == null) return;
         if (!PocketDimensionManager.isPocketDimension(player.dimension)) {
