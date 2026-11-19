@@ -144,11 +144,29 @@ public class CommonEvents {
 
         if (event.isWasDeath()) {
             Mana.set(now, Mana.get(now) * (1.0 - PocketConfig.deathManaLoss));
-            if (old.dimension == PocketMod.DIM_ID) {
-                Mana.setFreeEntry(now, true);
+            boolean diedInOwnPocket = false;
+            if (old.world instanceof net.minecraft.world.WorldServer
+                    && PocketDimensionManager.isPocketDimension(old.dimension)) {
+                java.util.UUID pocketOwner = PocketDimensionManager.getOwnerForDimension(
+                        ((net.minecraft.world.WorldServer) old.world).getMinecraftServer(), old.dimension);
+                diedInOwnPocket = pocketOwner != null && pocketOwner.equals(old.getUniqueID());
             }
-            // Временный тотем на месте смерти (x10, до использования или следующей смерти)
-            Totems.setDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+            if (diedInOwnPocket) {
+                Mana.setFreeEntry(now, true);
+                // Death totem and free re-entry are owner-only.
+                Totems.setDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+            }
         }
     }
+    @SubscribeEvent
+    public static void onPlayerRespawn(net.minecraftforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.player instanceof EntityPlayerMP)) return;
+        EntityPlayerMP player = (EntityPlayerMP) event.player;
+        if (!PocketDimensionManager.isPocketDimension(player.dimension)) return;
+        java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(player.getServer(), player.dimension);
+        if (owner != null && !owner.equals(player.getUniqueID())) {
+            PocketTeleporter.toggle(player);
+        }
+    }
+
 }
