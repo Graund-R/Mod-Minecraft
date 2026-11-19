@@ -14,6 +14,15 @@ public final class PocketDoorClientHandler {
         Minecraft.getMinecraft().addScheduledTask(new Runnable() {
             @Override public void run() {
                 PocketDoorNetwork.setClientState(state);
+                if (PocketDoorNetwork.consumeTotemGuiPending()) {
+                    if (state.getBoolean("totemUnlocked")) {
+                        Minecraft.getMinecraft().displayGuiScreen(
+                                new TotemGui(Minecraft.getMinecraft().player));
+                    } else if (Minecraft.getMinecraft().player != null) {
+                        Minecraft.getMinecraft().player.sendStatusMessage(
+                                new net.minecraft.util.text.TextComponentTranslation("pocketmod.msg.need_shop"), true);
+                    }
+                }
                 if (PocketDoorNetwork.consumeMorphCatalogPending()) {
                     if (state.getBoolean("morphismUnlocked")
                             && state.getBoolean("morphismAvailable")) {
