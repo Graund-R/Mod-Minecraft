@@ -104,7 +104,7 @@ public final class PocketDoorEvents {
         boolean ownerAccess = owner.equals(player.getUniqueID());
         boolean trustedAccess = data.isTrusted(owner, player.getName());
         boolean keyAccess = data.keysEnabled(owner)
-                && PocketKeys.opensPair(event.getItemStack(), owner, pairId);
+                && PocketKeys.opensPair(event.getItemStack(), owner, pairId, data.keyEpoch(owner));
 
         boolean leavingOwnerPocket = false;
         if (PocketDimensionManager.isPocketDimension(player.dimension)) {
