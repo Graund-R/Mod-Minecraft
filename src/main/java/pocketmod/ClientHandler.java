@@ -559,7 +559,7 @@ public class ClientHandler {
             }
 
             ItemStack held = mc.player.getHeldItemMainhand();
-            if (mc.player.dimension == PocketMod.DIM_ID
+            if (PocketDimensionManager.isPocketDimension(mc.player.dimension)
                     && mc.objectMouseOver != null
                     && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
                     && ManaItems.isManaItem(held)) {

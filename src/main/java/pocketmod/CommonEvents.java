@@ -33,7 +33,7 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension()) || event.isCanceled()) {
             return;
         }
         PocketData data = PocketData.get(world);

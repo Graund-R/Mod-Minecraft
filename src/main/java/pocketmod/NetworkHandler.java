@@ -42,13 +42,13 @@ public final class NetworkHandler {
 
     /** Передаёт клиенту WorldSavedData карманного измерения для подсказок и локального UI. */
     public static void syncPocket(EntityPlayerMP player) {
-        if (player == null || player.dimension != PocketMod.DIM_ID) return;
+        if (player == null || !PocketDimensionManager.isPocketDimension(player.dimension)) return;
         NBTTagCompound snapshot = PocketData.get(player.world).writeToNBT(new NBTTagCompound());
-        CHANNEL_INSTANCE.sendTo(new PocketSyncMessage(PocketMod.DIM_ID, snapshot), player);
+        CHANNEL_INSTANCE.sendTo(new PocketSyncMessage(player.dimension, snapshot), player);
     }
 
     public static void syncPocketWorld(WorldServer world) {
-        if (world == null || world.provider.getDimension() != PocketMod.DIM_ID) return;
+        if (world == null || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) return;
         for (net.minecraft.entity.player.EntityPlayer player : world.playerEntities) {
             if (player instanceof EntityPlayerMP) syncPocket((EntityPlayerMP) player);
         }
@@ -200,13 +200,13 @@ public final class NetworkHandler {
         if (event.player instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.player;
             sync(player);
-            if (player.dimension == PocketMod.DIM_ID) syncPocket(player);
+            if (PocketDimensionManager.isPocketDimension(player.dimension)) syncPocket(player);
         }
     }
 
     @SubscribeEvent
     public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.player instanceof EntityPlayerMP && event.toDim == PocketMod.DIM_ID) {
+        if (event.player instanceof EntityPlayerMP && PocketDimensionManager.isPocketDimension(event.toDim)) {
             syncPocket((EntityPlayerMP) event.player);
         }
     }
