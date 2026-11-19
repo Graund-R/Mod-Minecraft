@@ -155,7 +155,7 @@ public class Spector {
                     net.minecraft.util.math.MathHelper.floor(x),
                     net.minecraft.util.math.MathHelper.floor(y),
                     net.minecraft.util.math.MathHelper.floor(z));
-            if (!pd.interior.contains(f) && !pd.interior.contains(f.up())) {
+            if (!pd.interior.contains(f) || !pd.interior.contains(f.up())) {
                 p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_limits"), true);
                 return;
             }
