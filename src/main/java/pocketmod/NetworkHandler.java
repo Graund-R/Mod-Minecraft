@@ -127,15 +127,21 @@ public final class NetworkHandler {
         // Не допускаем NaN/Infinity в экономику и коэффициенты, а также лишние данные пакета.
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
-        if (MorphIntegration.isMorphed(p)
-                && m.action != NetAction.CREATE_TOTEM
-                && m.action != NetAction.MOVE_TOTEM
-                && m.action != NetAction.DELETE_TOTEM
-                && m.action != NetAction.TELEPORT_TOTEM
-                && m.action != NetAction.TELEPORT_LAST_TOTEM
-                && m.action != NetAction.DEATH_TOTEM_CHOICE) {
-            return;
-        }
+        boolean shopAction = m.action == NetAction.TAKE_CREDIT
+                || m.action == NetAction.TOGGLE_DECOY
+                || m.action == NetAction.TOGGLE_SILENCE
+                || m.action == NetAction.UPGRADE_BLOODSUCKER
+                || m.action == NetAction.UPGRADE_ABILITY
+                || m.action == NetAction.BUY_BODY_PERMANENT
+                || m.action == NetAction.TOGGLE_BODY_RENT
+                || m.action == NetAction.SPIN_LOOT;
+        boolean totemAction = m.action == NetAction.CREATE_TOTEM
+                || m.action == NetAction.MOVE_TOTEM
+                || m.action == NetAction.DELETE_TOTEM
+                || m.action == NetAction.TELEPORT_TOTEM
+                || m.action == NetAction.TELEPORT_LAST_TOTEM
+                || m.action == NetAction.DEATH_TOTEM_CHOICE;
+        if (MorphIntegration.isMorphed(p) && !shopAction && !totemAction) return;
         switch (m.action) {
             case TAKE_CREDIT:
                 double repay = Mana.takeCredit(p, m.value);

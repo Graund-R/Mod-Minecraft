@@ -312,6 +312,17 @@ public final class PocketDoorNetwork {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 
+        // Морф не блокирует магазин: покупка, настройка доступа, формы и тотемы остаются доступны.
+        // Боевые/перемещающие способности (19-29) во время формы не выполняются.
+        boolean shopAction = message.action >= BUY_PAIR && message.action <= REMOVE_TRUSTED
+                || message.action == MORPH_TRANSFORM || message.action == MORPH_DEMORPH
+                || message.action >= 12 && message.action <= 18
+                || message.action >= 30 && message.action <= 35;
+        if (MorphIntegration.isMorphed(player)
+                && message.action != REQUEST_STATE && !shopAction) {
+            return;
+        }
+
         PocketDoorData data = PocketDoorData.get(server.getWorld(0));
         UUID owner = player.getUniqueID();
         switch (message.action) {
