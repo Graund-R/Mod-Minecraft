@@ -11,8 +11,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -27,35 +25,61 @@ public class TotemGui extends GuiScreen {
     private static final int ROW_W = 314;
     private static final int LIST_TOP = 66;
 
-    private interface ServerAction {
-        void run(EntityPlayerMP p);
-    }
-
     private final EntityPlayer player;
     private GuiTextField nameField;
     private int scroll = 0;
     private int confirmIndex = -1;
+    private int refreshTicks = 0;
 
     public TotemGui(EntityPlayer player) {
         this.player = player;
     }
 
-    private EntityPlayer dataPlayer() {
-        EntityPlayerMP mp = ClientHandler.sp();
-        return mp != null ? mp : player;
+    private net.minecraft.nbt.NBTTagCompound state() {
+        return PocketDoorNetwork.getClientState();
     }
 
-    private void server(final ServerAction action) {
-        final IntegratedServer s = mc.getIntegratedServer();
-        if (s == null) return;
-        s.addScheduledTask(() -> {
-            EntityPlayerMP mp = s.getPlayerList().getPlayerByUUID(player.getUniqueID());
-            if (mp != null) action.run(mp);
-        });
+    private List<Totems.Totem> totems() {
+        List<Totems.Totem> list = new java.util.ArrayList<Totems.Totem>();
+        net.minecraft.nbt.NBTTagList tags = state().getTagList("totems", 10);
+        for (int i = 0; i < tags.tagCount(); i++) {
+            net.minecraft.nbt.NBTTagCompound tag = tags.getCompoundTagAt(i);
+            list.add(new Totems.Totem(tag.getString("name"), tag.getInteger("dim"),
+                    tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z")));
+        }
+        return list;
+    }
+
+    private double mana() { return state().getDouble("mana"); }
+    private double multiplier() { return state().getDouble("priceMultiplier"); }
+    private int slots() { return state().getInteger("totemSlots"); }
+
+    private double createCost() { return PocketConfig.totemCreateCost * multiplier(); }
+    private double deleteCost() { return PocketConfig.totemDeleteCost * multiplier(); }
+
+    private double discount() {
+        int[] levels = state().getIntArray("abilityLevels");
+        int level = levels.length > AbilityType.TOTEM.ordinal()
+                ? levels[AbilityType.TOTEM.ordinal()] : 0;
+        if (level >= 3) return PocketConfig.totemDiscount3;
+        if (level == 2) return PocketConfig.totemDiscount2;
+        return 0.0D;
+    }
+
+    private double teleportCost(Totems.Totem t) {
+        double base = PocketConfig.totemTeleportBase;
+        if (player.dimension != t.dim) {
+            base += PocketConfig.totemDimensionCost;
+        } else {
+            double dx = t.x - player.posX, dy = t.y - player.posY, dz = t.z - player.posZ;
+            base += Math.sqrt(dx * dx + dy * dy + dz * dz) * PocketConfig.totemTeleportPerBlock;
+        }
+        return base * (1.0D - discount()) * multiplier();
     }
 
     @Override
     public void initGui() {
+        PocketDoorNetwork.requestState();
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
         int cx = width / 2;
@@ -90,20 +114,23 @@ public class TotemGui extends GuiScreen {
 
     private void createTotem() {
         final String name = nameField.getText();
-        server(p -> Totems.create(p, name));
+        PocketDoorNetwork.createTotem(name);
         nameField.setText("");
     }
 
     @Override
     public void updateScreen() {
         nameField.updateCursorCounter();
-        EntityPlayer dp = dataPlayer();
-        double cost = Totems.createCost(dp);
-        boolean full = Totems.get(dp).size() >= Totems.maxSlots(dp);
+        if (++refreshTicks >= 10) {
+            refreshTicks = 0;
+            PocketDoorNetwork.requestState();
+        }
+        double cost = createCost();
+        boolean full = totems().size() >= slots();
         for (GuiButton b : buttonList) {
             if (b.id == BTN_CREATE) {
                 String s = Tr.format("pocketmod.gui.totem_create", (int) Math.ceil(cost));
-                b.displayString = (Mana.get(dp) < cost ? TextFormatting.RED.toString() : "") + s;
+                b.displayString = (mana() < cost ? TextFormatting.RED.toString() : "") + s;
                 b.enabled = !full;
             }
         }
@@ -117,15 +144,14 @@ public class TotemGui extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        EntityPlayer dp = dataPlayer();
-        List<Totems.Totem> list = Totems.get(dp);
+        List<Totems.Totem> list = totems();
         int cx = width / 2;
         int left = cx - 172;
 
         drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.totems_title"), cx, 6, 0xFFE080);
-        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.mana", (long) Mana.get(dp),
-                String.format("%.2f", Mana.getPriceMultiplier(dp))), cx, 18, 0xAAAAFF);
-        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.totem_slots", list.size(), Totems.maxSlots(dp)),
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.mana", (long) mana(),
+                String.format("%.2f", multiplier())), cx, 18, 0xAAAAFF);
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.totem_slots", list.size(), slots()),
                 cx, 28, 0xCCCCCC);
 
         nameField.drawTextBox();
@@ -153,9 +179,9 @@ public class TotemGui extends GuiScreen {
             fontRenderer.drawString(dimName(t.dim) + " " + (int) t.x + " " + (int) t.y + " " + (int) t.z,
                     left + 120, y + 4, 0xAAAAAA);
 
-            double cost = Totems.teleportCost(dp, t);
+            double cost = teleportCost(t);
             fontRenderer.drawString(String.valueOf((int) Math.ceil(cost)), left + 222, y + 4,
-                    Mana.get(dp) < cost ? 0xFF5555 : 0x88FF88);
+                    mana() < cost ? 0xFF5555 : 0x88FF88);
 
             drawSmallButton(left + 250, y, 14, "^", mouseX >= left + 250 && mouseX <= left + 264 && hover, 0xFFFFFF);
             drawSmallButton(left + 266, y, 14, "v", mouseX >= left + 266 && mouseX <= left + 280 && hover, 0xFFFFFF);
@@ -164,7 +190,7 @@ public class TotemGui extends GuiScreen {
                     confirm ? 0xFF5555 : 0xFFAAAA);
         }
 
-        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.totem_hint", (int) Math.ceil(Totems.deleteCost(dp))),
+        drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.totem_hint", (int) Math.ceil(deleteCost())),
                 cx, height - 36, 0x888888);
 
         super.drawScreen(mouseX, mouseY, partialTicks);
@@ -176,7 +202,7 @@ public class TotemGui extends GuiScreen {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (mouseButton != 0) return;
 
-        List<Totems.Totem> list = Totems.get(dataPlayer());
+        List<Totems.Totem> list = totems();
         int left = width / 2 - 172;
         int rows = visibleRows();
         for (int r = 0; r < rows; r++) {
@@ -187,20 +213,20 @@ public class TotemGui extends GuiScreen {
 
             if (mouseX >= left + 250 && mouseX <= left + 264) {
                 confirmIndex = -1;
-                server(p -> Totems.move(p, i, -1));
+                PocketDoorNetwork.moveTotem(i, -1);
             } else if (mouseX >= left + 266 && mouseX <= left + 280) {
                 confirmIndex = -1;
-                server(p -> Totems.move(p, i, 1));
+                PocketDoorNetwork.moveTotem(i, 1);
             } else if (mouseX >= left + 284) {
                 if (confirmIndex == i) {
                     confirmIndex = -1;
-                    server(p -> Totems.delete(p, i));
+                    PocketDoorNetwork.deleteTotem(i);
                 } else {
                     confirmIndex = i;
                 }
             } else {
                 confirmIndex = -1;
-                server(p -> Totems.teleport(p, i));
+                PocketDoorNetwork.teleportTotem(i);
                 mc.player.closeScreen();
             }
             return;
@@ -242,6 +268,6 @@ public class TotemGui extends GuiScreen {
 
     @Override
     public boolean doesGuiPauseGame() {
-        return true;
+        return false;
     }
 }
