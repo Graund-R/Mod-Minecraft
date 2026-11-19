@@ -32,6 +32,8 @@ public class PocketDoorData extends WorldSavedData {
     private final Set<String> lockedOwners = new LinkedHashSet<String>();
     /** Owners who have temporarily suspended all visitor access. */
     private final Set<String> pausedOwners = new LinkedHashSet<String>();
+    /** Owners currently testing the temporary-guest permission tier in their own pocket. */
+    private final Set<String> guestTestOwners = new LinkedHashSet<String>();
 
     public PocketDoorData() {
         super(ID);
@@ -153,6 +155,16 @@ public class PocketDoorData extends WorldSavedData {
         if (changed) markDirty();
     }
 
+    public boolean guestTestEnabled(UUID owner) {
+        return guestTestOwners.contains(owner.toString());
+    }
+
+    public void setGuestTestEnabled(UUID owner, boolean enabled) {
+        String id = owner.toString();
+        boolean changed = enabled ? guestTestOwners.add(id) : guestTestOwners.remove(id);
+        if (changed) markDirty();
+    }
+
     public boolean isTrusted(UUID owner, String playerName) {
         if (playerName == null) return false;
         Set<String> names = trustedPlayers.get(owner.toString());
@@ -210,6 +222,7 @@ public class PocketDoorData extends WorldSavedData {
         trustedPlayers.clear();
         lockedOwners.clear();
         pausedOwners.clear();
+        guestTestOwners.clear();
 
         NBTTagList pairs = nbt.getTagList("pairs", 10);
         for (int i = 0; i < pairs.tagCount(); i++) {
@@ -249,6 +262,11 @@ public class PocketDoorData extends WorldSavedData {
         NBTTagList paused = nbt.getTagList("pausedAccess", 8);
         for (int i = 0; i < paused.tagCount(); i++) {
             pausedOwners.add(paused.getStringTagAt(i));
+        }
+
+        NBTTagList guestTest = nbt.getTagList("guestTestOwners", 8);
+        for (int i = 0; i < guestTest.tagCount(); i++) {
+            guestTestOwners.add(guestTest.getStringTagAt(i));
         }
 
         NBTTagList locked = nbt.getTagList("lockedKeys", 8);
@@ -299,6 +317,12 @@ public class PocketDoorData extends WorldSavedData {
             paused.appendTag(new net.minecraft.nbt.NBTTagString(owner));
         }
         nbt.setTag("pausedAccess", paused);
+
+        NBTTagList guestTest = new NBTTagList();
+        for (String owner : guestTestOwners) {
+            guestTest.appendTag(new net.minecraft.nbt.NBTTagString(owner));
+        }
+        nbt.setTag("guestTestOwners", guestTest);
         return nbt;
     }
 }
