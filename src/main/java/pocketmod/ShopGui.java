@@ -210,7 +210,7 @@ public class ShopGui extends GuiScreen {
 
     private String cardLabel(AbilityType t, boolean sel) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = abilityLevel(t);
         String st = lvl == 0 ? TextFormatting.DARK_GRAY + "· " + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + "· L" + lvl + "/" + t.maxLevel;
         String name = (sel ? TextFormatting.GOLD : TextFormatting.WHITE) + Tr.format(t.titleKey());
@@ -244,7 +244,7 @@ public class ShopGui extends GuiScreen {
     }
 
     private void drawManaChip(EntityPlayer dp, int cx, int y) {
-        double mana = Mana.get(dp);
+        double mana = manaValue();
         double mult = priceMultiplier();
         double drain = Abilities.totalDrainPerSec(dp);
         int w = Math.min(280, width - 40);
@@ -270,7 +270,7 @@ public class ShopGui extends GuiScreen {
 
         int y = top;
         fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()), x, y, COL_ACCENT);
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = abilityLevel(t);
         String badge = lvl == 0
                 ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
@@ -303,7 +303,7 @@ public class ShopGui extends GuiScreen {
                 text = Tr.format("pocketmod.gui.lvl_done", L, ShopInfo.level(t, L));
                 color = COL_OK;
             } else {
-                double real = cost > 0 ? Mana.shopPrice(dp, cost) : 0;
+                double real = cost > 0 ? shopPrice(cost) : 0;
                 String pr = String.valueOf((int) Math.ceil(real));
                 text = Tr.format(L == lvl + 1 ? "pocketmod.gui.lvl_next" : "pocketmod.gui.lvl_later", L, pr, ShopInfo.level(t, L));
                 color = L == lvl + 1 ? 0xFFE8C070 : COL_MUTED;
@@ -327,9 +327,9 @@ public class ShopGui extends GuiScreen {
         EntityPlayer dp = dataPlayer();
         int have = bodyLevel(i);
         if (have >= BodyEffects.maxPerm(i)) return Tr.format("pocketmod.gui.max");
-        double real = Mana.shopPrice(dp, PocketConfig.bodyPermCost[i]);
+        double real = shopPrice(PocketConfig.bodyPermCost[i]);
         String s = Tr.format("pocketmod.gui.perm", (int) Math.ceil(real));
-        return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + s;
+        return (manaValue() < real ? TextFormatting.RED.toString() : "") + s;
     }
 
     private String rentLabel(int i) {
@@ -340,8 +340,8 @@ public class ShopGui extends GuiScreen {
 
     private String stakeLabel(int i) {
         EntityPlayer dp = dataPlayer();
-        double real = PocketConfig.lootStakes[i] * Mana.getPriceMultiplier(dp);
-        return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + Tr.format("pocketmod.loot.spin", (int) Math.ceil(real));
+        double real = PocketConfig.lootStakes[i] * priceMultiplier();
+        return (manaValue() < real ? TextFormatting.RED.toString() : "") + Tr.format("pocketmod.loot.spin", (int) Math.ceil(real));
     }
 
     private static String formatTime(long ms) {
@@ -404,7 +404,7 @@ public class ShopGui extends GuiScreen {
                             formatTime(creditLeftMs())),
                     cx, 52, 0xFF8888);
         } else {
-            double disc = 1.0 - Mana.getPriceMultiplier(dp);
+            double disc = 1.0 - priceMultiplier();
             if (disc > 0.001) {
                 drawCenteredString(fontRenderer, Tr.format("pocketmod.gui.discount", (int) Math.round(disc * 100)), cx, 52, COL_OK);
             }
@@ -443,7 +443,7 @@ public class ShopGui extends GuiScreen {
             drawFrame(4, top - 6, width - 4, height - 72, COL_PANEL, COL_PANEL_EDGE);
             for (int i = 0; i < BodyEffects.IDS.length; i++) {
                 int y = top + i * rowH;
-                int have = BodyEffects.perm(dp, i);
+                int have = bodyLevel(i);
                 String st = have > 0 ? TextFormatting.GREEN + " x" + have : "";
                 fontRenderer.drawStringWithShadow(Tr.format("pocketmod.body." + BodyEffects.IDS[i]) + st, lx + 6, y + (rowH - 10) / 2, 0xE8ECF0);
             }
@@ -461,7 +461,7 @@ public class ShopGui extends GuiScreen {
                     sliderX, sliderY - 12, 0xC8CDD5);
         } else {
             fontRenderer.drawStringWithShadow(TextFormatting.RED + Tr.format("pocketmod.gui.credit_active",
-                    (long) Math.ceil(Mana.getCredit(dp)), formatTime(Mana.getCreditLeftMs(dp))),
+                    (long) Math.ceil(creditValue()), formatTime(creditLeftMs())),
                     12, height - 40, 0xFFFFFF);
         }
         Gui.drawRect(sliderX, sliderY + 3, sliderX + sliderW, sliderY + sliderH - 3, 0xFF2A3038);
@@ -633,7 +633,7 @@ public class ShopGui extends GuiScreen {
             } else if (b.id >= BTN_PERM && b.id < BTN_PERM + 5) {
                 int i = b.id - BTN_PERM;
                 b.displayString = permLabel(i);
-                b.enabled = BodyEffects.perm(dp, i) < BodyEffects.maxPerm(i);
+                b.enabled = bodyLevel(i) < BodyEffects.maxPerm(i);
             } else if (b.id >= BTN_RENT && b.id < BTN_RENT + 5) {
                 b.displayString = rentLabel(b.id - BTN_RENT);
             } else if (b.id >= BTN_STAKE && b.id < BTN_STAKE + 3) {
