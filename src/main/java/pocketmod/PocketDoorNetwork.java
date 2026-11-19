@@ -114,6 +114,7 @@ public final class PocketDoorNetwork {
         state.setBoolean("guestTest", data.guestTestEnabled(owner));
         state.setDouble("mana", Mana.get(player));
         state.setDouble("priceMultiplier", Mana.getPriceMultiplier(player));
+        state.setDouble("discount", Mana.getDiscount(player));
         state.setDouble("credit", Mana.getCredit(player));
         state.setLong("creditLeftMs", Mana.getCreditLeftMs(player));
         state.setBoolean("hasCredit", Mana.hasCredit(player));
