@@ -135,7 +135,7 @@ public class PocketDoorGui extends GuiScreen {
         }
     }
 
-    private void purchasePair() { PocketDoorNetwork.buyPair(); }
+    private void purchasePair() { PocketDoorNetwork.buyPair(selectedPairId); }
 
     private void purchaseKey(boolean oneTime) {
         if (selectedPairId == null) return;
