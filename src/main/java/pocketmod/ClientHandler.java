@@ -39,6 +39,7 @@ public class ClientHandler {
     private static KeyBinding keyPocket;
     private static KeyBinding keyTeleport;
     private static KeyBinding keyInvis;
+    private static KeyBinding keyShop;
     private static KeyBinding keySlow;
     private static KeyBinding keySpector;
     private static KeyBinding keyPhase;
@@ -89,6 +90,7 @@ public class ClientHandler {
     private static final Hold hG = new Hold();
     private static final Hold hV = new Hold();
     private static final Hold hZ = new Hold();
+    private static final Hold hEnter = new Hold();
 
     private static final int EV_NONE = 0, EV_HOLD = 1, EV_TAP = 2;
 
@@ -96,6 +98,7 @@ public class ClientHandler {
         keyPocket   = new KeyBinding("key.pocketmod.pocket",   Keyboard.KEY_K, "key.categories.pocketmod");
         keyTeleport = new KeyBinding("key.pocketmod.teleport", Keyboard.KEY_G, "key.categories.pocketmod");
         keyInvis    = new KeyBinding("key.pocketmod.invis",    Keyboard.KEY_V, "key.categories.pocketmod");
+        keyShop     = new KeyBinding("key.pocketmod.shop",     Keyboard.KEY_RETURN, "key.categories.pocketmod");
         keySlow     = new KeyBinding("key.pocketmod.slow",     Keyboard.KEY_Z, "key.categories.pocketmod");
         keySpector  = new KeyBinding("key.pocketmod.spector",  Keyboard.KEY_X, "key.categories.pocketmod");
         keyPhase    = new KeyBinding("key.pocketmod.phase",    Keyboard.KEY_R, "key.categories.pocketmod");
@@ -108,6 +111,7 @@ public class ClientHandler {
         ClientRegistry.registerKeyBinding(keyPocket);
         ClientRegistry.registerKeyBinding(keyTeleport);
         ClientRegistry.registerKeyBinding(keyInvis);
+        ClientRegistry.registerKeyBinding(keyShop);
         ClientRegistry.registerKeyBinding(keySlow);
         MinecraftForge.EVENT_BUS.register(new ClientHandler());
         MinecraftForge.EVENT_BUS.register(new ConfigButton());
@@ -180,6 +184,7 @@ public class ClientHandler {
             resetHold(hG);
             resetHold(hV);
             resetHold(hZ);
+            resetHold(hEnter);
             xWait = raw(keySpector);
             specClient = false;
             return;
@@ -211,12 +216,21 @@ public class ClientHandler {
             if (p != null) NetworkHandler.action(NetAction.TELEPORT_LOOK, 0, 0, 0, "");
         }
 
-        int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
-        if (v == EV_HOLD) {
-            mc.displayGuiScreen(new ShopGui(mc.player));
-        } else if (v == EV_TAP) {
+        boolean vDown = raw(keyInvis);
+        // Shift+V открывает каталог форм; обычный короткий V переключает невидимость.
+        if (vDown && !hV.was && !hV.wait && GuiScreen.isShiftKeyDown()) {
+            PocketDoorNetwork.requestMorphCatalog();
+            hV.wait = true;
+        }
+        int v = poll(vDown, hV, now, holdMs);
+        if (v == EV_TAP) {
             EntityPlayer p = mc.player;
             if (p != null) NetworkHandler.action(NetAction.TOGGLE_INVISIBILITY, 0, 0, 0, "");
+        }
+
+        int enter = poll(raw(keyShop), hEnter, now, holdMs);
+        if (enter == EV_HOLD) {
+            mc.displayGuiScreen(new ShopGui(mc.player));
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);

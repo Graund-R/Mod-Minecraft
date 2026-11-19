@@ -69,6 +69,14 @@ public class SoftFall {
         }
     }
 
+    public static void disable(EntityPlayerMP p) {
+        NBTTagCompound e = p.getEntityData();
+        setActive(p, false);
+        e.setInteger(MODE, 0);
+        e.setFloat(ACC, 0f);
+        e.setDouble(LASTY, p.posY);
+    }
+
     public static void tick(EntityPlayerMP p) {
         NBTTagCompound e = p.getEntityData();
         if (!AbilityStorage.isUnlocked(p, AbilityType.SOFTFALL)) {

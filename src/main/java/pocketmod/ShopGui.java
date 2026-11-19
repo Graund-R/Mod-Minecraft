@@ -26,6 +26,8 @@ public class ShopGui extends GuiScreen {
     private static final int BTN_PERM = 200;     // 200..204
     private static final int BTN_RENT = 210;     // 210..214
     private static final int BTN_STAKE = 220;    // 220..222
+    private static final int BTN_DOOR_MANAGE = 232;
+    private static final int BTN_MORPHISM = 233;
 
     private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
     private static final AbilityType[][] TAB_ABIL = {
@@ -59,6 +61,7 @@ public class ShopGui extends GuiScreen {
 
     @Override
     public void initGui() {
+        PocketDoorNetwork.requestState();
         buttonList.clear();
         int cx = width / 2;
 
@@ -84,12 +87,17 @@ public class ShopGui extends GuiScreen {
             if (l[selected] == AbilityType.WAREHOUSE) {
                 buttonList.add(new GuiButton(BTN_OPEN_WAREHOUSE, px + 164, height - 78, 150, 20, Tr.format("pocketmod.gui.warehouse_open")));
             }
+            if (tab == 1) {
+                buttonList.add(new GuiButton(BTN_DOOR_MANAGE, px, top - 22, 256, 18,
+                        "Управление карманными дверями"));
+            }
             if (l[selected] == AbilityType.DECOY) {
                 buttonList.add(new GuiButton(BTN_DECOY, px + 156, height - 66, 120, 18, decoyLabel()));
             } else if (l[selected] == AbilityType.TELEPORT) {
                 buttonList.add(new GuiButton(BTN_SILENCE, px + 156, height - 66, 120, 18, silenceLabel()));
             }
         } else if (tab == 4) {
+            buttonList.add(new GuiButton(BTN_MORPHISM, bx, top - 22, 196, 18, morphismLabel()));
             // только эффекты тела — без наложений
             for (int i = 0; i < BodyEffects.IDS.length; i++) {
                 int ry = top + i * rowH;
@@ -115,6 +123,13 @@ public class ShopGui extends GuiScreen {
     }
 
     // ===== подписи =====
+    private String morphismLabel() {
+        if (!PocketConfig.morphEnabled) return "Морфизм: отключён";
+        net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+        if (!state.getBoolean("morphismAvailable")) return "Требуется Metamorph";
+        return state.getBoolean("morphismUnlocked") ? "Каталог образов" : "Купить морфизм: 500";
+    }
+
     private String buyLabel(AbilityType t) {
         EntityPlayer dp = dataPlayer();
         int lvl = AbilityStorage.getLevel(dp, t);
@@ -445,6 +460,17 @@ public class ShopGui extends GuiScreen {
     protected void actionPerformed(GuiButton button) throws IOException {
         if (button.id == BTN_CLOSE) { mc.player.closeScreen(); return; }
         if (button.id == BTN_OPEN_WAREHOUSE) { NetworkHandler.action(NetAction.OPEN_WAREHOUSE, 0, 0, 0, ""); return; }
+        if (button.id == BTN_DOOR_MANAGE) {
+            mc.displayGuiScreen(new PocketDoorGui(player));
+            return;
+        }
+        if (button.id == BTN_MORPHISM) {
+            net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+            if (!PocketConfig.morphEnabled || !state.getBoolean("morphismAvailable")) return;
+            if (state.getBoolean("morphismUnlocked")) PocketDoorNetwork.requestMorphCatalog();
+            else PocketDoorNetwork.upgradeAbility(AbilityType.MORPHISM);
+            return;
+        }
         if (button.id >= BTN_TAB && button.id < BTN_TAB + 6) {
             tab = button.id - BTN_TAB; selected = 0; initGui(); return;
         }
@@ -496,6 +522,9 @@ public class ShopGui extends GuiScreen {
             if (b.id >= BTN_BUY && b.id < BTN_BUY + 10 && tab <= 3) {
                 int idx = b.id - BTN_BUY;
                 b.displayString = cardLabel(list()[idx], idx == selected);
+            } else if (b.id == BTN_MORPHISM) {
+                b.displayString = morphismLabel();
+                b.enabled = PocketConfig.morphEnabled && PocketDoorNetwork.getClientState().getBoolean("morphismAvailable");
             } else if (b.id == BTN_BUYSEL) {
                 AbilityType[] lst = list();
                 if (lst.length == 0) {

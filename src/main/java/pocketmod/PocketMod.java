@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.8", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.9", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 
@@ -48,6 +48,8 @@ public class PocketMod {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        MorphIntegration.register();
+        PocketDoorNetwork.registerServer();
         proxy.init();
     }
 
@@ -59,6 +61,7 @@ public class PocketMod {
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        PocketDimensionManager.load(event.getServer().getWorld(0));
         event.registerServerCommand(new CommandManaAdd());
         event.registerServerCommand(new CommandPocketDebug());
     }

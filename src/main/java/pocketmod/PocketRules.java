@@ -1,6 +1,14 @@
 package pocketmod;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumActionResult;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
+import net.minecraftforge.event.world.BlockEvent.BreakEvent;
+import net.minecraftforge.event.world.BlockEvent.PlaceEvent;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -27,18 +35,52 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class PocketRules {
 
     private static boolean inPocket(World w) {
-        return w.provider.getDimension() == PocketMod.DIM_ID;
+        return PocketDimensionManager.isPocketDimension(w.provider.getDimension());
     }
 
-    /** Любые живые существа, кроме игрока и нашей приманки/тела Спектора, в кармане не появляются. */
+    /** Enforce the permission tier granted by the door key or trusted list. */
     @SubscribeEvent
-    public static void onJoin(EntityJoinWorldEvent e) {
-        World w = e.getWorld();
-        if (w.isRemote || !inPocket(w)) return;
-        Entity en = e.getEntity();
-        if (en instanceof EntityPlayer || en instanceof EntityDecoy) return;
-        if (en instanceof EntityLivingBase) {
-            e.setCanceled(true);
+    public static void onPocketBlockPlace(PlaceEvent event) {
+        World world = event.getWorld();
+        if (world.isRemote || !inPocket(world)) return;
+        EntityPlayer player = event.getPlayer();
+        if (player == null) return;
+
+        if (!PocketAccess.canBuild(player, world)) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.guest_no_build"), true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPocketBlockBreak(BreakEvent event) {
+        World world = event.getWorld();
+        if (world.isRemote || !inPocket(world)) return;
+        EntityPlayer player = event.getPlayer();
+        if (player == null) return;
+
+        if (!PocketAccess.canBuild(player, world)) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.guest_no_break"), true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPocketUtilityUse(RightClickBlock event) {
+        World world = event.getWorld();
+        if (world.isRemote || !inPocket(world)) return;
+        EntityPlayer player = event.getEntityPlayer();
+        if (player == null) return;
+
+        // A temporary guest must always be able to use a pocket door to leave,
+        // including while new entries are paused. The door handler validates access.
+        if (world.getBlockState(event.getPos()).getBlock() instanceof BlockDoor) return;
+
+        if (PocketAccess.level(player, world) == PocketAccess.TEMPORARY
+                && !PocketAccess.canUseTemporary(player, world, world.getBlockState(event.getPos()).getBlock())) {
+            event.setCanceled(true);
+            event.setCancellationResult(EnumActionResult.FAIL);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.guest_no_use"), true);
         }
     }
 

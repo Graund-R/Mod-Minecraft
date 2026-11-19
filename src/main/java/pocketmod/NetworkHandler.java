@@ -127,6 +127,16 @@ public final class NetworkHandler {
         // Не допускаем NaN/Infinity в экономику и коэффициенты, а также лишние данные пакета.
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
+        if (MorphIntegration.isMorphed(p)
+                && m.action != NetAction.CREATE_TOTEM
+                && m.action != NetAction.MOVE_TOTEM
+                && m.action != NetAction.DELETE_TOTEM
+                && m.action != NetAction.TELEPORT_TOTEM
+                && m.action != NetAction.TELEPORT_LAST_TOTEM
+                && m.action != NetAction.DEATH_TOTEM_CHOICE
+                && m.action != NetAction.TOGGLE_POCKET) {
+            return;
+        }
         switch (m.action) {
             case TAKE_CREDIT:
                 double repay = Mana.takeCredit(p, m.value);

@@ -36,6 +36,7 @@ public class Spector {
     }
 
     public static void start(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (isActive(p)) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.SPECTOR)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
@@ -115,6 +116,7 @@ public class Spector {
 
     /** Фазовый шаг: тело появляется в переданных координатах духа (клиентская камера). */
     public static void phaseStep(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         try {
             doPhaseStep(p);
         } catch (Throwable t) {
@@ -160,7 +162,7 @@ public class Spector {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_blocked"), true);
             return;
         }
-        if (p.world.provider.getDimension() == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(p.world.provider.getDimension())) {
             PocketData pd = PocketData.get(p.world);
             net.minecraft.util.math.BlockPos f = new net.minecraft.util.math.BlockPos(
                     net.minecraft.util.math.MathHelper.floor(x),
@@ -235,6 +237,16 @@ public class Spector {
         if (body(p) == null) {
             end(p, true);
             return;
+        }
+        // Spectator movement is not collision-bound; keep it inside every personal pocket.
+        if (PocketDimensionManager.isPocketDimension(p.dimension)) {
+            PocketData pocket = PocketData.get(p.world);
+            net.minecraft.util.math.BlockPos feet = p.getPosition();
+            if (!pocket.interior.contains(feet) || !pocket.interior.contains(feet.up())) {
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_limits"), true);
+                end(p, true);
+                return;
+            }
         }
         if (p.ticksExisted % 10 == 0) {
             ((WorldServer) p.world).spawnParticle(EnumParticleTypes.SPELL_MOB, p.posX, p.posY + 1.0, p.posZ,

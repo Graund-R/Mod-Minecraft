@@ -38,6 +38,13 @@ public class PocketConfig {
     public static float expandRingStep = 0.2f;
     public static String wallBlock = "minecraft:quartz_block";
 
+    // Metamorph и карманные двери
+    public static boolean morphEnabled = true;
+    public static int morphCost = 20;
+    public static int doorPairPrice = 1000;
+    public static int goldKeyPrice = 100;
+    public static int ironKeyPrice = 50;
+
     public static int teleportBaseRange = 50;
     public static int teleportRange2 = 100;
     public static int teleportRange3 = 200;
@@ -234,6 +241,12 @@ public class PocketConfig {
         expandBaseCost = cfg.getInt("expandBaseCost", "карман", 4, 1, 100000, "Base expand cost in iron units");
         expandRingStep = cfg.getFloat("expandRingStep", "карман", 0.2f, 0f, 100f, "Ring cost growth");
         wallBlock = cfg.getString("wallBlock", "карман", "minecraft:quartz_block", "Блок стен кармана (кварц; измерение всегда яркое)");
+
+        morphEnabled = cfg.getBoolean("morphEnabled", "морфизм", true, "Включить совместимость с Metamorph");
+        morphCost = cfg.getInt("morphCost", "морфизм", 20, 0, 1000000, "Разовая стоимость каждого превращения в мане");
+        doorPairPrice = cfg.getInt("doorPairPrice", "двери", 1000, 0, 1000000, "Цена комплекта из двух дверей");
+        goldKeyPrice = cfg.getInt("goldKeyPrice", "двери", 100, 0, 1000000, "Цена постоянного золотого ключа");
+        ironKeyPrice = cfg.getInt("ironKeyPrice", "двери", 50, 0, 1000000, "Цена одноразового железного ключа");
         pocketTickCost = cfg.getFloat("pocketTickCost", "карман", 0.0f, 0f, 100000f, "Мана в секунду за нахождение в кармане; 0 = бесплатно.");
 
         teleportBaseRange = cfg.getInt("teleportBaseRange", "способности", 50, 5, 500, "Teleport range, level 1");

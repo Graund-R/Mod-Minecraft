@@ -33,19 +33,63 @@ public class PocketTeleporter implements ITeleporter {
         entity.fallDistance = 0;
     }
 
+    /**
+     * Единственная проверка права входа в карманное измерение.
+     * Покупка дверей/ключей сама по себе не открывает измерение:
+     * сначала игрок должен приобрести AbilityType.POCKET.
+     * Эту проверку должны использовать и будущие двери.
+     */
+    public static boolean canEnterPocket(EntityPlayerMP player) {
+        if (AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+            return true;
+        }
+        player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        return false;
+    }
+
+    /** Вход гостя в измерение владельца сети через проверенную дверь. */
+    public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return false;
+        // The door owner already had to unlock the pocket ability before placing this door.
+        // Create their persistent dimension on first door entry if they have not used K yet.
+        int targetId = PocketDimensionManager.getOrCreateDimension(server, owner);
+        WorldServer target = server.getWorld(targetId);
+        if (target == null) {
+            net.minecraftforge.common.DimensionManager.initDimension(targetId);
+            target = server.getWorld(targetId);
+        }
+        if (target == null) return false;
+        Pocket.buildIfNeeded(target);
+        PocketData.get(target);
+        // Door guests always enter for free. The owner's free-entry-on-death
+        // flag belongs only to the owner's own pocket and is never consumed here.
+        MorphIntegration.demorph(player);
+        NBTTagCompound data = PlayerData.root(player);
+        data.setInteger("pocket_return_dim", player.dimension);
+        data.setDouble("pocket_return_x", player.posX);
+        data.setDouble("pocket_return_y", player.posY);
+        data.setDouble("pocket_return_z", player.posZ);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        Dash.onTeleport(player);
+        player.changeDimension(targetId, new PocketTeleporter(2.5D, 64.0D, 2.5D));
+        return true;
+    }
+
     public static void toggle(EntityPlayerMP player) {
-        if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        if (!PocketDimensionManager.isPocketDimension(player.dimension) && !canEnterPocket(player)) {
             return;
         }
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (player.dimension != PocketMod.DIM_ID) {
-            // вход в карман выключает полёт и Спектор
+        if (!PocketDimensionManager.isPocketDimension(player.dimension)) {
+            // Вход в карман снимает морф и отключает полёт/Спектор.
+            MorphIntegration.demorph(player);
             Spector.forceReturnIfActive(player);
             Flight.stop(player);
         }
-        if (player.dimension == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
             leave(player, server);
         } else {
             enter(player, server);
@@ -64,20 +108,13 @@ public class PocketTeleporter implements ITeleporter {
     private static void enter(EntityPlayerMP player, MinecraftServer server) {
         NBTTagCompound data = PlayerData.root(player);
 
-        WorldServer pocket = server.getWorld(PocketMod.DIM_ID);
+        int pocketDimension = PocketDimensionManager.getOrCreateDimension(server, player.getUniqueID());
+        WorldServer pocket = server.getWorld(pocketDimension);
         Pocket.buildIfNeeded(pocket);
         PocketData pd = PocketData.get(pocket);
 
-        boolean free = Mana.hasFreeEntry(player);
-        if (!free) {
-            double price = entryPrice(player, pd);
-            if (!Mana.spend(player, price)) {
-                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
-                        (int) Math.ceil(price)), true);
-                return;
-            }
-        }
-        Mana.setFreeEntry(player, false);
+        // Вход через K в личное измерение бесплатный.
+        // Флаг бесплатного входа после смерти оставлен для совместимости со старыми сохранениями.
 
         // Мобы вокруг точки ухода теряют цель
         Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
@@ -102,11 +139,12 @@ public class PocketTeleporter implements ITeleporter {
         }
 
         Dash.onTeleport(player);
-        player.changeDimension(PocketMod.DIM_ID, new PocketTeleporter(ix, iy, iz));
+        player.changeDimension(pocketDimension, new PocketTeleporter(ix, iy, iz));
     }
 
     private static void leave(EntityPlayerMP player, MinecraftServer server) {
         NBTTagCompound data = PlayerData.root(player);
+        PocketAccess.clear(player);
 
         // Запоминаем, где стоял внутри
         data.setDouble("pocket_inner_x", player.posX);

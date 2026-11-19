@@ -8,7 +8,7 @@ public class PocketWorldProvider extends WorldProvider {
 
     @Override
     public DimensionType getDimensionType() {
-        return PocketMod.POCKET_TYPE;
+        return PocketDimensionManager.typeFor(getDimension());
     }
 
     @Override

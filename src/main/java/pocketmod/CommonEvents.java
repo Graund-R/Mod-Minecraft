@@ -21,7 +21,7 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
         if (PocketData.get(world).walls.contains(event.getPos())) {
@@ -120,14 +120,37 @@ public class CommonEvents {
         if (event.isWasDeath()) {
             Mana.set(now, Mana.get(now) * (1.0 - PocketConfig.deathManaLoss));
             WarehouseInventory.handleDeath(old, now);
-            if (old.dimension == PocketMod.DIM_ID) {
+
+            boolean diedInOwnPocket = false;
+            if (old.world instanceof WorldServer
+                    && PocketDimensionManager.isPocketDimension(old.dimension)) {
+                java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(
+                        ((WorldServer) old.world).getMinecraftServer(), old.dimension);
+                diedInOwnPocket = owner != null && owner.equals(old.getUniqueID());
+            }
+            if (diedInOwnPocket) {
+                // Старое бесплатное возвращение сохраняем в данных, хотя K теперь бесплатен всегда.
                 Mana.setFreeEntry(now, true);
             }
-            // Тотем смерти: прежний исчезает со следующей смертью, новый создаётся только если игрок согласится
+
             Totems.clearDeathTotem(now);
             if (AbilityStorage.isUnlocked(now, AbilityType.TOTEM)) {
                 Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
             }
         }
     }
-}
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.player instanceof net.minecraft.entity.player.EntityPlayerMP)) return;
+        net.minecraft.entity.player.EntityPlayerMP player =
+                (net.minecraft.entity.player.EntityPlayerMP) event.player;
+        MorphIntegration.demorph(player);
+        if (!PocketDimensionManager.isPocketDimension(player.dimension)) return;
+
+        java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(player.getServer(), player.dimension);
+        if (owner != null && !owner.equals(player.getUniqueID())) {
+            // Гость не остаётся в чужом измерении после возрождения.
+            PocketTeleporter.toggle(player);
+        }
+    }}

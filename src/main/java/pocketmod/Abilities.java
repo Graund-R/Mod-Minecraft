@@ -109,6 +109,7 @@ public class Abilities {
     }
 
     public static void toggleInvisibility(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.INVISIBILITY)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -139,6 +140,17 @@ public class Abilities {
         }
         player.sendStatusMessage(new TextComponentTranslation(
                 now ? "pocketmod.msg.invis_on" : "pocketmod.msg.invis_off"), true);
+    }
+
+    /** Сбрасывает активные эффекты, которые несовместимы с обликом Metamorph. */
+    public static void disableForMorph(EntityPlayerMP player) {
+        player.getEntityData().setBoolean(KEY_INVIS, false);
+        player.getEntityData().setBoolean(KEY_SLOW, false);
+        player.getEntityData().setInteger(KEY_SILENT, 0);
+        player.getEntityData().setInteger(KEY_BREAK, 0);
+        player.removePotionEffect(MobEffects.INVISIBILITY);
+        player.setInvisible(false);
+        EntityDecoy.removeDecoys(player);
     }
 
     public static boolean isInvisible(EntityPlayer player) {
@@ -186,6 +198,7 @@ public class Abilities {
     }
 
     public static void toggleSlow(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.SLOW)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -247,6 +260,7 @@ public class Abilities {
     }
 
     public static void teleportLook(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.TELEPORT)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -262,7 +276,7 @@ public class Abilities {
         Vec3d look = player.getLook(1.0f);
         Vec3d end = eye.addVector(look.x * range, look.y * range, look.z * range);
 
-        boolean inPocket = world.provider.getDimension() == PocketMod.DIM_ID;
+        boolean inPocket = PocketDimensionManager.isPocketDimension(world.provider.getDimension());
         RayTraceResult hit = inPocket ? null : world.rayTraceBlocks(eye, end, false, true, false);
         BlockPos land = null;
         if (inPocket) {

@@ -552,3 +552,4 @@ pocketmod.cfg.21.levelGraceTicks=Неуязвимость после рывка,
 pocketmod.cfg.21.levelGraceTicks.tooltip=Сколько тиков после рывка урон не проходит, по уровням 1-4.
 pocketmod.cfg.21.levelRefund=Возврат заряда за врага
 pocketmod.cfg.21.levelRefund.tooltip=1 = сбитый рывком враг возвращает заряд, по уровням 1-4.
+pocketmod.msg.visitors_kicked_paused=All visitors removed; entry for new visitors is paused

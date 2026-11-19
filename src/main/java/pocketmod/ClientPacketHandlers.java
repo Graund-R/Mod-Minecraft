@@ -52,7 +52,7 @@ public final class ClientPacketHandlers {
         @Override public IMessage onMessage(NetworkHandler.PocketSyncMessage message, MessageContext ctx) {
             Minecraft mc = Minecraft.getMinecraft();
             mc.addScheduledTask(() -> {
-                if (mc.world != null && message.dimension == PocketMod.DIM_ID
+                if (mc.world != null && PocketDimensionManager.isPocketDimension(message.dimension)
                         && mc.world.provider.getDimension() == message.dimension) {
                     PocketData.get(mc.world).readFromNBT(message.data);
                 }

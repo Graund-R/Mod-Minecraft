@@ -45,6 +45,11 @@ public class Thermal {
         p.sendStatusMessage(new TextComponentTranslation(now ? "pocketmod.msg.thermal_on" : "pocketmod.msg.thermal_switched_off"), true);
     }
 
+    public static void disable(EntityPlayerMP p) {
+        p.getEntityData().setBoolean(KEY, false);
+        clearGlow(p);
+    }
+
     /** Мана кончилась (вызывает реестр способностей). */
     public static void onManaExhausted(EntityPlayerMP p) {
         p.getEntityData().setBoolean(KEY, false);
