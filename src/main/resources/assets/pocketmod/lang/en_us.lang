@@ -446,3 +446,12 @@ pocketmod.cfg.18.waveLevel4=Цена: Волна, ур. 4
 pocketmod.cfg.18.waveLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
 pocketmod.cfg.18.waveLevel5=Цена: Волна, ур. 5
 pocketmod.cfg.18.waveLevel5.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+
+key.pocketmod.shop=Ability Shop
+pocketmod.ability.morphism=Morphing
+pocketmod.info.morphism.desc=Take the appearance of any creature you have acquired. New forms are unlocked by killing mobs.
+pocketmod.info.morphism.key=Open morph catalog: Shift+V
+pocketmod.info.morphism.l1=Unlocks the catalog. Each transformation costs 20 mana; returning to normal is free.
+pocketmod.msg.morph_need_metamorph=Install Metamorph and its McLib dependency to use morphing.
+pocketmod.msg.morph_failed=Could not apply this form. Mana has been refunded.
+pocketmod.msg.morph_on=Transformed into %s. Mana spent: %s
