@@ -245,6 +245,7 @@ public class MorphIntegration {
             return false;
         }
 
+        suppressAbilities(player);
         player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_on",
                 getMorphName(morph), (int) Math.ceil(cost)), true);
         return true;
@@ -288,6 +289,20 @@ public class MorphIntegration {
             return;
         }
 
+        // Suppress Pocket Mod's active and passive effects after every successful morph.
+        if ("mchorse.metamorph.api.events.MorphEvent$Post".equals(eventName)) {
+            try {
+                EntityPlayer player = (EntityPlayer) event.getClass().getField("player").get(event);
+                Object morph = event.getClass().getField("morph").get(event);
+                if (player instanceof EntityPlayerMP && morph != null && !player.world.isRemote) {
+                    suppressAbilities((EntityPlayerMP) player);
+                }
+            } catch (Throwable error) {
+                System.err.println("[PocketMod] Could not suppress abilities after morph: " + error);
+            }
+            return;
+        }
+
         // Prevent Metamorph's native morph key from bypassing Pocket Mod's one-time mana charge.
         if ("mchorse.metamorph.api.events.MorphEvent$Pre".equals(eventName) && !AUTHORIZED.get()) {
             try {
@@ -297,6 +312,16 @@ public class MorphIntegration {
                 System.err.println("[PocketMod] Could not validate Metamorph morph event: " + error);
             }
         }
+    }
+
+    public static void suppressAbilities(EntityPlayerMP player) {
+        if (player == null || !isMorphed(player)) return;
+        Abilities.disableForMorph(player);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        Thermal.disable(player);
+        Shield.off(player);
+        SoftFall.disable(player);
     }
 
     private static void cancelAcquisitionWhenLocked(Event event) {
@@ -311,5 +336,4 @@ public class MorphIntegration {
             System.err.println("[PocketMod] Could not validate Metamorph acquisition event: " + error);
         }
     }
-}
 }
