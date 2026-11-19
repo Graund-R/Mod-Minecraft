@@ -74,6 +74,26 @@ public final class PocketDoorNetwork {
     public static void toggleSilence() { send(16, 0, "", ""); }
     public static void takeCredit(int amount) { send(17, amount, "", ""); }
     public static void spinLoot(int tier) { send(18, tier, "", ""); }
+    public static void togglePocket() { send(19, 0, "", ""); }
+    public static void teleportLook() { send(20, 0, "", ""); }
+    public static void toggleInvisibility() { send(21, 0, "", ""); }
+    public static void toggleSlow() { send(22, 0, "", ""); }
+    public static void toggleSpector() { send(23, 0, "", ""); }
+    public static void phaseStep(double x, double y, double z, float yaw, float pitch) {
+        CHANNEL.sendToServer(new ActionMessage(24, 0, "", "", x, y, z, yaw, pitch));
+    }
+    public static void toggleThermal() { send(25, 0, "", ""); }
+    public static void toggleShield() { send(26, 0, "", ""); }
+    public static void shockwave() { send(27, 0, "", ""); }
+    public static void startFlight() { send(28, 0, "", ""); }
+    public static void setSlowFactor(float factor) { send(29, 0, "", "", factor, 0, 0, 0, 0); }
+    public static void teleportLastTotem() { send(30, 0, "", ""); }
+    public static void teleportDeathTotem() { send(31, 0, "", ""); }
+    public static void openTotemGui() { morphCatalogPending = false; requestState(); }
+    public static void createTotem(String name) { send(32, 0, "", name); }
+    public static void teleportTotem(int index) { send(33, index, "", ""); }
+    public static void moveTotem(int index, int delta) { send(34, index, "", "", delta, 0, 0, 0, 0); }
+    public static void deleteTotem(int index) { send(35, index, "", ""); }
 
     public static void buyPair(String selectedPair) { send(BUY_PAIR, 0, selectedPair == null ? "" : selectedPair, ""); }
     public static void buyGoldKey(String pairId, boolean preserveOld) { send(BUY_GOLD_KEY, preserveOld ? 1 : 0, pairId, ""); }
@@ -89,6 +109,11 @@ public final class PocketDoorNetwork {
 
     private static void send(int action, int value, String pair, String text) {
         CHANNEL.sendToServer(new ActionMessage(action, value, pair, text));
+    }
+
+    private static void send(int action, int value, String pair, String text,
+            double x, double y, double z, float yaw, float pitch) {
+        CHANNEL.sendToServer(new ActionMessage(action, value, pair, text, x, y, z, yaw, pitch));
     }
 
     public static NBTTagCompound getClientState() {
@@ -114,6 +139,25 @@ public final class PocketDoorNetwork {
         state.setBoolean("keysEnabled", data.keysEnabled(owner));
         state.setBoolean("accessPaused", data.accessPaused(owner));
         state.setBoolean("guestTest", data.guestTestEnabled(owner));
+        state.setBoolean("spectorActive", Spector.isActive(player));
+        state.setBoolean("slowEnabled", Abilities.isSlow(player));
+        state.setFloat("slowFactor", Abilities.getSlowFactor(player));
+        state.setBoolean("thermalEnabled", Thermal.isOn(player));
+        state.setBoolean("shieldEnabled", Shield.isOn(player));
+        state.setBoolean("flightEnabled", Flight.isArmed(player));
+        state.setBoolean("hasDeathTotem", Totems.hasDeathTotem(player));
+        state.setInteger("totemSlots", Totems.maxSlots(player));
+        NBTTagList totems = new NBTTagList();
+        for (Totems.Totem saved : Totems.get(player)) {
+            NBTTagCompound totem = new NBTTagCompound();
+            totem.setString("name", saved.name);
+            totem.setInteger("dim", saved.dim);
+            totem.setDouble("x", saved.x);
+            totem.setDouble("y", saved.y);
+            totem.setDouble("z", saved.z);
+            totems.appendTag(totem);
+        }
+        state.setTag("totems", totems);
         state.setDouble("mana", Mana.get(player));
         state.setDouble("priceMultiplier", Mana.getPriceMultiplier(player));
         state.setDouble("discount", Mana.getDiscount(player));
@@ -162,25 +206,46 @@ public final class PocketDoorNetwork {
         public int value;
         public String pair = "";
         public String text = "";
+        public double x, y, z;
+        public float yaw, pitch;
 
         public ActionMessage() {}
         public ActionMessage(int action, int value, String pair, String text) {
+            this(action, value, pair, text, 0.0D, 0.0D, 0.0D, 0.0F, 0.0F);
+        }
+        public ActionMessage(int action, int value, String pair, String text,
+                double x, double y, double z, float yaw, float pitch) {
             this.action = action;
             this.value = value;
             this.pair = pair == null ? "" : pair;
             this.text = text == null ? "" : text;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.yaw = yaw;
+            this.pitch = pitch;
         }
         @Override public void fromBytes(ByteBuf buf) {
             action = buf.readInt();
             value = buf.readInt();
             pair = ByteBufUtils.readUTF8String(buf);
             text = ByteBufUtils.readUTF8String(buf);
+            x = buf.readDouble();
+            y = buf.readDouble();
+            z = buf.readDouble();
+            yaw = buf.readFloat();
+            pitch = buf.readFloat();
         }
         @Override public void toBytes(ByteBuf buf) {
             buf.writeInt(action);
             buf.writeInt(value);
             ByteBufUtils.writeUTF8String(buf, pair);
             ByteBufUtils.writeUTF8String(buf, text);
+            buf.writeDouble(x);
+            buf.writeDouble(y);
+            buf.writeDouble(z);
+            buf.writeFloat(yaw);
+            buf.writeFloat(pitch);
         }
     }
 
@@ -206,7 +271,7 @@ public final class PocketDoorNetwork {
 
     private static void execute(EntityPlayerMP player, ActionMessage message) {
         if (player == null || message == null || message.pair.length() > 64
-                || message.text.length() > 16) return;
+                || message.text.length() > 24) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
 
@@ -350,6 +415,73 @@ public final class PocketDoorNetwork {
                 if (message.value >= 0 && message.value < PocketConfig.lootStakes.length) {
                     Loot.spin(player, message.value);
                 }
+                break;
+            case 19:
+                PocketTeleporter.toggle(player);
+                break;
+            case 20:
+                Abilities.teleportLook(player);
+                break;
+            case 21:
+                Abilities.toggleInvisibility(player);
+                break;
+            case 22:
+                Abilities.toggleSlow(player);
+                break;
+            case 23:
+                if (Spector.isActive(player)) Spector.stop(player);
+                else Spector.start(player);
+                break;
+            case 24:
+                if (Double.isNaN(message.x) || Double.isInfinite(message.x)
+                        || Double.isNaN(message.y) || Double.isInfinite(message.y)
+                        || Double.isNaN(message.z) || Double.isInfinite(message.z)
+                        || Math.abs(message.x - player.posX) > 64
+                        || Math.abs(message.y - player.posY) > 64
+                        || Math.abs(message.z - player.posZ) > 64) return;
+                Spector.phaseStep(player, message.x, message.y, message.z, message.yaw, message.pitch);
+                break;
+            case 25:
+                Thermal.toggle(player);
+                break;
+            case 26:
+                Shield.toggle(player);
+                break;
+            case 27:
+                Abilities.shockwave(player);
+                break;
+            case 28:
+                Flight.start(player);
+                break;
+            case 29: {
+                if (!Abilities.isSlow(player) || MorphIntegration.isMorphed(player)) break;
+                float min = Abilities.minSlowFactor(player);
+                float factor = (float) message.x;
+                if (Float.isNaN(factor) || Float.isInfinite(factor)) break;
+                factor = Math.max(min, Math.min(0.75F, factor));
+                Abilities.setSlowFactor(player, factor);
+                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_factor",
+                        String.format("%.2f", factor)), true);
+                break;
+            }
+            case 30:
+                if (Totems.hasDeathTotem(player)) Totems.teleportDeath(player);
+                else Totems.teleportLast(player);
+                break;
+            case 31:
+                Totems.teleportDeath(player);
+                break;
+            case 32:
+                Totems.create(player, message.text);
+                break;
+            case 33:
+                Totems.teleport(player, message.value);
+                break;
+            case 34:
+                Totems.move(player, message.value, (int) message.x);
+                break;
+            case 35:
+                Totems.delete(player, message.value);
                 break;
             default:
                 return;
