@@ -66,7 +66,25 @@ public class BodyEffects {
         d(p).setBoolean("pocketmod_body_rent_" + IDS[i], now);
     }
 
+    public static void suppressForMorph(EntityPlayerMP p) {
+        IAttributeInstance attribute = p.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH);
+        AttributeModifier old = attribute.getModifier(HEART_ID);
+        if (old != null) attribute.removeModifier(old);
+        for (PotionEffect effect : new java.util.ArrayList<PotionEffect>(p.getActivePotionEffects())) {
+            Potion potion = effect.getPotion();
+            if ((potion == MobEffects.SPEED || potion == MobEffects.STRENGTH
+                    || potion == MobEffects.FIRE_RESISTANCE || potion == MobEffects.WATER_BREATHING)
+                    && effect.getIsAmbient() && !effect.doesShowParticles()) {
+                p.removePotionEffect(potion);
+            }
+        }
+    }
+
     public static void tick(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) {
+            suppressForMorph(p);
+            return;
+        }
         for (int i = 0; i < IDS.length; i++) {
             if (rent(p, i) && !Mana.spend(p, rentCost(p, i) / 20.0)) {
                 d(p).setBoolean("pocketmod_body_rent_" + IDS[i], false);
