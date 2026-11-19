@@ -16,6 +16,7 @@ import net.minecraft.block.BlockLever;
 import net.minecraft.block.BlockWorkbench;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 /** Server-side permission level for a visitor in another player's pocket dimension. */
 public final class PocketAccess {
@@ -47,7 +48,13 @@ public final class PocketAccess {
         if (!PocketDimensionManager.isPocketDimension(world.provider.getDimension())) return TRUSTED;
         UUID owner = PocketDimensionManager.getOwnerForDimension(
                 world.getMinecraftServer(), world.provider.getDimension());
-        if (owner != null && owner.equals(player.getUniqueID())) return TRUSTED;
+        if (owner != null && owner.equals(player.getUniqueID())) {
+            if (world instanceof WorldServer
+                    && PocketDoorData.get((WorldServer) world).guestTestEnabled(player.getUniqueID())) {
+                return TEMPORARY;
+            }
+            return TRUSTED;
+        }
         net.minecraft.nbt.NBTTagCompound data = PlayerData.root(player);
         if (data.getInteger(DIM_KEY) != world.provider.getDimension()
                 || owner == null || !owner.toString().equals(data.getString(OWNER_KEY))) {
