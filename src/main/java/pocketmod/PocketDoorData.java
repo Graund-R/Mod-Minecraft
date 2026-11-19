@@ -161,8 +161,8 @@ public class PocketDoorData extends WorldSavedData {
 
     public void setGuestTestEnabled(UUID owner, boolean enabled) {
         String id = owner.toString();
-        boolean changed = enabled ? guestTestOwners.add(id) : guestTestOwners.remove(id);
-        if (changed) markDirty();
+        if (enabled) guestTestOwners.add(id);
+        else guestTestOwners.remove(id);
     }
 
     public boolean isTrusted(UUID owner, String playerName) {
@@ -264,11 +264,6 @@ public class PocketDoorData extends WorldSavedData {
             pausedOwners.add(paused.getStringTagAt(i));
         }
 
-        NBTTagList guestTest = nbt.getTagList("guestTestOwners", 8);
-        for (int i = 0; i < guestTest.tagCount(); i++) {
-            guestTestOwners.add(guestTest.getStringTagAt(i));
-        }
-
         NBTTagList locked = nbt.getTagList("lockedKeys", 8);
         for (int i = 0; i < locked.tagCount(); i++) {
             lockedOwners.add(locked.getStringTagAt(i));
@@ -318,11 +313,6 @@ public class PocketDoorData extends WorldSavedData {
         }
         nbt.setTag("pausedAccess", paused);
 
-        NBTTagList guestTest = new NBTTagList();
-        for (String owner : guestTestOwners) {
-            guestTest.appendTag(new net.minecraft.nbt.NBTTagString(owner));
-        }
-        nbt.setTag("guestTestOwners", guestTest);
         return nbt;
     }
 }
