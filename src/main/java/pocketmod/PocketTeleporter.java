@@ -34,8 +34,8 @@ public class PocketTeleporter implements ITeleporter {
     }
 
     public static void toggle(EntityPlayerMP player) {
-        if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        if (!PocketKeys.hasOwnerKey(player)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_pocket_key"), true);
             return;
         }
         MinecraftServer server = player.getServer();
