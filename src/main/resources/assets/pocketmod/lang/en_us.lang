@@ -481,3 +481,7 @@ pocketmod.msg.visitors_kicked=All visitors have been sent outside.
 pocketmod.msg.morph_disabled=Morphism is disabled in the configuration.
 pocketmod.msg.morph_need_metamorph=Metamorph and McLib are required for Morphism.
 pocketmod.msg.morph_failed=Transformation failed; mana was refunded.
+
+pocketmod.msg.guest_no_build=Temporary keys do not allow block placement.
+pocketmod.msg.guest_no_break=Temporary keys do not allow block breaking.
+pocketmod.msg.guest_no_use=This guest may only use basic utility blocks.
