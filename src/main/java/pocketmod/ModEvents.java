@@ -70,6 +70,7 @@ public class ModEvents {
             killer = (EntityPlayerMP) src.getImmediateSource();
         }
         if (killer == null) return;
+        if (MorphIntegration.isMorphed(killer)) return;
         if (!AbilityStorage.isUnlocked(killer, AbilityType.BLOODSUCKER)) return;
         // ближний бой: нет projectile / нет explosion
         if (src.isProjectile() || src.isExplosion()) return;
