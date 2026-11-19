@@ -50,6 +50,7 @@ public class PocketMod {
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        PocketDimensionManager.load(event.getServer().getWorld(0));
         event.registerServerCommand(new CommandManaAdd());
         event.registerServerCommand(new CommandPocketDebug());
     }
