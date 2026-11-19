@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
 @Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.1", acceptedMinecraftVersions = "[1.12.2]",
-        guiFactory = "pocketmod.ConfigGuiFactory")
+        guiFactory = "pocketmod.ConfigGuiFactory", dependencies = "after:metamorph;after:mclib")
 public class PocketMod {
 
     public static final String MODID = "pocketmod";
