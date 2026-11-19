@@ -123,6 +123,6 @@ public class MorphCatalogGui extends GuiScreen {
 
     @Override
     public boolean doesGuiPauseGame() {
-        return true;
+        return false;
     }
 }
