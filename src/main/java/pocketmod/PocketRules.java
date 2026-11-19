@@ -2,6 +2,7 @@ package pocketmod;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
@@ -70,6 +71,10 @@ public class PocketRules {
         if (world.isRemote || !inPocket(world)) return;
         EntityPlayer player = event.getEntityPlayer();
         if (player == null) return;
+
+        // A temporary guest must always be able to use a pocket door to leave,
+        // including while new entries are paused. The door handler validates access.
+        if (world.getBlockState(event.getPos()).getBlock() instanceof BlockDoor) return;
 
         if (PocketAccess.level(player, world) == PocketAccess.TEMPORARY
                 && !PocketAccess.canUseTemporary(player, world, world.getBlockState(event.getPos()).getBlock())) {
