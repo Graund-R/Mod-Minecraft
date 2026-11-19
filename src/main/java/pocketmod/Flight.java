@@ -46,6 +46,7 @@ public class Flight {
     }
 
     public static void start(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (isArmed(p) || p.isCreative() || p.isSpectator()) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.FLIGHT)) return; // двойной пробел без покупки молчит
         if (Spector.isActive(p)) {
@@ -82,6 +83,10 @@ public class Flight {
     }
 
     public static void tick(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) {
+            stop(p);
+            return;
+        }
         if (p.getEntityData().getBoolean(NOFALL) && p.onGround) {
             p.getEntityData().setBoolean(NOFALL, false);
         }
