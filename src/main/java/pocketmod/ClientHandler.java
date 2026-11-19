@@ -89,6 +89,7 @@ public class ClientHandler {
     private static final Hold hG = new Hold();
     private static final Hold hV = new Hold();
     private static final Hold hZ = new Hold();
+    private static final Hold hEnter = new Hold();
 
     private static final int EV_NONE = 0, EV_HOLD = 1, EV_TAP = 2;
 
@@ -192,6 +193,7 @@ public class ClientHandler {
             resetHold(hG);
             resetHold(hV);
             resetHold(hZ);
+            resetHold(hEnter);
             xWait = raw(keySpector);
             specClient = false;
             return;
@@ -229,10 +231,15 @@ public class ClientHandler {
         }
 
         int v = poll(vDown, hV, now, holdMs);
-        if (v == EV_HOLD) {
-            mc.displayGuiScreen(new ShopGui(mc.player));
-        } else if (v == EV_TAP) {
+        if (v == EV_TAP) {
             PocketDoorNetwork.toggleInvisibility();
+        }
+
+        // The shop is opened by holding Enter; V remains reserved for invisibility.
+        int enter = poll(Keyboard.isKeyDown(Keyboard.KEY_RETURN), hEnter, now, holdMs);
+        if (enter == EV_HOLD) {
+            mc.displayGuiScreen(new ShopGui(mc.player));
+            return;
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);
@@ -509,7 +516,9 @@ public class ClientHandler {
                 PocketData d = PocketData.get(pw);
                 BlockPos pos = mc.objectMouseOver.getBlockPos();
                 if (Pocket.isPayable(d, pos)) {
-                    double cost = Pocket.costMana(pos, sp);
+                    EntityPlayerMP serverPlayer = server.getPlayerList().getPlayerByUUID(mc.player.getUniqueID());
+                if (serverPlayer == null) return;
+                double cost = Pocket.costMana(pos, serverPlayer);
                     Double pd = d.paid.get(pos);
                     double paid = pd == null ? 0.0 : pd.doubleValue();
                     int itemValue = Math.max(1, ManaItems.manaValue(held));
