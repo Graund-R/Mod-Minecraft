@@ -45,10 +45,6 @@ public class PocketRules {
         EntityPlayer player = event.getPlayer();
         if (player == null) return;
 
-        // Pocket doors have their own owner/ability checks in PocketDoorEvents.
-        ItemStack held = event.getItemInHand();
-        if (!held.isEmpty() && held.getItem() == PocketDoorItems.DOOR) return;
-
         if (!PocketAccess.canBuild(player, world)) {
             event.setCanceled(true);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.guest_no_build"), true);
