@@ -145,6 +145,7 @@ public class Abilities {
     public static void disableForMorph(EntityPlayerMP player) {
         player.getEntityData().setBoolean(KEY_INVIS, false);
         player.getEntityData().setBoolean(KEY_SLOW, false);
+        player.getEntityData().setInteger(KEY_SILENT, 0);
         player.getEntityData().setInteger(KEY_BREAK, 0);
         player.removePotionEffect(MobEffects.INVISIBILITY);
         player.setInvisible(false);
