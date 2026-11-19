@@ -6,9 +6,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
@@ -29,6 +27,7 @@ public class ShopGui extends GuiScreen {
     private static final int BTN_RENT = 210;     // 210..214
     private static final int BTN_STAKE = 220;    // 220..222
     private static final int BTN_DOOR_MANAGE = 232;
+    private static final int BTN_MORPHISM = 233;
 
     private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
     private static final AbilityType[][] TAB_ABIL = {
@@ -55,8 +54,70 @@ public class ShopGui extends GuiScreen {
     }
 
     private EntityPlayer dataPlayer() {
-        EntityPlayerMP mp = ClientHandler.sp();
-        return mp != null ? mp : player;
+        return player;
+    }
+
+    private net.minecraft.nbt.NBTTagCompound shopState() {
+        return PocketDoorNetwork.getClientState();
+    }
+
+    private int abilityLevel(AbilityType type) {
+        int[] levels = shopState().getIntArray("abilityLevels");
+        return levels.length > type.ordinal() ? levels[type.ordinal()] : 0;
+    }
+
+    private int bodyLevel(int index) {
+        int[] levels = shopState().getIntArray("bodyLevels");
+        return levels.length > index ? levels[index] : 0;
+    }
+
+    private boolean bodyRent(int index) {
+        int[] rents = shopState().getIntArray("bodyRent");
+        return rents.length > index && rents[index] != 0;
+    }
+
+    private double manaValue() {
+        return shopState().hasKey("mana") ? shopState().getDouble("mana") : 0.0D;
+    }
+
+    private double priceMultiplier() {
+        return shopState().hasKey("priceMultiplier") ? shopState().getDouble("priceMultiplier") : 1.0D;
+    }
+
+    private double discount() {
+        return shopState().hasKey("discount") ? shopState().getDouble("discount") : 0.0D;
+    }
+
+    private double shopPrice(double base) {
+        return base * priceMultiplier() * (1.0D - discount());
+    }
+
+    private boolean hasCredit() {
+        return shopState().getBoolean("hasCredit");
+    }
+
+    private double creditValue() {
+        return shopState().getDouble("credit");
+    }
+
+    private long creditLeftMs() {
+        return shopState().getLong("creditLeftMs");
+    }
+
+    private boolean decoyEnabled() {
+        return shopState().getBoolean("decoyEnabled");
+    }
+
+    private boolean silenceEnabled() {
+        return shopState().getBoolean("silenceEnabled");
+    }
+
+    private double bodyRentCost(int index) {
+        return PocketConfig.bodyRentPerSec[index] * priceMultiplier();
+    }
+
+    private String lastLoot() {
+        return shopState().getString("lastLoot");
     }
 
     private AbilityType[] list() {
@@ -65,6 +126,7 @@ public class ShopGui extends GuiScreen {
 
     @Override
     public void initGui() {
+        PocketDoorNetwork.requestState();
         buttonList.clear();
         int cx = width / 2;
 
@@ -97,6 +159,7 @@ public class ShopGui extends GuiScreen {
                 buttonList.add(new GuiButton(BTN_SILENCE, px + 156, height - 66, 120, 18, silenceLabel()));
             }
         } else if (tab == 4) {
+            buttonList.add(new GuiButton(BTN_MORPHISM, bx, top - 22, 196, 18, morphismLabel()));
             // только эффекты тела — без наложений
             for (int i = 0; i < BodyEffects.IDS.length; i++) {
                 int ry = top + i * rowH;
@@ -122,15 +185,21 @@ public class ShopGui extends GuiScreen {
     }
 
     // ===== подписи =====
+    private String morphismLabel() {
+        if (!PocketConfig.morphEnabled) return "Морфизм: отключён";
+        return shopState().getBoolean("morphismUnlocked")
+                ? "Каталог образов" : "Купить морфизм: 500";
+    }
+
     private String buyLabel(AbilityType t) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = abilityLevel(t);
         if (lvl >= t.maxLevel) return Tr.format("pocketmod.gui.max");
         int cost = t.costForNextLevel(lvl);
         if (cost < 0) return "-";
-        double real = Mana.shopPrice(dp, cost);
+        double real = shopPrice(cost);
         String s = Tr.format(lvl == 0 ? "pocketmod.gui.buy" : "pocketmod.gui.upgrade", (int) Math.ceil(real));
-        return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + s;
+        return (manaValue() < real ? TextFormatting.RED.toString() : "") + s;
     }
 
     private static final int LIST_W = 150;
@@ -149,7 +218,7 @@ public class ShopGui extends GuiScreen {
     }
 
     private String silenceLabel() {
-        return Tr.format(Abilities.isSilenceEnabled(dataPlayer()) ? "pocketmod.gui.silence_on" : "pocketmod.gui.silence_off");
+        return Tr.format(silenceEnabled() ? "pocketmod.gui.silence_on" : "pocketmod.gui.silence_off");
     }
 
 
@@ -176,7 +245,7 @@ public class ShopGui extends GuiScreen {
 
     private void drawManaChip(EntityPlayer dp, int cx, int y) {
         double mana = Mana.get(dp);
-        double mult = Mana.getPriceMultiplier(dp);
+        double mult = priceMultiplier();
         double drain = Abilities.totalDrainPerSec(dp);
         int w = Math.min(280, width - 40);
         int x = cx - w / 2;
@@ -251,12 +320,12 @@ public class ShopGui extends GuiScreen {
     }
 
     private String decoyLabel() {
-        return Tr.format(Abilities.isDecoyEnabled(dataPlayer()) ? "pocketmod.gui.decoy_on" : "pocketmod.gui.decoy_off");
+        return Tr.format(decoyEnabled() ? "pocketmod.gui.decoy_on" : "pocketmod.gui.decoy_off");
     }
 
     private String permLabel(int i) {
         EntityPlayer dp = dataPlayer();
-        int have = BodyEffects.perm(dp, i);
+        int have = bodyLevel(i);
         if (have >= BodyEffects.maxPerm(i)) return Tr.format("pocketmod.gui.max");
         double real = Mana.shopPrice(dp, PocketConfig.bodyPermCost[i]);
         String s = Tr.format("pocketmod.gui.perm", (int) Math.ceil(real));
@@ -265,8 +334,8 @@ public class ShopGui extends GuiScreen {
 
     private String rentLabel(int i) {
         EntityPlayer dp = dataPlayer();
-        String c = String.format("%.1f", BodyEffects.rentCost(dp, i));
-        return Tr.format(BodyEffects.rent(dp, i) ? "pocketmod.gui.rent_on" : "pocketmod.gui.rent_off", c);
+        String c = String.format("%.1f", bodyRentCost(i));
+        return Tr.format(bodyRent(i) ? "pocketmod.gui.rent_on" : "pocketmod.gui.rent_off", c);
     }
 
     private String stakeLabel(int i) {
@@ -324,15 +393,15 @@ public class ShopGui extends GuiScreen {
         drawDefaultBackground();
         EntityPlayer dp = dataPlayer();
         int cx = width / 2;
-        boolean hasCredit = Mana.hasCredit(dp);
+        boolean hasCredit = hasCredit();
 
         // верхняя плашка с маной
         drawManaChip(dp, cx, 20);
 
         if (hasCredit) {
             drawCenteredString(fontRenderer,
-                    Tr.format("pocketmod.gui.credit_active", (long) Math.ceil(Mana.getCredit(dp)),
-                            formatTime(Mana.getCreditLeftMs(dp))),
+                    Tr.format("pocketmod.gui.credit_active", (long) Math.ceil(creditValue()),
+                            formatTime(creditLeftMs())),
                     cx, 52, 0xFF8888);
         } else {
             double disc = 1.0 - Mana.getPriceMultiplier(dp);
@@ -428,7 +497,7 @@ public class ShopGui extends GuiScreen {
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (mouseButton == 0 && inSlider(mouseX, mouseY) && !Mana.hasCredit(dataPlayer())) {
+        if (mouseButton == 0 && inSlider(mouseX, mouseY) && !hasCredit()) {
             dragging = true;
             updateSlider(mouseX);
         }
@@ -465,99 +534,77 @@ public class ShopGui extends GuiScreen {
             initGui();
             return;
         }
-        final IntegratedServer server = mc.getIntegratedServer();
-        if (server == null) return;
-        final java.util.UUID id = player.getUniqueID();
 
         if (button.id == BTN_DOOR_MANAGE) {
             mc.displayGuiScreen(new PocketDoorGui(player));
             return;
         }
+        if (button.id == BTN_MORPHISM) {
+            if (!PocketConfig.morphEnabled) return;
+            if (shopState().getBoolean("morphismUnlocked")) {
+                mc.displayGuiScreen(new MorphCatalogGui(player));
+            } else {
+                PocketDoorNetwork.upgradeAbility(AbilityType.MORPHISM);
+            }
+            return;
+        }
         if (button.id == BTN_TAKE) {
-            if (Mana.hasCredit(dataPlayer())) return;
-            final int amt = creditAmount;
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null && !Mana.hasCredit(mp)) {
-                    double repay = Mana.takeCredit(mp, amt);
-                    if (repay > 0) {
-                        mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken",
-                                (int) Math.ceil(repay), PocketConfig.creditDurationSec / 60), true);
-                    }
-                }
-            });
+            if (!hasCredit()) PocketDoorNetwork.takeCredit(creditAmount);
             return;
         }
         if (button.id == BTN_DECOY) {
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) Abilities.setDecoyEnabled(mp, !Abilities.isDecoyEnabled(mp));
-            });
+            PocketDoorNetwork.toggleDecoy();
             return;
         }
         if (button.id == BTN_SILENCE) {
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) Abilities.setSilenceEnabled(mp, !Abilities.isSilenceEnabled(mp));
-            });
+            PocketDoorNetwork.toggleSilence();
             return;
         }
         if (button.id == BTN_BLOOD) {
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) AbilityStorage.tryUpgrade(mp, AbilityType.BLOODSUCKER);
-            });
+            PocketDoorNetwork.upgradeAbility(AbilityType.BLOODSUCKER);
             return;
         }
         if (button.id == BTN_BUYSEL && tab <= 3) {
-            final AbilityType t = list()[Math.min(selected, list().length - 1)];
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) AbilityStorage.tryUpgrade(mp, t);
-            });
+            AbilityType[] abilities = list();
+            if (abilities.length > 0) PocketDoorNetwork.upgradeAbility(abilities[Math.min(selected, abilities.length - 1)]);
             return;
         }
         if (button.id >= BTN_PERM && button.id < BTN_PERM + 5) {
-            final int i = button.id - BTN_PERM;
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) BodyEffects.buyPerm(mp, i);
-            });
+            PocketDoorNetwork.buyBodyEffect(button.id - BTN_PERM);
             return;
         }
         if (button.id >= BTN_RENT && button.id < BTN_RENT + 5) {
-            final int i = button.id - BTN_RENT;
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) BodyEffects.toggleRent(mp, i);
-            });
+            PocketDoorNetwork.toggleBodyRent(button.id - BTN_RENT);
             return;
         }
         if (button.id >= BTN_STAKE && button.id < BTN_STAKE + 3) {
             if (spinTicks > 0) return;
-            final int tier = button.id - BTN_STAKE;
-            double real = PocketConfig.lootStakes[tier] * Mana.getPriceMultiplier(dataPlayer());
-            if (Mana.get(dataPlayer()) < real) return;
+            int tier = button.id - BTN_STAKE;
+            double real = PocketConfig.lootStakes[tier] * priceMultiplier();
+            if (manaValue() < real) return;
             spinTicks = 30;
             shownResult = "";
-            server.addScheduledTask(() -> {
-                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-                if (mp != null) Loot.spin(mp, tier);
-            });
+            PocketDoorNetwork.spinLoot(tier);
         }
     }
 
+    private int refreshTicks = 0;
+
     @Override
     public void updateScreen() {
+        if (++refreshTicks >= 10) {
+            refreshTicks = 0;
+            PocketDoorNetwork.requestState();
+        }
         EntityPlayer dp = dataPlayer();
-        boolean hasCredit = Mana.hasCredit(dp);
+        boolean hasCredit = hasCredit();
         if (spinTicks > 0) {
             spinTicks--;
             if (spinTicks % 3 == 0) {
                 mc.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.4F, 1.4F);
             }
             if (spinTicks == 0) {
-                shownResult = Loot.last(dp);
+                shownResult = lastLoot();
             }
         }
         for (GuiButton b : buttonList) {
@@ -571,7 +618,7 @@ public class ShopGui extends GuiScreen {
                     b.displayString = "-";
                 } else {
                     AbilityType t = lst[Math.min(selected, lst.length - 1)];
-                    int lvl = AbilityStorage.getLevel(dp, t);
+                    int lvl = abilityLevel(t);
                     int cost = t.costForNextLevel(lvl);
                     b.displayString = buyLabel(t);
                     // активна пока не MAX; нехватка маны не блокирует клик (сообщение при покупке)
@@ -579,10 +626,10 @@ public class ShopGui extends GuiScreen {
                 }
             } else if (b.id == BTN_SILENCE) {
                 b.displayString = silenceLabel();
-                b.enabled = AbilityStorage.getLevel(dp, AbilityType.TELEPORT) >= PocketConfig.silenceMinLevel;
+                b.enabled = abilityLevel(AbilityType.TELEPORT) >= PocketConfig.silenceMinLevel;
             } else if (b.id == BTN_DECOY) {
                 b.displayString = decoyLabel();
-                b.enabled = AbilityStorage.isUnlocked(dp, AbilityType.DECOY);
+                b.enabled = abilityLevel(AbilityType.DECOY) > 0;
             } else if (b.id >= BTN_PERM && b.id < BTN_PERM + 5) {
                 int i = b.id - BTN_PERM;
                 b.displayString = permLabel(i);
