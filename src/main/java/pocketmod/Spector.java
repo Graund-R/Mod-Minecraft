@@ -36,6 +36,7 @@ public class Spector {
     }
 
     public static void start(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (isActive(p)) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.SPECTOR)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
@@ -143,6 +144,7 @@ public class Spector {
     }
 
     private static void doPhaseStep(EntityPlayerMP p, double x, double y, double z, float yaw, float pitch) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (!isActive(p)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_need"), true);
             return;
