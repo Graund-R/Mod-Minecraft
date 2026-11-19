@@ -34,6 +34,8 @@ public class PocketDoorData extends WorldSavedData {
     private final Set<String> pausedOwners = new LinkedHashSet<String>();
     /** Owners currently testing the temporary-guest permission tier in their own pocket. */
     private final Set<String> guestTestOwners = new LinkedHashSet<String>();
+    /** Incrementing owner key epoch invalidates every key issued before the rotation. */
+    private final Map<String, Integer> keyEpochs = new LinkedHashMap<String, Integer>();
 
     public PocketDoorData() {
         super(ID);
@@ -130,9 +132,27 @@ public class PocketDoorData extends WorldSavedData {
     public void remove(int dim, long pos) {
         String pairId = doorPairs.remove(doorKey(dim, pos));
         if (pairId == null) return;
-        // If every physical door in this pair is gone, release its slot.
-        if (doorCount(pairId) == 0) pairOwners.remove(pairId);
+        // Keep the pair slot and its stable ID: replacement doors must remain
+        // accessible with already issued keys bound to this pair.
         markDirty();
+    }
+
+    public int keyEpoch(UUID owner) {
+        Integer epoch = keyEpochs.get(owner.toString());
+        return epoch == null ? 0 : epoch.intValue();
+    }
+
+    public int rotateKeyEpoch(UUID owner) {
+        String id = owner.toString();
+        int next = keyEpoch(id) + 1;
+        keyEpochs.put(id, next);
+        markDirty();
+        return next;
+    }
+
+    private int keyEpoch(String ownerId) {
+        Integer epoch = keyEpochs.get(ownerId);
+        return epoch == null ? 0 : epoch.intValue();
     }
 
     public boolean keysEnabled(UUID owner) {
@@ -223,6 +243,7 @@ public class PocketDoorData extends WorldSavedData {
         lockedOwners.clear();
         pausedOwners.clear();
         guestTestOwners.clear();
+        keyEpochs.clear();
 
         NBTTagList pairs = nbt.getTagList("pairs", 10);
         for (int i = 0; i < pairs.tagCount(); i++) {
@@ -268,6 +289,13 @@ public class PocketDoorData extends WorldSavedData {
         for (int i = 0; i < locked.tagCount(); i++) {
             lockedOwners.add(locked.getStringTagAt(i));
         }
+
+        NBTTagList epochs = nbt.getTagList("keyEpochs", 10);
+        for (int i = 0; i < epochs.tagCount(); i++) {
+            NBTTagCompound entry = epochs.getCompoundTagAt(i);
+            String owner = entry.getString("owner");
+            if (!owner.isEmpty()) keyEpochs.put(owner, entry.getInteger("epoch"));
+        }
     }
 
     @Override
@@ -312,6 +340,15 @@ public class PocketDoorData extends WorldSavedData {
             paused.appendTag(new net.minecraft.nbt.NBTTagString(owner));
         }
         nbt.setTag("pausedAccess", paused);
+
+        NBTTagList epochs = new NBTTagList();
+        for (Map.Entry<String, Integer> entry : keyEpochs.entrySet()) {
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setString("owner", entry.getKey());
+            tag.setInteger("epoch", entry.getValue().intValue());
+            epochs.appendTag(tag);
+        }
+        nbt.setTag("keyEpochs", epochs);
 
         return nbt;
     }
