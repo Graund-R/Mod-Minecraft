@@ -3,17 +3,12 @@ package pocketmod;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -29,11 +24,8 @@ public class PocketDoorGui extends GuiScreen {
     private static final int BTN_REMOVE_TRUST = 6;
     private static final int BTN_PAUSE_ACCESS = 7;
     private static final int BTN_TEST_GUEST = 8;
+    private static final int BTN_KICK_ALL = 9;
     private static final int BTN_PAIR_BASE = 20;
-
-    private static final double PAIR_PRICE = 1000.0D;
-    private static final double KEY_PRICE = 100.0D;
-    private static final double TEMP_KEY_PRICE = 50.0D;
 
     private final EntityPlayer player;
     private final List<String> pairIds = new ArrayList<String>();
@@ -44,23 +36,42 @@ public class PocketDoorGui extends GuiScreen {
         this.player = player;
     }
 
-    private IntegratedServer server() {
-        return mc == null ? null : mc.getIntegratedServer();
+    private net.minecraft.nbt.NBTTagCompound state() {
+        return PocketDoorNetwork.getClientState();
     }
 
-    private PocketDoorData data() {
-        IntegratedServer server = server();
-        return server == null ? null : PocketDoorData.get(server.getWorld(0));
+    private List<String> pairIdsFromState() {
+        List<String> result = new ArrayList<String>();
+        net.minecraft.nbt.NBTTagList list = state().getTagList("pairs", 10);
+        for (int i = 0; i < list.tagCount(); i++) {
+            String id = list.getCompoundTagAt(i).getString("id");
+            if (!id.isEmpty()) result.add(id);
+        }
+        return result;
     }
 
-    private UUID ownerId() {
-        return player.getUniqueID();
+    private int pairCount() {
+        return state().getInteger("pairCount");
+    }
+
+    private int doorCount(String pairId) {
+        net.minecraft.nbt.NBTTagList list = state().getTagList("pairs", 10);
+        for (int i = 0; i < list.tagCount(); i++) {
+            net.minecraft.nbt.NBTTagCompound pair = list.getCompoundTagAt(i);
+            if (pairId.equals(pair.getString("id"))) return pair.getInteger("doors");
+        }
+        return 0;
+    }
+
+    private List<String> trustedNames() {
+        List<String> result = new ArrayList<String>();
+        net.minecraft.nbt.NBTTagList list = state().getTagList("trusted", 8);
+        for (int i = 0; i < list.tagCount(); i++) result.add(list.getStringTagAt(i));
+        return result;
     }
 
     private void refreshPairs() {
-        PocketDoorData data = data();
-        if (data == null) return;
-        List<String> current = data.pairIds(ownerId());
+        List<String> current = pairIdsFromState();
         if (!current.equals(pairIds)) {
             pairIds.clear();
             pairIds.addAll(current);
@@ -73,6 +84,7 @@ public class PocketDoorGui extends GuiScreen {
 
     @Override
     public void initGui() {
+        PocketDoorNetwork.requestState();
         buttonList.clear();
         refreshPairListOnly();
         int leftX = 8;
@@ -87,7 +99,7 @@ public class PocketDoorGui extends GuiScreen {
 
         buttonList.add(new GuiButton(BTN_PAUSE_ACCESS, rightX, 134, rightW, 19, "Доступ: открыт"));
 
-        int inputY = 180;
+        int inputY = 203;
         int fieldW = Math.max(48, rightW - 78);
         nameField = new GuiTextField(0, fontRenderer, rightX, inputY, fieldW, 18);
         nameField.setMaxStringLength(16);
@@ -100,7 +112,7 @@ public class PocketDoorGui extends GuiScreen {
 
         for (int i = 0; i < pairIds.size() && i < PocketDoorData.MAX_PAIRS; i++) {
             String id = pairIds.get(i);
-            int count = data() == null ? 0 : data().doorCount(id);
+            int count = doorCount(id);
             GuiButton pairButton = new GuiButton(BTN_PAIR_BASE + i, leftX, 42 + i * 19, leftW, 17,
                     "Пара " + (i + 1) + "  " + count + "/2");
             pairButton.enabled = !id.equals(selectedPairId);
@@ -109,9 +121,7 @@ public class PocketDoorGui extends GuiScreen {
     }
 
     private void refreshPairListOnly() {
-        PocketDoorData d = data();
-        if (d == null) return;
-        List<String> current = d.pairIds(ownerId());
+        List<String> current = pairIdsFromState();
         if (!current.equals(pairIds)) {
             pairIds.clear();
             pairIds.addAll(current);
@@ -121,130 +131,24 @@ public class PocketDoorGui extends GuiScreen {
         }
     }
 
-    private void schedule(java.util.function.Consumer<EntityPlayerMP> action) {
-        final IntegratedServer server = server();
-        if (server == null) return;
-        final UUID id = ownerId();
-        server.addScheduledTask(() -> {
-            EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
-            if (mp != null) action.accept(mp);
-        });
+    private void purchasePair() { PocketDoorNetwork.buyPair(); }
+
+    private void purchaseKey(boolean oneTime) {
+        if (selectedPairId == null) return;
+        if (oneTime) PocketDoorNetwork.buyIronKey(selectedPairId);
+        else PocketDoorNetwork.buyGoldKey(selectedPairId);
     }
 
-    private void give(EntityPlayerMP player, net.minecraft.item.ItemStack stack) {
-        if (!player.inventory.addItemStackToInventory(stack)) player.dropItem(stack, false);
-    }
+    private void toggleKeys() { PocketDoorNetwork.toggleKeys(); }
+    private void toggleGuestTestMode() { PocketDoorNetwork.toggleGuestTest(); }
+    private void toggleVisitorAccess() { PocketDoorNetwork.togglePause(); }
+    private void kickAllVisitors() { PocketDoorNetwork.kickAll(); }
 
-    private void purchasePair() {
-        schedule(mp -> {
-            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
-            if (!AbilityStorage.isUnlocked(mp, AbilityType.POCKET)) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
-                return;
-            }
-            if (!data.canBuyPair(mp.getUniqueID())) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
-                return;
-            }
-            double price = Mana.shopPrice(mp, PAIR_PRICE);
-            if (!Mana.spend(mp, price)) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
-                        (int) Math.ceil(price)), true);
-                return;
-            }
-            String pairId = data.createPair(mp.getUniqueID());
-            if (pairId == null) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
-                return;
-            }
-            Mana.consumeDiscount(mp);
-            give(mp, PocketDoorItems.createPairItem(mp.getUniqueID(), pairId));
-            give(mp, PocketDoorItems.createPairItem(mp.getUniqueID(), pairId));
-            mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_bought"), true);
-        });
-    }
-
-    private void purchaseKey(final boolean oneTime) {
-        final String pairId = selectedPairId;
-        if (pairId == null) return;
-        schedule(mp -> {
-            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
-            if (!AbilityStorage.isUnlocked(mp, AbilityType.POCKET)) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
-                return;
-            }
-            if (!data.ownsPair(mp.getUniqueID(), pairId)) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_missing"), true);
-                return;
-            }
-            double base = oneTime ? TEMP_KEY_PRICE : KEY_PRICE;
-            double price = Mana.shopPrice(mp, base);
-            if (!Mana.spend(mp, price)) {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
-                        (int) Math.ceil(price)), true);
-                return;
-            }
-            Mana.consumeDiscount(mp);
-            give(mp, PocketKeys.createKeyFor(mp.getUniqueID(), pairId, oneTime));
-            mp.sendStatusMessage(new TextComponentTranslation(
-                    oneTime ? "pocketmod.msg.temp_key_bought" : "pocketmod.msg.key_bought"), true);
-        });
-    }
-
-    private void toggleKeys() {
-        schedule(mp -> {
-            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
-            boolean enabled = !data.keysEnabled(mp.getUniqueID());
-            data.setKeysEnabled(mp.getUniqueID(), enabled);
-            mp.sendStatusMessage(new TextComponentTranslation(
-                    enabled ? "pocketmod.msg.keys_enabled" : "pocketmod.msg.keys_disabled"), true);
-        });
-    }
-
-    private void toggleGuestTestMode() {
-        schedule(mp -> {
-            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
-            boolean enabled = !data.guestTestEnabled(mp.getUniqueID());
-            data.setGuestTestEnabled(mp.getUniqueID(), enabled);
-            mp.sendStatusMessage(new TextComponentTranslation(
-                    enabled ? "pocketmod.msg.guest_test_enabled" : "pocketmod.msg.guest_test_disabled"), true);
-        });
-    }
-
-    private void toggleVisitorAccess() {
-        schedule(mp -> {
-            net.minecraft.server.MinecraftServer server = mp.getServer();
-            PocketDoorData data = PocketDoorData.get(server.getWorld(0));
-            boolean pause = !data.accessPaused(mp.getUniqueID());
-            data.setAccessPaused(mp.getUniqueID(), pause);
-            if (pause) {
-                int dimension = PocketDimensionManager.getDimensionForOwner(server, mp.getUniqueID());
-                java.util.List<EntityPlayerMP> occupants =
-                        new java.util.ArrayList<EntityPlayerMP>(server.getPlayerList().getPlayers());
-                for (EntityPlayerMP visitor : occupants) {
-                    if (visitor.dimension == dimension
-                            && !visitor.getUniqueID().equals(mp.getUniqueID())) {
-                        PocketTeleporter.toggle(visitor);
-                    }
-                }
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.access_paused"), true);
-            } else {
-                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.access_resumed"), true);
-            }
-        });
-    }
-
-    private void updateTrusted(final boolean add) {
-        final String name = nameField == null ? "" : nameField.getText().trim();
+    private void updateTrusted(boolean add) {
+        String name = nameField == null ? "" : nameField.getText().trim();
         if (!name.matches("[A-Za-z0-9_]{1,16}")) return;
-        schedule(mp -> {
-            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
-            boolean changed = add ? data.addTrusted(mp.getUniqueID(), name)
-                    : data.removeTrusted(mp.getUniqueID(), name);
-            mp.sendStatusMessage(new TextComponentTranslation(
-                    changed ? (add ? "pocketmod.msg.trusted_added" : "pocketmod.msg.trusted_removed")
-                            : "pocketmod.msg.trusted_unchanged", name), true);
-        });
+        if (add) PocketDoorNetwork.addTrusted(name);
+        else PocketDoorNetwork.removeTrusted(name);
         nameField.setText("");
     }
 
@@ -274,6 +178,8 @@ public class PocketDoorGui extends GuiScreen {
             toggleVisitorAccess();
         } else if (button.id == BTN_TEST_GUEST) {
             toggleGuestTestMode();
+        } else if (button.id == BTN_KICK_ALL) {
+            kickAllVisitors();
         } else if (button.id == BTN_ADD_TRUST) {
             updateTrusted(true);
         } else if (button.id == BTN_REMOVE_TRUST) {
@@ -304,26 +210,27 @@ public class PocketDoorGui extends GuiScreen {
     public void updateScreen() {
         super.updateScreen();
         refreshPairs();
-        PocketDoorData data = data();
-        boolean hasPair = selectedPairId != null && data != null
-                && data.ownsPair(ownerId(), selectedPairId);
+        net.minecraft.nbt.NBTTagCompound snapshot = state();
+        boolean hasPair = selectedPairId != null && pairIds.contains(selectedPairId);
         for (GuiButton button : buttonList) {
             if (button.id >= BTN_PAIR_BASE && button.id < BTN_PAIR_BASE + PocketDoorData.MAX_PAIRS) {
                 int index = button.id - BTN_PAIR_BASE;
                 if (index < pairIds.size()) {
-                    button.displayString = "Пара " + (index + 1) + "  " + data.doorCount(pairIds.get(index)) + "/2";
+                    button.displayString = "Пара " + (index + 1) + "  " + doorCount(pairIds.get(index)) + "/2";
                 }
             } else if (button.id == BTN_BUY_PAIR) {
-                button.displayString = "Пара дверей: 1000 (" + (data == null ? 0 : data.pairCount(ownerId()))
-                        + "/" + PocketDoorData.MAX_PAIRS + ")";
-                button.enabled = data != null && data.canBuyPair(ownerId());
+                button.displayString = "Пара дверей: 1000 (" + pairCount() + "/" + PocketDoorData.MAX_PAIRS + ")";
+                button.enabled = pairCount() < PocketDoorData.MAX_PAIRS;
             } else if (button.id == BTN_BUY_KEY || button.id == BTN_BUY_TEMP) {
                 button.enabled = hasPair;
             } else if (button.id == BTN_TOGGLE_KEYS) {
-                button.displayString = data != null && data.keysEnabled(ownerId())
+                button.displayString = snapshot.getBoolean("keysEnabled")
                         ? "Все ключи: включены" : "Все ключи: заблокированы";
+            } else if (button.id == BTN_PAUSE_ACCESS) {
+                button.displayString = snapshot.getBoolean("accessPaused")
+                        ? "Пауза: включена" : "Пауза: выключена";
             } else if (button.id == BTN_TEST_GUEST) {
-                button.displayString = data != null && data.guestTestEnabled(ownerId())
+                button.displayString = snapshot.getBoolean("guestTest")
                         ? "[x] Тест гостя" : "[ ] Тест гостя";
             }
         }
@@ -339,14 +246,14 @@ public class PocketDoorGui extends GuiScreen {
         Gui.drawRect(4, 4, width - 4, height - 4, 0xCC101418);
         Gui.drawRect(4, 4, width - 4, 5, 0xFFE0A040);
         drawCenteredString(fontRenderer, "Управление дверями", width / 2, 12, 0xFFE0A040);
-        fontRenderer.drawString("Куплено пар: " + (data() == null ? 0 : data().pairCount(ownerId()))
+        fontRenderer.drawString("Куплено пар: " + pairCount()
                 + "/" + PocketDoorData.MAX_PAIRS, 10, 28, 0xFFCCCCCC);
         fontRenderer.drawString("Выбрана: " + (selectedPairId == null ? "нет пары"
                 : "пара " + (pairIds.indexOf(selectedPairId) + 1)), rightX, 28, 0xFFCCCCCC);
         fontRenderer.drawString("Доверенные игроки:", rightX, 165, 0xFFE0A040);
 
-        if (data() != null) {
-            List<String> trusted = data().trustedNames(ownerId());
+        {
+            List<String> trusted = trustedNames();
             String names = trusted.isEmpty() ? "список пуст" : String.join(", ", trusted);
             int y = 228;
             for (Object line : fontRenderer.listFormattedStringToWidth(names, rightW)) {
@@ -361,6 +268,6 @@ public class PocketDoorGui extends GuiScreen {
 
     @Override
     public boolean doesGuiPauseGame() {
-        return true;
+        return false;
     }
 }
