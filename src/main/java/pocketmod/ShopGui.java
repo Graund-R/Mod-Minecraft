@@ -120,6 +120,10 @@ public class ShopGui extends GuiScreen {
         return shopState().getString("lastLoot");
     }
 
+    private double totalDrain() {
+        return shopState().getDouble("totalDrain");
+    }
+
     private AbilityType[] list() {
         return TAB_ABIL[tab];
     }
@@ -246,7 +250,7 @@ public class ShopGui extends GuiScreen {
     private void drawManaChip(EntityPlayer dp, int cx, int y) {
         double mana = manaValue();
         double mult = priceMultiplier();
-        double drain = Abilities.totalDrainPerSec(dp);
+        double drain = totalDrain();
         int w = Math.min(280, width - 40);
         int x = cx - w / 2;
         drawFrame(x, y, x + w, y + 28, COL_PANEL, COL_PANEL_EDGE);
@@ -611,6 +615,9 @@ public class ShopGui extends GuiScreen {
             if (b.id >= BTN_BUY && b.id < BTN_BUY + 10 && tab <= 3) {
                 int idx = b.id - BTN_BUY;
                 b.displayString = cardLabel(list()[idx], idx == selected);
+            } else if (b.id == BTN_MORPHISM) {
+                b.displayString = morphismLabel();
+                b.enabled = PocketConfig.morphEnabled;
             } else if (b.id == BTN_BUYSEL) {
                 AbilityType[] lst = list();
                 if (lst.length == 0) {
