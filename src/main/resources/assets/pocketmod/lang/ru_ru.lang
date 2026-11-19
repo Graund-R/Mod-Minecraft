@@ -468,3 +468,6 @@ pocketmod.msg.keys_disabled=Все ключи заблокированы.
 pocketmod.msg.trusted_added=Игрок добавлен в список доступа: %s
 pocketmod.msg.trusted_removed=Игрок удалён из списка доступа: %s
 pocketmod.msg.trusted_unchanged=Список доступа не изменён: %s
+
+pocketmod.msg.access_paused=Доступ временно приостановлен. Все гости выгнаны из измерения.
+pocketmod.msg.access_resumed=Доступ к измерению снова открыт.
