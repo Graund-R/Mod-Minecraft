@@ -79,7 +79,13 @@ public final class PocketDoorEvents {
         World world = event.getWorld();
         if (world.isRemote || !(world instanceof WorldServer)) return;
         BlockPos pos = lowerPos(world, event.getPos());
-        PocketDoorData.get((WorldServer) world).remove(world.provider.getDimension(), pos.toLong());
+        PocketDoorData data = PocketDoorData.get((WorldServer) world);
+        UUID owner = data.owner(world.provider.getDimension(), pos.toLong());
+        if (owner != null && !owner.equals(event.getPlayer().getUniqueID())) {
+            event.setCanceled(true);
+            return;
+        }
+        data.remove(world.provider.getDimension(), pos.toLong());
     }
 
     @SubscribeEvent
@@ -123,6 +129,12 @@ public final class PocketDoorEvents {
         }
 
         boolean entered = PocketTeleporter.enterNetwork(player, owner);
+        if (entered) {
+            int accessLevel = trustedAccess ? PocketAccess.TRUSTED
+                    : (keyAccess && !PocketKeys.isOneTime(event.getItemStack())
+                        ? PocketAccess.BUILDER : PocketAccess.TEMPORARY);
+            PocketAccess.grant(player, owner, accessLevel);
+        }
         event.setCanceled(true);
         event.setCancellationResult(entered ? EnumActionResult.SUCCESS : EnumActionResult.FAIL);
         boolean keyWasRequired = !ownerAccess && !trustedAccess && keyAccess;
