@@ -20,6 +20,17 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class CommonEvents {
 
     @SubscribeEvent
+    public static void onPlace(BlockEvent.PlaceEvent event) {
+        World world = event.getWorld();
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
+            return;
+        }
+        if (!PocketAccess.canBuild(event.getPlayer(), world)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
         World world = event.getWorld();
         if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
