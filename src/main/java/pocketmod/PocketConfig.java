@@ -41,6 +41,9 @@ public class PocketConfig {
     // Metamorph integration
     public static boolean morphEnabled = true;
     public static int morphCost = 20;
+    public static int doorPairPrice = 1000;
+    public static int goldKeyPrice = 100;
+    public static int ironKeyPrice = 50;
 
     public static int teleportBaseRange = 50;
     public static int teleportRange2 = 100;
@@ -198,6 +201,9 @@ public class PocketConfig {
 
         morphEnabled = cfg.getBoolean("morphEnabled", "морфизм", true, "Включить совместимость с Metamorph");
         morphCost = cfg.getInt("morphCost", "морфизм", 20, 0, 1000000, "Разовая стоимость каждого превращения в мане");
+        doorPairPrice = cfg.getInt("doorPairPrice", "двери", 1000, 0, 1000000, "Цена комплекта из двух дверей");
+        goldKeyPrice = cfg.getInt("goldKeyPrice", "двери", 100, 0, 1000000, "Цена постоянного золотого ключа");
+        ironKeyPrice = cfg.getInt("ironKeyPrice", "двери", 50, 0, 1000000, "Цена одноразового железного ключа");
 
         teleportBaseRange = cfg.getInt("teleportBaseRange", "способности", 50, 5, 500, "Teleport range, level 1");
         teleportRange2 = cfg.getInt("teleportRange2", "способности", 100, 5, 1000, "Teleport range, level 2");
