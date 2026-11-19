@@ -94,19 +94,6 @@ public class CommonEvents {
         }
         EntityPlayer player = event.getEntityPlayer();
         ItemStack stack = event.getItemStack();
-        // Тестовый выпуск личного ключа: Shift + ПКМ золотым слитком.
-        // Ключ привязывается к UUID создавшего его игрока и не расходуется при входе.
-        if (player.isSneaking() && stack.getItem() == Items.GOLD_INGOT) {
-            ItemStack key = PocketKeys.createOwnerKey(player);
-            stack.shrink(1);
-            if (!player.inventory.addItemStackToInventory(key)) {
-                player.dropItem(key, false);
-            }
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.key_created"), true);
-            event.setCanceled(true);
-            event.setCancellationResult(EnumActionResult.SUCCESS);
-            return;
-        }
         if (!ManaItems.isManaItem(stack)) {
             return;
         }
