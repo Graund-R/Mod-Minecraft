@@ -40,12 +40,12 @@ public class PocketTeleporter implements ITeleporter {
         }
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (player.dimension != PocketMod.DIM_ID) {
+        if (!PocketDimensionManager.isPocketDimension(player.dimension)) {
             // вход в карман выключает полёт и Спектор
             Spector.forceReturnIfActive(player);
             Flight.stop(player);
         }
-        if (player.dimension == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
             leave(player, server);
         } else {
             enter(player, server);
@@ -64,7 +64,8 @@ public class PocketTeleporter implements ITeleporter {
     private static void enter(EntityPlayerMP player, MinecraftServer server) {
         NBTTagCompound data = PlayerData.root(player);
 
-        WorldServer pocket = server.getWorld(PocketMod.DIM_ID);
+        int pocketDimension = PocketDimensionManager.getOrCreateDimension(server, player.getUniqueID());
+        WorldServer pocket = server.getWorld(pocketDimension);
         Pocket.buildIfNeeded(pocket);
         PocketData pd = PocketData.get(pocket);
 
@@ -101,7 +102,7 @@ public class PocketTeleporter implements ITeleporter {
             }
         }
 
-        player.changeDimension(PocketMod.DIM_ID, new PocketTeleporter(ix, iy, iz));
+        player.changeDimension(pocketDimension, new PocketTeleporter(ix, iy, iz));
     }
 
     private static void leave(EntityPlayerMP player, MinecraftServer server) {
