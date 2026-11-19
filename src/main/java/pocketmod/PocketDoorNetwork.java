@@ -502,7 +502,8 @@ public final class PocketDoorNetwork {
                         || Math.abs(message.z - player.posZ) > 64) return;
                 float yaw = message.yaw % 360.0F;
                 float pitch = Math.max(-90.0F, Math.min(90.0F, message.pitch));
-                Spector.phaseStep(player, message.x, message.y, message.z, yaw, pitch);
+                // 2.9 validates the phase-step destination from the server-side player position.
+                Spector.phaseStep(player);
                 break;
             case 25:
                 Thermal.toggle(player);
