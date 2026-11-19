@@ -25,12 +25,14 @@ public class PocketDoorGui extends GuiScreen {
     private static final int BTN_PAUSE_ACCESS = 7;
     private static final int BTN_TEST_GUEST = 8;
     private static final int BTN_KICK_ALL = 9;
+    private static final int BTN_PRESERVE_KEYS = 10;
     private static final int BTN_PAIR_BASE = 20;
 
     private final EntityPlayer player;
     private final List<String> pairIds = new ArrayList<String>();
     private String selectedPairId;
     private GuiTextField nameField;
+    private boolean preserveOldKeys = false;
 
     public PocketDoorGui(EntityPlayer player) {
         this.player = player;
@@ -99,8 +101,9 @@ public class PocketDoorGui extends GuiScreen {
 
         buttonList.add(new GuiButton(BTN_PAUSE_ACCESS, rightX, 134, rightW, 19, "Пауза доступа"));
         buttonList.add(new GuiButton(BTN_KICK_ALL, rightX, 157, rightW, 19, "Выкинуть всех"));
+        buttonList.add(new GuiButton(BTN_PRESERVE_KEYS, rightX, 180, rightW, 19, "Старые ключи: не сохранять"));
 
-        int inputY = 203;
+        int inputY = 221;
         int fieldW = Math.max(48, rightW - 78);
         nameField = new GuiTextField(0, fontRenderer, rightX, inputY, fieldW, 18);
         nameField.setMaxStringLength(16);
@@ -136,8 +139,8 @@ public class PocketDoorGui extends GuiScreen {
 
     private void purchaseKey(boolean oneTime) {
         if (selectedPairId == null) return;
-        if (oneTime) PocketDoorNetwork.buyIronKey(selectedPairId);
-        else PocketDoorNetwork.buyGoldKey(selectedPairId);
+        if (oneTime) PocketDoorNetwork.buyIronKey(selectedPairId, preserveOldKeys);
+        else PocketDoorNetwork.buyGoldKey(selectedPairId, preserveOldKeys);
     }
 
     private void toggleKeys() { PocketDoorNetwork.toggleKeys(); }
@@ -181,6 +184,8 @@ public class PocketDoorGui extends GuiScreen {
             toggleGuestTestMode();
         } else if (button.id == BTN_KICK_ALL) {
             kickAllVisitors();
+        } else if (button.id == BTN_PRESERVE_KEYS) {
+            preserveOldKeys = !preserveOldKeys;
         } else if (button.id == BTN_ADD_TRUST) {
             updateTrusted(true);
         } else if (button.id == BTN_REMOVE_TRUST) {
@@ -234,6 +239,8 @@ public class PocketDoorGui extends GuiScreen {
             } else if (button.id == BTN_PAUSE_ACCESS) {
                 button.displayString = snapshot.getBoolean("accessPaused")
                         ? "Пауза: включена" : "Пауза: выключена";
+            } else if (button.id == BTN_PRESERVE_KEYS) {
+                button.displayString = preserveOldKeys ? "Старые ключи: сохранять" : "Старые ключи: не сохранять";
             } else if (button.id == BTN_TEST_GUEST) {
                 button.displayString = snapshot.getBoolean("guestTest")
                         ? "[x] Тест гостя" : "[ ] Тест гостя";
@@ -255,12 +262,12 @@ public class PocketDoorGui extends GuiScreen {
                 + "/" + PocketDoorData.MAX_PAIRS, 10, 28, 0xFFCCCCCC);
         fontRenderer.drawString("Выбрана: " + (selectedPairId == null ? "нет пары"
                 : "пара " + (pairIds.indexOf(selectedPairId) + 1)), rightX, 28, 0xFFCCCCCC);
-        fontRenderer.drawString("Доверенные игроки:", rightX, 181, 0xFFE0A040);
+        fontRenderer.drawString("Доверенные игроки:", rightX, 203, 0xFFE0A040);
 
         {
             List<String> trusted = trustedNames();
             String names = trusted.isEmpty() ? "список пуст" : String.join(", ", trusted);
-            int y = 244;
+            int y = 259;
             for (Object line : fontRenderer.listFormattedStringToWidth(names, rightW)) {
                 fontRenderer.drawStringWithShadow((String) line, rightX, y, 0xFFB9C6D4);
                 y += 10;
