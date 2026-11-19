@@ -68,6 +68,13 @@ public final class PocketDimensionManager {
         return dimensionId;
     }
 
+    public static int getDimensionForOwner(MinecraftServer server, UUID owner) {
+        WorldServer overworld = server.getWorld(0);
+        if (registry == null) load(overworld);
+        Integer id = registry.ownerDimensions.get(owner.toString());
+        return id == null ? -1 : id.intValue();
+    }
+
     public static boolean isPocketDimension(int dimensionId) {
         return dimensionId == PocketMod.DIM_ID || TYPES.containsKey(Integer.valueOf(dimensionId));
     }
