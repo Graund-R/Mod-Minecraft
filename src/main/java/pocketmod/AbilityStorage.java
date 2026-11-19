@@ -31,6 +31,13 @@ public class AbilityStorage {
     }
 
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
+        if (type == AbilityType.MORPHISM && !PocketConfig.morphEnabled) {
+            if (player instanceof EntityPlayerMP) {
+                ((EntityPlayerMP) player).sendStatusMessage(
+                        new TextComponentTranslation("pocketmod.msg.morph_disabled"), true);
+            }
+            return false;
+        }
         int cur = getLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {
