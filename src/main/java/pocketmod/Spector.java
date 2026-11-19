@@ -209,6 +209,17 @@ public class Spector {
             end(p, true);
             return;
         }
+        // Spectator movement is not collision-bound; enforce the pocket interior
+        // every server tick so phase walking cannot escape through walls or ceiling.
+        if (PocketDimensionManager.isPocketDimension(p.dimension)) {
+            PocketData pocket = PocketData.get(p.world);
+            net.minecraft.util.math.BlockPos feet = p.getPosition();
+            if (!pocket.interior.contains(feet) || !pocket.interior.contains(feet.up())) {
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_limits"), true);
+                end(p, true);
+                return;
+            }
+        }
         if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_off"), true);
             end(p, true);
