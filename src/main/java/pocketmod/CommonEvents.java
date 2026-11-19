@@ -2,7 +2,7 @@ package pocketmod;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.init.Items;
+import net.minecraft.init.Items;\nimport net.minecraft.block.Block;\nimport net.minecraft.block.BlockDoor;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
@@ -25,7 +25,8 @@ public class CommonEvents {
         if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
-        if (PocketData.get(world).walls.contains(event.getPos())) {
+        if (!PocketAccess.canBuild(event.getPlayer(), world)
+                || PocketData.get(world).walls.contains(event.getPos())) {
             event.setCanceled(true);
         }
     }
@@ -37,12 +38,25 @@ public class CommonEvents {
         if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
+        EntityPlayer player = event.getEntityPlayer();
+        Block clicked = world.getBlockState(event.getPos()).getBlock();
+        if (PocketAccess.level(player, world) == PocketAccess.TEMPORARY
+                && !(clicked instanceof BlockDoor)
+                && !PocketAccess.canUseTemporary(player, world, clicked)) {
+            event.setCanceled(true);
+            event.setCancellationResult(EnumActionResult.FAIL);
+            return;
+        }
         PocketData data = PocketData.get(world);
         BlockPos pos = event.getPos();
         if (!data.walls.contains(pos)) {
             return;
         }
-        EntityPlayer player = event.getEntityPlayer();
+        if (!PocketAccess.canBuild(player, world)) {
+            event.setCanceled(true);
+            event.setCancellationResult(EnumActionResult.FAIL);
+            return;
+        }
         ItemStack stack = player.getHeldItemMainhand();
         int itemValue = ManaItems.manaValue(stack);
         if (itemValue <= 0) {
