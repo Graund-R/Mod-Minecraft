@@ -42,7 +42,15 @@ public class SoftFall {
                 && !p.isOnLadder();
     }
 
+    public static void disable(EntityPlayerMP p) {
+        setActive(p, false);
+    }
+
     public static void tick(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) {
+            disable(p);
+            return;
+        }
         if (!AbilityStorage.isUnlocked(p, AbilityType.SOFTFALL)) {
             if (isActive(p)) setActive(p, false);
             return;
