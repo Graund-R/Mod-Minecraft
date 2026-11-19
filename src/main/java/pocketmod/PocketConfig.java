@@ -38,6 +38,10 @@ public class PocketConfig {
     public static float expandRingStep = 0.2f;
     public static String wallBlock = "minecraft:quartz_block";
 
+    // Metamorph integration
+    public static boolean morphEnabled = true;
+    public static int morphCost = 20;
+
     public static int teleportBaseRange = 50;
     public static int teleportRange2 = 100;
     public static int teleportRange3 = 200;
@@ -191,6 +195,9 @@ public class PocketConfig {
         expandBaseCost = cfg.getInt("expandBaseCost", "карман", 4, 1, 100000, "Base expand cost in iron units");
         expandRingStep = cfg.getFloat("expandRingStep", "карман", 0.2f, 0f, 100f, "Ring cost growth");
         wallBlock = cfg.getString("wallBlock", "карман", "minecraft:quartz_block", "Блок стен кармана (кварц; измерение всегда яркое)");
+
+        morphEnabled = cfg.getBoolean("morphEnabled", "морфизм", true, "Включить совместимость с Metamorph");
+        morphCost = cfg.getInt("morphCost", "морфизм", 20, 0, 1000000, "Разовая стоимость каждого превращения в мане");
 
         teleportBaseRange = cfg.getInt("teleportBaseRange", "способности", 50, 5, 500, "Teleport range, level 1");
         teleportRange2 = cfg.getInt("teleportRange2", "способности", 100, 5, 1000, "Teleport range, level 2");
