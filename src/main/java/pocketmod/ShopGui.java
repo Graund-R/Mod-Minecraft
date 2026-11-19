@@ -191,6 +191,7 @@ public class ShopGui extends GuiScreen {
     // ===== подписи =====
     private String morphismLabel() {
         if (!PocketConfig.morphEnabled) return "Морфизм: отключён";
+        if (!shopState().getBoolean("morphismAvailable")) return "Требуется Metamorph";
         return shopState().getBoolean("morphismUnlocked")
                 ? "Каталог образов" : "Купить морфизм: 500";
     }
@@ -489,7 +490,7 @@ public class ShopGui extends GuiScreen {
         fontRenderer.drawStringWithShadow(res, x, y, 0xFFFFFF);
         y += 12;
         fontRenderer.drawStringWithShadow(Tr.format("pocketmod.loot.info", String.format("%.0f", Loot.rtp() * 100.0),
-                Math.max(0, PocketConfig.lootPity - Loot.pity(dp))), x, y, 0xAAAAAA);
+                Math.max(0, PocketConfig.lootPity - shopState().getInteger("lootPity"))), x, y, 0xAAAAAA);
         y += 12;
         for (Loot.Out o : Loot.Out.values()) {
             fontRenderer.drawStringWithShadow(
@@ -544,7 +545,7 @@ public class ShopGui extends GuiScreen {
             return;
         }
         if (button.id == BTN_MORPHISM) {
-            if (!PocketConfig.morphEnabled) return;
+            if (!PocketConfig.morphEnabled || !shopState().getBoolean("morphismAvailable")) return;
             if (shopState().getBoolean("morphismUnlocked")) {
                 mc.displayGuiScreen(new MorphCatalogGui(player));
             } else {
@@ -617,7 +618,7 @@ public class ShopGui extends GuiScreen {
                 b.displayString = cardLabel(list()[idx], idx == selected);
             } else if (b.id == BTN_MORPHISM) {
                 b.displayString = morphismLabel();
-                b.enabled = PocketConfig.morphEnabled;
+                b.enabled = PocketConfig.morphEnabled && shopState().getBoolean("morphismAvailable");
             } else if (b.id == BTN_BUYSEL) {
                 AbilityType[] lst = list();
                 if (lst.length == 0) {
