@@ -112,7 +112,7 @@ public final class PocketDoorEvents {
             leavingOwnerPocket = ownerDimension == player.dimension;
         }
 
-        if (!leavingOwnerPocket && data.accessPaused(owner)) {
+        if (!leavingOwnerPocket && !ownerAccess && data.accessPaused(owner)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.access_paused"), true);
             event.setCanceled(true);
             event.setCancellationResult(EnumActionResult.FAIL);
