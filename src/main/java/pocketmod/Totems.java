@@ -110,7 +110,7 @@ public class Totems {
 
     public static void create(EntityPlayerMP p, String rawName) {
         if (!allowed(p)) return;
-        if (p.dimension == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(p.dimension)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.totem_in_pocket"), true);
             return;
         }
@@ -174,7 +174,7 @@ public class Totems {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.teleport_spector"), true);
             return;
         }
-        if (p.dimension == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(p.dimension)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.totem_in_pocket"), true);
             return;
         }
