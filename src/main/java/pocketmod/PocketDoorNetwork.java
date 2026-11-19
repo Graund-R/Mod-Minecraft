@@ -43,10 +43,9 @@ public final class PocketDoorNetwork {
 
     public static void registerServer() {
         CHANNEL.registerMessage(ActionHandler.class, ActionMessage.class, 0, Side.SERVER);
-    }
-
-    public static void registerClient() {
-        CHANNEL.registerMessage(PocketDoorClientHandler.class, StateMessage.class, 1, Side.CLIENT);
+        // The common relay keeps the discriminator table identical on dedicated servers
+        // and clients, without loading any net.minecraft.client classes server-side.
+        CHANNEL.registerMessage(StateRelayHandler.class, StateMessage.class, 1, Side.CLIENT);
     }
 
     public static void requestState() {
@@ -274,6 +273,19 @@ public final class PocketDoorNetwork {
         }
         @Override public void fromBytes(ByteBuf buf) { state = ByteBufUtils.readTag(buf); }
         @Override public void toBytes(ByteBuf buf) { ByteBufUtils.writeTag(buf, state); }
+    }
+
+    public static final class StateRelayHandler implements IMessageHandler<StateMessage, IMessage> {
+        @Override
+        public IMessage onMessage(final StateMessage message, MessageContext context) {
+            try {
+                Class<?> handler = Class.forName("pocketmod.PocketDoorClientHandler");
+                handler.getMethod("receive", NBTTagCompound.class).invoke(null, message.state.copy());
+            } catch (Throwable error) {
+                System.err.println("[PocketMod] Could not relay client state: " + error);
+            }
+            return null;
+        }
     }
 
     public static final class ActionHandler implements IMessageHandler<ActionMessage, IMessage> {
