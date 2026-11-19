@@ -27,6 +27,14 @@ public class ServerTick {
         Long prev = lastTick.put(player.getUniqueID(), now);
         long delta = prev == null ? 50L : Math.max(0L, Math.min(100L, now - prev.longValue()));
 
+        // Morphism disables every Pocket Mod ability/passive except shop and totems.
+        if (MorphIntegration.isMorphed(player)) {
+            MorphIntegration.suppressAbilities(player);
+            BodyEffects.suppressForMorph(player);
+            Mana.tickCredit(player, delta);
+            return;
+        }
+
         // Каждый тик — только дешёвые проверки внутри; тяжёлые сканы throttled в классах
         Abilities.tickInvisibility(player);
         Abilities.tickSlow(player);
