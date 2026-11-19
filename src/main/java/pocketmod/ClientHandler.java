@@ -178,9 +178,11 @@ public class ClientHandler {
         if (mc.player.ticksExisted % 100 == 1) Tr.ensureLoaded();
         TotemMarkers.tick(mc);
         if (mc.player.ticksExisted % 4 == 0) updateThermalGlow(mc);
-        EntityPlayerMP spt = sp();
-        updateSlowShader(mc, spt != null && Abilities.isSlow(spt));
-        if (spt != null && SoftFall.isActive(spt) && !mc.player.onGround) {
+        net.minecraft.nbt.NBTTagCompound snapshot = PocketDoorNetwork.getClientState();
+        boolean stateReady = snapshot.getBoolean("ready");
+        updateSlowShader(mc, stateReady && snapshot.getBoolean("slowEnabled"));
+        specClient = stateReady && snapshot.getBoolean("spectorActive");
+        if (stateReady && snapshot.getBoolean("softFallEnabled") && !mc.player.onGround) {
             double lim = -PocketConfig.softFallSpeed;
             if (mc.player.motionY < lim) mc.player.motionY = lim;
         }
@@ -201,27 +203,19 @@ public class ClientHandler {
         boolean gDown = raw(keyTeleport);
         // Shift+G — окно тотемов (сразу при нажатии)
         if (gDown && !hG.was && !hG.wait && GuiScreen.isShiftKeyDown()) {
-            EntityPlayerMP sp0 = sp();
-            if (sp0 != null && !AbilityStorage.isUnlocked(sp0, AbilityType.TOTEM)) {
-                mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
-                hG.wait = true;
-            } else {
-                mc.displayGuiScreen(new TotemGui(mc.player));
-            }
+            PocketDoorNetwork.openTotemGui();
+            mc.displayGuiScreen(new TotemGui(mc.player));
+            hG.was = true;
+            hG.wait = true;
             return;
         }
 
         int g = poll(gDown, hG, now, holdMs);
         if (g == EV_HOLD) {
-            // удержание G — тотем смерти (если есть), иначе последний обычный тотем
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> {
-                if (Totems.hasDeathTotem(p)) Totems.teleportDeath(p);
-                else Totems.teleportLast(p);
-            });
+            // Удержание G: сначала тотем смерти, иначе последний обычный.
+            PocketDoorNetwork.teleportLastTotem();
         } else if (g == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.teleportLook(p));
+            PocketDoorNetwork.teleportLook();
         }
 
         boolean vDown = raw(keyInvis);
@@ -238,8 +232,7 @@ public class ClientHandler {
         if (v == EV_HOLD) {
             mc.displayGuiScreen(new ShopGui(mc.player));
         } else if (v == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.toggleInvisibility(p));
+            PocketDoorNetwork.toggleInvisibility();
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);
@@ -247,8 +240,7 @@ public class ClientHandler {
             if (zWheelUsed) {
                 zWheelUsed = false; // крутили колесо при зажатой Z — это не тап
             } else {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Abilities.toggleSlow(p));
+                PocketDoorNetwork.toggleSlow();
             }
         } else if (!keySlow.isKeyDown()) {
             zWheelUsed = false;
@@ -263,65 +255,39 @@ public class ClientHandler {
             xPhys = false;
         }
         boolean shiftDown = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-        EntityPlayerMP px = sp();
-        boolean specActive = px != null && Spector.isActive(px);
-        if (specActive) specClient = true;
+        boolean specActive = snapshot.getBoolean("spectorActive");
         // отдельная клавиша фазового шага (по умолчанию R) — тот же вызов, что и Shift+X
         boolean phKey = raw(keyPhase);
         boolean phaseRequest = phKey && !phWas;
         phWas = phKey;
-        if (px != null && ((xPhys && !xWas) || phaseRequest)) {
-            final EntityPlayerMP target = px;
+        if ((xPhys && !xWas) || phaseRequest) {
             final boolean doPhase = phaseRequest || (shiftDown && (specActive || specClient));
             if (doPhase) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_try"), true);
+                PocketDoorNetwork.phaseStep(mc.player.posX, mc.player.posY, mc.player.posZ,
+                        mc.player.rotationYaw, mc.player.rotationPitch);
+            } else if (!shiftDown && !phaseRequest) {
+                PocketDoorNetwork.toggleSpector();
             }
-            final double cx = mc.player.posX;
-            final double cy = mc.player.posY;
-            final double cz = mc.player.posZ;
-            final float cyaw = mc.player.rotationYaw;
-            final float cpitch = mc.player.rotationPitch;
-            server(() -> {
-                if (doPhase) {
-                    Spector.phaseStep(target, cx, cy, cz, cyaw, cpitch);
-                } else if (!shiftDown && !phaseRequest) {
-                    if (Spector.isActive(target)) Spector.stop(target);
-                    else Spector.start(target);
-                }
-            });
         }
         xWas = xPhys;
         shiftWas = shiftDown;
-        if (px != null && Spector.isActive(px)) {
-            specClient = true;
-            px.setPositionAndRotation(mc.player.posX, mc.player.posY, mc.player.posZ,
-                    mc.player.rotationYaw, mc.player.rotationPitch);
-        } else if (px != null) {
-            specClient = false;
-        }
+        specClient = PocketDoorNetwork.getClientState().getBoolean("spectorActive");
 
         // Волна: Shift + пробел
         boolean jDown = mc.gameSettings.keyBindJump.isKeyDown();
         if (jDown && !jWas && shiftDown && !specActive) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.shockwave(p));
+            PocketDoorNetwork.shockwave();
         }
 
-        if (keyThermal.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Thermal.toggle(p));
-        }
-        if (keyShield.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Shield.toggle(p));
-        }
+        if (keyThermal.isPressed()) PocketDoorNetwork.toggleThermal();
+        if (keyShield.isPressed()) PocketDoorNetwork.toggleShield();
 
         // Полёт: двойной пробел в воздухе (без Shift)
         if (jDown && !jWas && !shiftDown) {
             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
                     && !mc.player.isRiding() && !mc.player.isInWater()) {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Flight.start(p));
+                PocketDoorNetwork.startFlight();
                 lastJump = 0L;
             } else {
                 lastJump = now;
@@ -329,10 +295,7 @@ public class ClientHandler {
         }
         jWas = jDown;
 
-        if (keyPocket.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> PocketTeleporter.toggle(p));
-        }
+        if (keyPocket.isPressed()) PocketDoorNetwork.togglePocket();
     }
 
     private static final String TEAM_HOT = "pm_hot";
@@ -374,16 +337,9 @@ public class ClientHandler {
 
     /** Тепловизор: контур сквозь стены. Враги красные, остальные белые. */
     private static void updateThermalGlow(Minecraft mc) {
-        boolean on = false;
-        int radius = 0;
-        try {
-            EntityPlayerMP sp = sp();
-            if (sp != null && Thermal.isOn(sp)) {
-                on = true;
-                radius = Thermal.radius(sp);
-            }
-        } catch (Exception ignored) {
-        }
+        net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+        boolean on = state.getBoolean("thermalEnabled");
+        int radius = state.getInteger("thermalRadius");
         if (!on) {
             if (!glowing.isEmpty()) {
                 for (Entity e : glowing) e.setGlowing(false);
@@ -495,19 +451,12 @@ public class ClientHandler {
         if (wheel == 0) return;
         event.setCanceled(true);
         zWheelUsed = true;
-        EntityPlayerMP p = sp();
-        if (p == null) return;
-        float cur = Abilities.getSlowFactor(p);
+        net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+        float cur = state.getFloat("slowFactor");
         float raw = Math.round((cur + (wheel > 0 ? 0.05f : -0.05f)) * 100f) / 100f;
-        final float next = Math.max(Abilities.minSlowFactor(p), Math.min(0.75f, raw));
-        server(() -> {
-            Abilities.setSlowFactor(p, next);
-            if (next <= 0.001f) {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_stop"), true);
-            } else {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_factor", String.format("%.2f", next)), true);
-            }
-        });
+        float min = state.getFloat("slowMinFactor");
+        float next = Math.max(min, Math.min(0.75f, raw));
+        PocketDoorNetwork.setSlowFactor(next);
     }
 
     /** Длина шкалы: цена самого дорогого уже открытого действия (пока ничего нет — hudBarScale, по умолчанию 100). */
@@ -526,20 +475,19 @@ public class ClientHandler {
     public void onOverlay(RenderGameOverlayEvent.Post event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || mc.gameSettings.hideGUI || !mc.isIntegratedServerRunning()) return;
+        if (mc.player == null || mc.gameSettings.hideGUI) return;
 
         try {
-            EntityPlayerMP sp = sp();
-            if (sp == null) return;
-
-            double mana = Mana.get(sp);
+            net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+            if (!state.getBoolean("ready")) return;
+            double mana = state.getDouble("mana");
             int x = 10, y = 10, w = 100, h = 8;
-            double fill = Math.min(1.0, mana / barScale(sp));
+            double fill = Math.min(1.0, mana / Math.max(1.0D, state.getDouble("barScale")));
             Gui.drawRect(x - 1, y - 1, x + w + 1, y + h + 1, 0xAA000000);
             Gui.drawRect(x, y, x + (int) (w * fill), y + h, 0xFF55AAFF);
             mc.fontRenderer.drawStringWithShadow(String.valueOf((long) mana), x + w + 6, y, 0xFFFFFF);
 
-            if (Thermal.isOn(sp)) {
+            if (state.getBoolean("thermalEnabled")) {
                 drawThermalOverlay(event.getResolution());
                 // шкала маны поверх затемнения
                 Gui.drawRect(x - 1, y - 1, x + w + 1, y + h + 1, 0xAA000000);
@@ -547,12 +495,12 @@ public class ClientHandler {
                 mc.fontRenderer.drawStringWithShadow(String.valueOf((long) mana), x + w + 6, y, 0xFFFFFF);
             }
 
-            if (PocketConfig.slowVisual && Abilities.isSlow(sp)) {
-                drawSlowVignette(mc, event.getResolution(), Abilities.getSlowFactor(sp));
+            if (PocketConfig.slowVisual && state.getBoolean("slowEnabled")) {
+                drawSlowVignette(mc, event.getResolution(), state.getFloat("slowFactor"));
             }
 
             ItemStack held = mc.player.getHeldItemMainhand();
-            if (PocketDimensionManager.isPocketDimension(mc.player.dimension)
+            if (mc.isIntegratedServerRunning() && PocketDimensionManager.isPocketDimension(mc.player.dimension)
                     && mc.objectMouseOver != null
                     && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
                     && ManaItems.isManaItem(held)) {
