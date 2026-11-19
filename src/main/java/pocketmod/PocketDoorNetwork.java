@@ -124,6 +124,10 @@ public final class PocketDoorNetwork {
         clientState = state == null ? new NBTTagCompound() : state.copy();
     }
 
+    public static void syncState(EntityPlayerMP player) {
+        if (player != null) sendState(player);
+    }
+
     private static void sendState(EntityPlayerMP player) {
         PocketDoorData data = PocketDoorData.get(player.getServer().getWorld(0));
         UUID owner = player.getUniqueID();
@@ -145,6 +149,9 @@ public final class PocketDoorNetwork {
         state.setBoolean("thermalEnabled", Thermal.isOn(player));
         state.setBoolean("shieldEnabled", Shield.isOn(player));
         state.setBoolean("flightEnabled", Flight.isArmed(player));
+        state.setBoolean("softFallEnabled", SoftFall.isActive(player));
+        state.setInteger("thermalRadius", Thermal.radius(player));
+        state.setBoolean("invisibilityEnabled", Abilities.isInvisible(player));
         state.setBoolean("hasDeathTotem", Totems.hasDeathTotem(player));
         state.setInteger("totemSlots", Totems.maxSlots(player));
         NBTTagList totems = new NBTTagList();
