@@ -27,6 +27,10 @@ public class ServerTick {
         Long prev = lastTick.put(player.getUniqueID(), now);
         long delta = prev == null ? 50L : Math.max(0L, Math.min(100L, now - prev.longValue()));
 
+        if (player.ticksExisted % 20 == 0) {
+            PocketDoorNetwork.syncState(player);
+        }
+
         // Morphism disables every Pocket Mod ability/passive except shop and totems.
         if (MorphIntegration.isMorphed(player)) {
             MorphIntegration.suppressAbilities(player);
