@@ -133,8 +133,7 @@ public final class NetworkHandler {
                 && m.action != NetAction.DELETE_TOTEM
                 && m.action != NetAction.TELEPORT_TOTEM
                 && m.action != NetAction.TELEPORT_LAST_TOTEM
-                && m.action != NetAction.DEATH_TOTEM_CHOICE
-                && m.action != NetAction.TOGGLE_POCKET) {
+                && m.action != NetAction.DEATH_TOTEM_CHOICE) {
             return;
         }
         switch (m.action) {
