@@ -38,6 +38,13 @@ public class AbilityStorage {
             }
             return false;
         }
+        if (type == AbilityType.MORPHISM && !MorphIntegration.isAvailable()) {
+            if (player instanceof EntityPlayerMP) {
+                ((EntityPlayerMP) player).sendStatusMessage(
+                        new TextComponentTranslation("pocketmod.msg.morph_need_metamorph"), true);
+            }
+            return false;
+        }
         int cur = getLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {
