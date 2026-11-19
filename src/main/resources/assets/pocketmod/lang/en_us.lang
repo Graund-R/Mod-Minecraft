@@ -471,3 +471,5 @@ pocketmod.msg.trusted_unchanged=Access list unchanged: %s
 
 pocketmod.msg.access_paused=Access is temporarily suspended. All visitors have been ejected.
 pocketmod.msg.access_resumed=Access to the dimension is open again.
+pocketmod.msg.guest_test_enabled=Guest test enabled: the owner has one-time-key permissions.
+pocketmod.msg.guest_test_disabled=Guest test disabled: normal owner permissions restored.
