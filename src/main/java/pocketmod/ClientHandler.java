@@ -542,12 +542,12 @@ public class ClientHandler {
             }
 
             ItemStack held = mc.player.getHeldItemMainhand();
-            if (mc.player.dimension == PocketMod.DIM_ID
+            if (PocketDimensionManager.isPocketDimension(mc.player.dimension)
                     && mc.objectMouseOver != null
                     && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
                     && ManaItems.isManaItem(held)) {
                 IntegratedServer server = mc.getIntegratedServer();
-                WorldServer pw = server.getWorld(PocketMod.DIM_ID);
+                WorldServer pw = server.getWorld(mc.player.dimension);
                 PocketData d = PocketData.get(pw);
                 BlockPos pos = mc.objectMouseOver.getBlockPos();
                 if (Pocket.isPayable(d, pos)) {
