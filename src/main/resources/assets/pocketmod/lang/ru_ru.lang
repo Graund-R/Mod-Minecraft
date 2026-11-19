@@ -481,3 +481,7 @@ pocketmod.msg.visitors_kicked=Все гости отправлены наруж�
 pocketmod.msg.morph_disabled=Морфизм отключён в конфигурации.
 pocketmod.msg.morph_need_metamorph=Для морфизма нужны Metamorph и McLib.
 pocketmod.msg.morph_failed=Превращение не удалось, мана возвращена.
+
+pocketmod.msg.guest_no_build=Одноразовый ключ не даёт права размещать блоки.
+pocketmod.msg.guest_no_break=Одноразовый ключ не даёт права ломать блоки.
+pocketmod.msg.guest_no_use=Этому гостю разрешено использовать только простые служебные блоки.
