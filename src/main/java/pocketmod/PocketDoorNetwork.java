@@ -109,6 +109,8 @@ public final class PocketDoorNetwork {
         state.setInteger("ironKeyPrice", PocketConfig.ironKeyPrice);
         state.setBoolean("morphismUnlocked", PocketConfig.morphEnabled
                 && AbilityStorage.isUnlocked(player, AbilityType.MORPHISM));
+        state.setBoolean("morphismAvailable", PocketConfig.morphEnabled && MorphIntegration.isAvailable());
+        state.setInteger("lootPity", Loot.pity(player));
         state.setBoolean("keysEnabled", data.keysEnabled(owner));
         state.setBoolean("accessPaused", data.accessPaused(owner));
         state.setBoolean("guestTest", data.guestTestEnabled(owner));
