@@ -47,6 +47,7 @@ public class ClientHandler {
     private static boolean phWas;
     private static KeyBinding keyThermal;
     private static KeyBinding keyShield;
+    private static KeyBinding keyShop;
 
     private static boolean phaseLatch;
     private static boolean xWas, xWait, shiftWas, jWas, zWheelUsed;
@@ -88,6 +89,7 @@ public class ClientHandler {
 
     private static final Hold hG = new Hold();
     private static final Hold hV = new Hold();
+    private static final Hold hEnter = new Hold();
     private static final Hold hZ = new Hold();
 
     private static final int EV_NONE = 0, EV_HOLD = 1, EV_TAP = 2;
@@ -101,10 +103,12 @@ public class ClientHandler {
         keyPhase    = new KeyBinding("key.pocketmod.phase",    Keyboard.KEY_R, "key.categories.pocketmod");
         keyThermal  = new KeyBinding("key.pocketmod.thermal",  Keyboard.KEY_C, "key.categories.pocketmod");
         keyShield   = new KeyBinding("key.pocketmod.shield",   Keyboard.KEY_B, "key.categories.pocketmod");
+        keyShop     = new KeyBinding("key.pocketmod.shop",     Keyboard.KEY_RETURN, "key.categories.pocketmod");
         ClientRegistry.registerKeyBinding(keySpector);
         ClientRegistry.registerKeyBinding(keyPhase);
         ClientRegistry.registerKeyBinding(keyThermal);
         ClientRegistry.registerKeyBinding(keyShield);
+        ClientRegistry.registerKeyBinding(keyShop);
         ClientRegistry.registerKeyBinding(keyPocket);
         ClientRegistry.registerKeyBinding(keyTeleport);
         ClientRegistry.registerKeyBinding(keyInvis);
@@ -189,6 +193,7 @@ public class ClientHandler {
         if (mc.currentScreen != null) {
             resetHold(hG);
             resetHold(hV);
+            resetHold(hEnter);
             resetHold(hZ);
             xWait = raw(keySpector);
             specClient = false;
@@ -197,6 +202,12 @@ public class ClientHandler {
 
         long now = System.currentTimeMillis();
         int holdMs = PocketConfig.holdMs;
+
+        int shop = poll(raw(keyShop), hEnter, now, holdMs);
+        if (shop == EV_HOLD) {
+            mc.displayGuiScreen(new ShopGui(mc.player));
+            return;
+        }
 
         boolean gDown = raw(keyTeleport);
         // Shift+G — окно тотемов (сразу при нажатии)
@@ -224,10 +235,19 @@ public class ClientHandler {
             if (p != null) server(() -> Abilities.teleportLook(p));
         }
 
-        int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
-        if (v == EV_HOLD) {
-            mc.displayGuiScreen(new ShopGui(mc.player));
-        } else if (v == EV_TAP) {
+        boolean vDown = raw(keyInvis);
+        if (vDown && !hV.was && !hV.wait && GuiScreen.isShiftKeyDown()) {
+            EntityPlayerMP p = sp();
+            if (p != null && AbilityStorage.isUnlocked(p, AbilityType.MORPHISM)) {
+                mc.displayGuiScreen(new MorphCatalogGui(mc.player));
+            } else if (p != null) {
+                mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            }
+            resetHold(hV);
+            return;
+        }
+        int v = poll(vDown, hV, now, holdMs);
+        if (v == EV_TAP) {
             EntityPlayerMP p = sp();
             if (p != null) server(() -> Abilities.toggleInvisibility(p));
         }
