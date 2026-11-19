@@ -269,7 +269,7 @@ public class Abilities {
         Vec3d look = player.getLook(1.0f);
         Vec3d end = eye.addVector(look.x * range, look.y * range, look.z * range);
 
-        boolean inPocket = world.provider.getDimension() == PocketMod.DIM_ID;
+        boolean inPocket = PocketDimensionManager.isPocketDimension(world.provider.getDimension());
         RayTraceResult hit = inPocket ? null : world.rayTraceBlocks(eye, end, false, true, false);
         BlockPos land = null;
         if (inPocket) {
