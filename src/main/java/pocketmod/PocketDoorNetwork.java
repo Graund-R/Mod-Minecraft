@@ -53,8 +53,8 @@ public final class PocketDoorNetwork {
     }
 
     public static void buyPair() { send(BUY_PAIR, 0, "", ""); }
-    public static void buyGoldKey(String pairId) { send(BUY_GOLD_KEY, 0, pairId, ""); }
-    public static void buyIronKey(String pairId) { send(BUY_IRON_KEY, 0, pairId, ""); }
+    public static void buyGoldKey(String pairId, boolean preserveOld) { send(BUY_GOLD_KEY, preserveOld ? 1 : 0, pairId, ""); }
+    public static void buyIronKey(String pairId, boolean preserveOld) { send(BUY_IRON_KEY, preserveOld ? 1 : 0, pairId, ""); }
     public static void toggleKeys() { send(TOGGLE_KEYS, 0, "", ""); }
     public static void toggleGuestTest() { send(TOGGLE_GUEST_TEST, 0, "", ""); }
     public static void togglePause() { send(TOGGLE_PAUSE, 0, "", ""); }
@@ -210,7 +210,8 @@ public final class PocketDoorNetwork {
                     break;
                 }
                 Mana.consumeDiscount(player);
-                give(player, PocketKeys.createKeyFor(owner, message.pair, oneTime));
+                if (message.value == 0) data.rotateKeyEpoch(owner);
+                give(player, PocketKeys.createKeyFor(owner, message.pair, oneTime, data.keyEpoch(owner)));
                 player.sendStatusMessage(new TextComponentTranslation(
                         oneTime ? "pocketmod.msg.temp_key_bought" : "pocketmod.msg.key_bought"), true);
                 break;
