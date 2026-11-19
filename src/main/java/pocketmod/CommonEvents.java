@@ -21,7 +21,7 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
         if (PocketData.get(world).walls.contains(event.getPos())) {
@@ -33,7 +33,7 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
         PocketData data = PocketData.get(world);
