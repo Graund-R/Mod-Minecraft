@@ -28,6 +28,7 @@ public class PocketDoorGui extends GuiScreen {
     private static final int BTN_ADD_TRUST = 5;
     private static final int BTN_REMOVE_TRUST = 6;
     private static final int BTN_PAUSE_ACCESS = 7;
+    private static final int BTN_TEST_GUEST = 8;
     private static final int BTN_PAIR_BASE = 20;
 
     private static final double PAIR_PRICE = 1000.0D;
@@ -95,6 +96,7 @@ public class PocketDoorGui extends GuiScreen {
         buttonList.add(new GuiButton(BTN_REMOVE_TRUST, rightX + fieldW + 40, inputY, 36, 18, "−"));
 
         buttonList.add(new GuiButton(BTN_BACK, width / 2 - 45, height - 24, 90, 20, "Назад"));
+        buttonList.add(new GuiButton(BTN_TEST_GUEST, leftX, 145, leftW, 19, "[ ] Тест гостя"));
 
         for (int i = 0; i < pairIds.size() && i < PocketDoorData.MAX_PAIRS; i++) {
             String id = pairIds.get(i);
@@ -199,6 +201,16 @@ public class PocketDoorGui extends GuiScreen {
         });
     }
 
+    private void toggleGuestTestMode() {
+        schedule(mp -> {
+            PocketDoorData data = PocketDoorData.get(mp.getServer().getWorld(0));
+            boolean enabled = !data.guestTestEnabled(mp.getUniqueID());
+            data.setGuestTestEnabled(mp.getUniqueID(), enabled);
+            mp.sendStatusMessage(new TextComponentTranslation(
+                    enabled ? "pocketmod.msg.guest_test_enabled" : "pocketmod.msg.guest_test_disabled"), true);
+        });
+    }
+
     private void toggleVisitorAccess() {
         schedule(mp -> {
             net.minecraft.server.MinecraftServer server = mp.getServer();
@@ -260,6 +272,8 @@ public class PocketDoorGui extends GuiScreen {
             toggleKeys();
         } else if (button.id == BTN_PAUSE_ACCESS) {
             toggleVisitorAccess();
+        } else if (button.id == BTN_TEST_GUEST) {
+            toggleGuestTestMode();
         } else if (button.id == BTN_ADD_TRUST) {
             updateTrusted(true);
         } else if (button.id == BTN_REMOVE_TRUST) {
@@ -308,6 +322,9 @@ public class PocketDoorGui extends GuiScreen {
             } else if (button.id == BTN_TOGGLE_KEYS) {
                 button.displayString = data != null && data.keysEnabled(ownerId())
                         ? "Все ключи: включены" : "Все ключи: заблокированы";
+            } else if (button.id == BTN_TEST_GUEST) {
+                button.displayString = data != null && data.guestTestEnabled(ownerId())
+                        ? "[x] Тест гостя" : "[ ] Тест гостя";
             }
         }
         if (nameField != null) nameField.updateCursorCounter();
