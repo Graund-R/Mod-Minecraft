@@ -153,6 +153,7 @@ public class PocketTeleporter implements ITeleporter {
 
     private static void leave(EntityPlayerMP player, MinecraftServer server) {
         NBTTagCompound data = PlayerData.root(player);
+        PocketAccess.clear(player);
 
         // Запоминаем, где стоял внутри
         data.setDouble("pocket_inner_x", player.posX);
