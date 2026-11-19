@@ -92,12 +92,13 @@ public class PocketDoorGui extends GuiScreen {
         int rightX = leftX + leftW + 8;
         int rightW = Math.max(110, width - rightX - 8);
 
-        buttonList.add(new GuiButton(BTN_BUY_PAIR, rightX, 42, rightW, 19, "Пара дверей: 1000"));
-        buttonList.add(new GuiButton(BTN_BUY_KEY, rightX, 65, rightW, 19, "Ключ пары: 100"));
-        buttonList.add(new GuiButton(BTN_BUY_TEMP, rightX, 88, rightW, 19, "Одноразовый ключ: 50"));
+        buttonList.add(new GuiButton(BTN_BUY_PAIR, rightX, 42, rightW, 19, "Пара дверей"));
+        buttonList.add(new GuiButton(BTN_BUY_KEY, rightX, 65, rightW, 19, "Золотой ключ"));
+        buttonList.add(new GuiButton(BTN_BUY_TEMP, rightX, 88, rightW, 19, "Железный ключ"));
         buttonList.add(new GuiButton(BTN_TOGGLE_KEYS, rightX, 111, rightW, 19, "Ключи: включены"));
 
-        buttonList.add(new GuiButton(BTN_PAUSE_ACCESS, rightX, 134, rightW, 19, "Доступ: открыт"));
+        buttonList.add(new GuiButton(BTN_PAUSE_ACCESS, rightX, 134, rightW, 19, "Пауза доступа"));
+        buttonList.add(new GuiButton(BTN_KICK_ALL, rightX, 157, rightW, 19, "Выкинуть всех"));
 
         int inputY = 203;
         int fieldW = Math.max(48, rightW - 78);
@@ -219,9 +220,13 @@ public class PocketDoorGui extends GuiScreen {
                     button.displayString = "Пара " + (index + 1) + "  " + doorCount(pairIds.get(index)) + "/2";
                 }
             } else if (button.id == BTN_BUY_PAIR) {
-                button.displayString = "Пара дверей: 1000 (" + pairCount() + "/" + PocketDoorData.MAX_PAIRS + ")";
+                button.displayString = "Пара дверей: " + snapshot.getInteger("pairPrice") + " (" + pairCount() + "/" + PocketDoorData.MAX_PAIRS + ")";
                 button.enabled = pairCount() < PocketDoorData.MAX_PAIRS;
-            } else if (button.id == BTN_BUY_KEY || button.id == BTN_BUY_TEMP) {
+            } else if (button.id == BTN_BUY_KEY) {
+                button.displayString = "Золотой ключ: " + snapshot.getInteger("goldKeyPrice");
+                button.enabled = hasPair;
+            } else if (button.id == BTN_BUY_TEMP) {
+                button.displayString = "Железный ключ: " + snapshot.getInteger("ironKeyPrice");
                 button.enabled = hasPair;
             } else if (button.id == BTN_TOGGLE_KEYS) {
                 button.displayString = snapshot.getBoolean("keysEnabled")
@@ -250,12 +255,12 @@ public class PocketDoorGui extends GuiScreen {
                 + "/" + PocketDoorData.MAX_PAIRS, 10, 28, 0xFFCCCCCC);
         fontRenderer.drawString("Выбрана: " + (selectedPairId == null ? "нет пары"
                 : "пара " + (pairIds.indexOf(selectedPairId) + 1)), rightX, 28, 0xFFCCCCCC);
-        fontRenderer.drawString("Доверенные игроки:", rightX, 165, 0xFFE0A040);
+        fontRenderer.drawString("Доверенные игроки:", rightX, 181, 0xFFE0A040);
 
         {
             List<String> trusted = trustedNames();
             String names = trusted.isEmpty() ? "список пуст" : String.join(", ", trusted);
-            int y = 228;
+            int y = 244;
             for (Object line : fontRenderer.listFormattedStringToWidth(names, rightW)) {
                 fontRenderer.drawStringWithShadow((String) line, rightX, y, 0xFFB9C6D4);
                 y += 10;
