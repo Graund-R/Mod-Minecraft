@@ -28,6 +28,7 @@ public class ShopGui extends GuiScreen {
     private static final int BTN_PERM = 200;     // 200..204
     private static final int BTN_RENT = 210;     // 210..214
     private static final int BTN_STAKE = 220;    // 220..222
+    private static final int BTN_DOOR = 230, BTN_KEY = 231;
 
     private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
     private static final AbilityType[][] TAB_ABIL = {
@@ -86,6 +87,10 @@ public class ShopGui extends GuiScreen {
             GuiButton buy = new GuiButton(BTN_BUYSEL, px, height - 78, 160, 20, buyLabel(l[selected]));
             buy.enabled = true;
             buttonList.add(buy);
+            if (tab == 1) {
+                buttonList.add(new GuiButton(BTN_DOOR, px, top - 22, 126, 18, "Дверь: 500"));
+                buttonList.add(new GuiButton(BTN_KEY, px + 130, top - 22, 126, 18, "Ключ: 100"));
+            }
             if (l[selected] == AbilityType.DECOY) {
                 buttonList.add(new GuiButton(BTN_DECOY, px + 156, height - 66, 120, 18, decoyLabel()));
             } else if (l[selected] == AbilityType.TELEPORT) {
@@ -464,6 +469,29 @@ public class ShopGui extends GuiScreen {
         if (server == null) return;
         final java.util.UUID id = player.getUniqueID();
 
+        if (button.id == BTN_DOOR || button.id == BTN_KEY) {
+            final boolean buyDoor = button.id == BTN_DOOR;
+            server.addScheduledTask(() -> {
+                EntityPlayerMP mp = server.getPlayerList().getPlayerByUUID(id);
+                if (mp == null) return;
+                if (!AbilityStorage.isUnlocked(mp, AbilityType.POCKET)) {
+                    mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+                    return;
+                }
+                double price = Mana.shopPrice(mp, buyDoor ? 500.0D : 100.0D);
+                if (!Mana.spend(mp, price)) {
+                    mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int)Math.ceil(price)), true);
+                    return;
+                }
+                Mana.consumeDiscount(mp);
+                net.minecraft.item.ItemStack bought = buyDoor
+                        ? new net.minecraft.item.ItemStack(PocketDoorItems.DOOR)
+                        : PocketKeys.createKeyFor(mp.getUniqueID());
+                if (!mp.inventory.addItemStackToInventory(bought)) mp.dropItem(bought, false);
+                mp.sendStatusMessage(new TextComponentTranslation(buyDoor ? "pocketmod.msg.door_bought" : "pocketmod.msg.key_bought"), true);
+            });
+            return;
+        }
         if (button.id == BTN_TAKE) {
             if (Mana.hasCredit(dataPlayer())) return;
             final int amt = creditAmount;
