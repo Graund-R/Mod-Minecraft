@@ -33,7 +33,7 @@ public class ShopGui extends GuiScreen {
     private static final AbilityType[][] TAB_ABIL = {
             { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER },
             { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW },
-            { AbilityType.SPECTOR, AbilityType.THERMAL },
+            { AbilityType.SPECTOR, AbilityType.THERMAL, AbilityType.MORPHISM },
             { AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD },
             {}, {} };
 
