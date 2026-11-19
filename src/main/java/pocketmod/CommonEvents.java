@@ -159,9 +159,9 @@ public class CommonEvents {
         }
     }
     @SubscribeEvent
-    public static void onPlayerRespawn(net.minecraftforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event) {
-        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
-        EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
+    public static void onPlayerRespawn(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.player instanceof EntityPlayerMP)) return;
+        EntityPlayerMP player = (EntityPlayerMP) event.player;
         if (!PocketDimensionManager.isPocketDimension(player.dimension)) return;
         java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(player.getServer(), player.dimension);
         if (owner != null && !owner.equals(player.getUniqueID())) {
