@@ -14,6 +14,15 @@ public final class PocketDoorClientHandler implements IMessageHandler<PocketDoor
         Minecraft.getMinecraft().addScheduledTask(new Runnable() {
             @Override public void run() {
                 PocketDoorNetwork.setClientState(message.state);
+                if (PocketDoorNetwork.consumeMorphCatalogPending()) {
+                    if (message.state.getBoolean("morphismUnlocked")) {
+                        Minecraft.getMinecraft().displayGuiScreen(
+                                new MorphCatalogGui(Minecraft.getMinecraft().player));
+                    } else if (Minecraft.getMinecraft().player != null) {
+                        Minecraft.getMinecraft().player.sendStatusMessage(
+                                new net.minecraft.util.text.TextComponentTranslation("pocketmod.msg.need_shop"), true);
+                    }
+                }
             }
         });
         return null;
