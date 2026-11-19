@@ -133,6 +133,7 @@ public final class PocketDoorNetwork {
         UUID owner = player.getUniqueID();
         NBTTagCompound state = new NBTTagCompound();
         state.setInteger("pairCount", data.pairCount(owner));
+        state.setBoolean("ready", true);
         state.setInteger("pairPrice", PocketConfig.doorPairPrice);
         state.setInteger("goldKeyPrice", PocketConfig.goldKeyPrice);
         state.setInteger("ironKeyPrice", PocketConfig.ironKeyPrice);
@@ -176,6 +177,14 @@ public final class PocketDoorNetwork {
         state.setString("lastLoot", Loot.last(player));
         state.setDouble("totalDrain", MorphIntegration.isMorphed(player) ? 0.0D
                 : Abilities.totalDrainPerSec(player));
+        double barScale = Math.max(1, PocketConfig.hudBarScale);
+        for (AbilityType type : AbilityType.values()) {
+            int level = AbilityStorage.getLevel(player, type);
+            if (level > 0 && level <= type.levelCosts.length) {
+                barScale = Math.max(barScale, type.levelCosts[level - 1]);
+            }
+        }
+        state.setDouble("barScale", barScale);
         int[] abilityLevels = new int[AbilityType.values().length];
         for (AbilityType type : AbilityType.values()) {
             abilityLevels[type.ordinal()] = AbilityStorage.getLevel(player, type);
