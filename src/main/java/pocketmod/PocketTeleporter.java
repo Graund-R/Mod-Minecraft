@@ -34,7 +34,7 @@ public class PocketTeleporter implements ITeleporter {
     }
 
     public static void toggle(EntityPlayerMP player) {
-        if (!PocketKeys.hasOwnerKey(player)) {
+        if (!PocketDimensionManager.isPocketDimension(player.dimension) && !PocketKeys.hasOwnerKey(player)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_pocket_key"), true);
             return;
         }
