@@ -471,3 +471,5 @@ pocketmod.msg.trusted_unchanged=Список доступа не изменён:
 
 pocketmod.msg.access_paused=Доступ временно приостановлен. Все гости выгнаны из измерения.
 pocketmod.msg.access_resumed=Доступ к измерению снова открыт.
+pocketmod.msg.guest_test_enabled=Тест гостя включён: владелец получает права одноразового ключа.
+pocketmod.msg.guest_test_disabled=Тест гостя выключен: обычные права владельца восстановлены.
