@@ -26,7 +26,7 @@ public class PocketDoorGui extends GuiScreen {
     private static final int BTN_BUY_TEMP = 3;
     private static final int BTN_TOGGLE_KEYS = 4;
     private static final int BTN_ADD_TRUST = 5;
-    private static final int BTN_REMOVE_TRUST = 6;
+    private static final int BTN_REMOVE_TRUST = 6;\n    private static final int BTN_PAUSE_ACCESS = 7;
     private static final int BTN_PAIR_BASE = 20;
 
     private static final double PAIR_PRICE = 1000.0D;
@@ -83,7 +83,7 @@ public class PocketDoorGui extends GuiScreen {
         buttonList.add(new GuiButton(BTN_BUY_TEMP, rightX, 88, rightW, 19, "Одноразовый ключ: 50"));
         buttonList.add(new GuiButton(BTN_TOGGLE_KEYS, rightX, 111, rightW, 19, "Ключи: включены"));
 
-        int inputY = 157;
+        buttonList.add(new GuiButton(BTN_PAUSE_ACCESS, rightX, 134, rightW, 19, "Доступ: открыт"));\n\n        int inputY = 180;
         int fieldW = Math.max(48, rightW - 78);
         nameField = new GuiTextField(0, fontRenderer, rightX, inputY, fieldW, 18);
         nameField.setMaxStringLength(16);
@@ -196,6 +196,29 @@ public class PocketDoorGui extends GuiScreen {
         });
     }
 
+    private void toggleVisitorAccess() {
+        schedule(mp -> {
+            net.minecraft.server.MinecraftServer server = mp.getServer();
+            PocketDoorData data = PocketDoorData.get(server.getWorld(0));
+            boolean pause = !data.accessPaused(mp.getUniqueID());
+            data.setAccessPaused(mp.getUniqueID(), pause);
+            if (pause) {
+                int dimension = PocketDimensionManager.getDimensionForOwner(server, mp.getUniqueID());
+                java.util.List<EntityPlayerMP> occupants =
+                        new java.util.ArrayList<EntityPlayerMP>(server.getPlayerList().getPlayers());
+                for (EntityPlayerMP visitor : occupants) {
+                    if (visitor.dimension == dimension
+                            && !visitor.getUniqueID().equals(mp.getUniqueID())) {
+                        PocketTeleporter.toggle(visitor);
+                    }
+                }
+                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.access_paused"), true);
+            } else {
+                mp.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.access_resumed"), true);
+            }
+        });
+    }
+
     private void updateTrusted(final boolean add) {
         final String name = nameField == null ? "" : nameField.getText().trim();
         if (!name.matches("[A-Za-z0-9_]{1,16}")) return;
@@ -232,7 +255,7 @@ public class PocketDoorGui extends GuiScreen {
             purchaseKey(true);
         } else if (button.id == BTN_TOGGLE_KEYS) {
             toggleKeys();
-        } else if (button.id == BTN_ADD_TRUST) {
+        } else if (button.id == BTN_PAUSE_ACCESS) {\n            toggleVisitorAccess();\n        } else if (button.id == BTN_ADD_TRUST) {
             updateTrusted(true);
         } else if (button.id == BTN_REMOVE_TRUST) {
             updateTrusted(false);
@@ -298,12 +321,12 @@ public class PocketDoorGui extends GuiScreen {
                 + "/" + PocketDoorData.MAX_PAIRS, 10, 28, 0xFFCCCCCC);
         fontRenderer.drawString("Выбрана: " + (selectedPairId == null ? "нет пары"
                 : "пара " + (pairIds.indexOf(selectedPairId) + 1)), rightX, 28, 0xFFCCCCCC);
-        fontRenderer.drawString("Доверенные игроки:", rightX, 142, 0xFFE0A040);
+        fontRenderer.drawString("Доверенные игроки:", rightX, 165, 0xFFE0A040);
 
         if (data() != null) {
             List<String> trusted = data().trustedNames(ownerId());
             String names = trusted.isEmpty() ? "список пуст" : String.join(", ", trusted);
-            int y = 205;
+            int y = 228;
             for (Object line : fontRenderer.listFormattedStringToWidth(names, rightW)) {
                 fontRenderer.drawStringWithShadow((String) line, rightX, y, 0xFFB9C6D4);
                 y += 10;
