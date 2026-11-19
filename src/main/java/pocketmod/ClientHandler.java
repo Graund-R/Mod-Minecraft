@@ -224,7 +224,17 @@ public class ClientHandler {
             if (p != null) server(() -> Abilities.teleportLook(p));
         }
 
-        int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
+        boolean vDown = raw(keyInvis);
+        boolean shiftForMorph = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)
+                || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+        if (vDown && shiftForMorph && !hV.was && !hV.wait) {
+            hV.was = true;
+            hV.wait = true;
+            PocketDoorNetwork.requestMorphCatalog();
+            return;
+        }
+
+        int v = poll(vDown, hV, now, holdMs);
         if (v == EV_HOLD) {
             mc.displayGuiScreen(new ShopGui(mc.player));
         } else if (v == EV_TAP) {
