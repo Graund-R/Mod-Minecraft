@@ -446,3 +446,12 @@ pocketmod.cfg.18.waveLevel4=Цена: Волна, ур. 4
 pocketmod.cfg.18.waveLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
 pocketmod.cfg.18.waveLevel5=Цена: Волна, ур. 5
 pocketmod.cfg.18.waveLevel5.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+
+key.pocketmod.shop=Магазин способностей
+pocketmod.ability.morphism=Морфизм
+pocketmod.info.morphism.desc=Позволяет принимать облик любого полученного существа. Новый облик открывается после убийства моба.
+pocketmod.info.morphism.key=Каталог обликов: Shift+V
+pocketmod.info.morphism.l1=Разблокирует каталог. Каждое превращение стоит 20 маны; снятие облика бесплатно.
+pocketmod.msg.morph_need_metamorph=Для морфизма установи Metamorph и его библиотеку McLib.
+pocketmod.msg.morph_failed=Не удалось принять этот облик. Мана возвращена.
+pocketmod.msg.morph_on=Принят облик %s. Потрачено маны: %s
