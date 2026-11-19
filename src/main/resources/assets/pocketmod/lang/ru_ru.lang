@@ -473,3 +473,11 @@ pocketmod.msg.access_paused=Доступ временно приостановл
 pocketmod.msg.access_resumed=Доступ к измерению снова открыт.
 pocketmod.msg.guest_test_enabled=Тест гостя включён: владелец получает права одноразового ключа.
 pocketmod.msg.guest_test_disabled=Тест гостя выключен: обычные права владельца восстановлены.
+
+item.pocketmod.pocket_iron_key.name=Железный ключ кармана
+item.pocketmod.pocket_gold_key.name=Золотой ключ кармана
+pocketmod.msg.door_pair_replaced=Для этой пары выданы двери на замену. Старые ключи продолжают работать.
+pocketmod.msg.visitors_kicked=Все гости отправлены наружу.
+pocketmod.msg.morph_disabled=Морфизм отключён в конфигурации.
+pocketmod.msg.morph_need_metamorph=Для морфизма нужны Metamorph и McLib.
+pocketmod.msg.morph_failed=Превращение не удалось, мана возвращена.
