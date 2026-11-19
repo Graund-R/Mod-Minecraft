@@ -109,6 +109,7 @@ public class Abilities {
     }
 
     public static void toggleInvisibility(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.INVISIBILITY)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -139,6 +140,15 @@ public class Abilities {
         }
         player.sendStatusMessage(new TextComponentTranslation(
                 now ? "pocketmod.msg.invis_on" : "pocketmod.msg.invis_off"), true);
+    }
+
+    public static void disableForMorph(EntityPlayerMP player) {
+        player.getEntityData().setBoolean(KEY_INVIS, false);
+        player.getEntityData().setBoolean(KEY_SLOW, false);
+        player.getEntityData().setInteger(KEY_BREAK, 0);
+        player.removePotionEffect(MobEffects.INVISIBILITY);
+        player.setInvisible(false);
+        EntityDecoy.removeDecoys(player);
     }
 
     public static boolean isInvisible(EntityPlayer player) {
@@ -186,6 +196,7 @@ public class Abilities {
     }
 
     public static void toggleSlow(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.SLOW)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -254,6 +265,7 @@ public class Abilities {
     }
 
     public static void teleportLook(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.TELEPORT)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
