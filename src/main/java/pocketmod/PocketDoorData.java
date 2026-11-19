@@ -17,7 +17,7 @@ import net.minecraft.world.storage.WorldSavedData;
 
 /** Persistent ownership and access settings for purchased door pairs. */
 public class PocketDoorData extends WorldSavedData {
-    public static final int MAX_PAIRS = 5;
+    public static final int MAX_PAIRS = 3;
     private static final String ID = "pocketmod_doors";
     private static PocketDoorData instance;
     private static WorldServer loadedWorld;
