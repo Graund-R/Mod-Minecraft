@@ -46,7 +46,6 @@ public class PocketMod {
         MorphIntegration.register();
         PocketDoorNetwork.registerServer();
         if (event.getSide() == Side.CLIENT) {
-            PocketDoorNetwork.registerClient();
             ClientHandler.register();
         }
     }
