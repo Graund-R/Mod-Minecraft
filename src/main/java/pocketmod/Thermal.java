@@ -31,6 +31,7 @@ public class Thermal {
     }
 
     public static void toggle(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.THERMAL)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -45,7 +46,17 @@ public class Thermal {
         p.sendStatusMessage(new TextComponentTranslation(now ? "pocketmod.msg.thermal_on" : "pocketmod.msg.thermal_switched_off"), true);
     }
 
+    public static void disable(EntityPlayerMP p) {
+        if (!isOn(p)) return;
+        p.getEntityData().setBoolean(KEY, false);
+        clearGlow(p);
+    }
+
     public static void tick(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) {
+            disable(p);
+            return;
+        }
         if (!isOn(p)) return;
         if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
             p.getEntityData().setBoolean(KEY, false);
