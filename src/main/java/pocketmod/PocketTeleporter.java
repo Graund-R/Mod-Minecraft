@@ -47,6 +47,38 @@ public class PocketTeleporter implements ITeleporter {
         return false;
     }
 
+    /** Вход гостя в измерение владельца сети через проверенную дверь. */
+    public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return false;
+        int targetId = PocketDimensionManager.getDimensionForOwner(server, owner);
+        if (targetId < 0) return false;
+        WorldServer target = server.getWorld(targetId);
+        if (target == null) {
+            net.minecraftforge.common.DimensionManager.initDimension(targetId);
+            target = server.getWorld(targetId);
+        }
+        if (target == null) return false;
+        Pocket.buildIfNeeded(target);
+        PocketData pd = PocketData.get(target);
+        double price = entryPrice(player, pd);
+        if (!Mana.hasFreeEntry(player) && !Mana.spend(player, price)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
+                    (int) Math.ceil(price)), true);
+            return false;
+        }
+        Mana.setFreeEntry(player, false);
+        NBTTagCompound data = PlayerData.root(player);
+        data.setInteger("pocket_return_dim", player.dimension);
+        data.setDouble("pocket_return_x", player.posX);
+        data.setDouble("pocket_return_y", player.posY);
+        data.setDouble("pocket_return_z", player.posZ);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        player.changeDimension(targetId, new PocketTeleporter(2.5D, 64.0D, 2.5D));
+        return true;
+    }
+
     public static void toggle(EntityPlayerMP player) {
         if (!PocketDimensionManager.isPocketDimension(player.dimension) && !canEnterPocket(player)) {
             return;
