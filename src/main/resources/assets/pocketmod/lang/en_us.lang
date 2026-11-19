@@ -457,7 +457,7 @@ pocketmod.msg.door_bought=Pocket door purchased.
 pocketmod.msg.key_bought=Pocket network key purchased.
 
 pocketmod.gui.door_manage=Manage doors
-pocketmod.msg.door_pair_limit=Limit reached: at most 5 door pairs.
+pocketmod.msg.door_pair_limit=Limit reached: at most 3 door pairs.
 pocketmod.msg.door_pair_full=This pair already has two placed doors.
 pocketmod.msg.door_not_yours=Only the owner can place doors from this pair.
 pocketmod.msg.door_pair_bought=Door pair purchased. You received two doors.
@@ -469,7 +469,15 @@ pocketmod.msg.trusted_added=Player added to access list: %s
 pocketmod.msg.trusted_removed=Player removed from access list: %s
 pocketmod.msg.trusted_unchanged=Access list unchanged: %s
 
-pocketmod.msg.access_paused=Access is temporarily suspended. All visitors have been ejected.
+pocketmod.msg.access_paused=Access is paused. Visitors already inside may leave.
 pocketmod.msg.access_resumed=Access to the dimension is open again.
 pocketmod.msg.guest_test_enabled=Guest test enabled: the owner has one-time-key permissions.
 pocketmod.msg.guest_test_disabled=Guest test disabled: normal owner permissions restored.
+
+item.pocketmod.pocket_iron_key.name=Iron Pocket Key
+item.pocketmod.pocket_gold_key.name=Gold Pocket Key
+pocketmod.msg.door_pair_replaced=Replacement doors issued for this pair. Existing keys still work.
+pocketmod.msg.visitors_kicked=All visitors have been sent outside.
+pocketmod.msg.morph_disabled=Morphism is disabled in the configuration.
+pocketmod.msg.morph_need_metamorph=Metamorph and McLib are required for Morphism.
+pocketmod.msg.morph_failed=Transformation failed; mana was refunded.
