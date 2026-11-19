@@ -38,6 +38,7 @@ public final class PocketDoorNetwork {
 
     private static volatile NBTTagCompound clientState = new NBTTagCompound();
     private static volatile boolean morphCatalogPending = false;
+    private static volatile boolean totemGuiPending = false;
 
     private PocketDoorNetwork() {}
 
@@ -88,7 +89,13 @@ public final class PocketDoorNetwork {
     public static void setSlowFactor(float factor) { send(29, 0, "", "", factor, 0, 0, 0, 0); }
     public static void teleportLastTotem() { send(30, 0, "", ""); }
     public static void teleportDeathTotem() { send(31, 0, "", ""); }
-    public static void openTotemGui() { morphCatalogPending = false; requestState(); }
+    public static void openTotemGui() { totemGuiPending = true; requestState(); }
+
+    static boolean consumeTotemGuiPending() {
+        boolean pending = totemGuiPending;
+        totemGuiPending = false;
+        return pending;
+    }
     public static void createTotem(String name) { send(32, 0, "", name); }
     public static void teleportTotem(int index) { send(33, index, "", ""); }
     public static void moveTotem(int index, int delta) { send(34, index, "", "", delta, 0, 0, 0, 0); }
@@ -138,6 +145,7 @@ public final class PocketDoorNetwork {
         state.setInteger("ironKeyPrice", PocketConfig.ironKeyPrice);
         state.setBoolean("morphismUnlocked", PocketConfig.morphEnabled
                 && AbilityStorage.isUnlocked(player, AbilityType.MORPHISM));
+        state.setBoolean("totemUnlocked", AbilityStorage.isUnlocked(player, AbilityType.TOTEM));
         state.setBoolean("morphismAvailable", PocketConfig.morphEnabled && MorphIntegration.isAvailable());
         state.setInteger("lootPity", Loot.pity(player));
         state.setBoolean("keysEnabled", data.keysEnabled(owner));
@@ -485,10 +493,14 @@ public final class PocketDoorNetwork {
                 if (Double.isNaN(message.x) || Double.isInfinite(message.x)
                         || Double.isNaN(message.y) || Double.isInfinite(message.y)
                         || Double.isNaN(message.z) || Double.isInfinite(message.z)
+                        || Float.isNaN(message.yaw) || Float.isInfinite(message.yaw)
+                        || Float.isNaN(message.pitch) || Float.isInfinite(message.pitch)
                         || Math.abs(message.x - player.posX) > 64
                         || Math.abs(message.y - player.posY) > 64
                         || Math.abs(message.z - player.posZ) > 64) return;
-                Spector.phaseStep(player, message.x, message.y, message.z, message.yaw, message.pitch);
+                float yaw = message.yaw % 360.0F;
+                float pitch = Math.max(-90.0F, Math.min(90.0F, message.pitch));
+                Spector.phaseStep(player, message.x, message.y, message.z, yaw, pitch);
                 break;
             case 25:
                 Thermal.toggle(player);
@@ -514,22 +526,46 @@ public final class PocketDoorNetwork {
                 break;
             }
             case 30:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 if (Totems.hasDeathTotem(player)) Totems.teleportDeath(player);
                 else Totems.teleportLast(player);
                 break;
             case 31:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 Totems.teleportDeath(player);
                 break;
             case 32:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 Totems.create(player, message.text);
                 break;
             case 33:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 Totems.teleport(player, message.value);
                 break;
             case 34:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 Totems.move(player, message.value, (int) message.x);
                 break;
             case 35:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.TOTEM)) {
+                    deny(player);
+                    break;
+                }
                 Totems.delete(player, message.value);
                 break;
             default:
