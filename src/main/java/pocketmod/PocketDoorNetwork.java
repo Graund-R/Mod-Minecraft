@@ -121,6 +121,8 @@ public final class PocketDoorNetwork {
         state.setBoolean("decoyEnabled", Abilities.isDecoyEnabled(player));
         state.setBoolean("silenceEnabled", Abilities.isSilenceEnabled(player));
         state.setString("lastLoot", Loot.last(player));
+        state.setDouble("totalDrain", MorphIntegration.isMorphed(player) ? 0.0D
+                : Abilities.totalDrainPerSec(player));
         int[] abilityLevels = new int[AbilityType.values().length];
         for (AbilityType type : AbilityType.values()) {
             abilityLevels[type.ordinal()] = AbilityStorage.getLevel(player, type);
