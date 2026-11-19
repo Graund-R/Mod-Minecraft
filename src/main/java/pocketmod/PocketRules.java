@@ -30,18 +30,6 @@ public class PocketRules {
         return PocketDimensionManager.isPocketDimension(w.provider.getDimension());
     }
 
-    /** Любые живые существа, кроме игрока и нашей приманки/тела Спектора, в кармане не появляются. */
-    @SubscribeEvent
-    public static void onJoin(EntityJoinWorldEvent e) {
-        World w = e.getWorld();
-        if (w.isRemote || !inPocket(w)) return;
-        Entity en = e.getEntity();
-        if (en instanceof EntityPlayer || en instanceof EntityDecoy) return;
-        if (en instanceof EntityLivingBase) {
-            e.setCanceled(true);
-        }
-    }
-
     @SubscribeEvent
     public static void onCropGrow(BlockEvent.CropGrowEvent.Pre e) {
         if (!e.getWorld().isRemote && inPocket(e.getWorld())) e.setResult(Event.Result.DENY);
