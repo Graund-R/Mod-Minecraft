@@ -367,22 +367,38 @@ public final class PocketDoorNetwork {
                 break;
             }
             case TOGGLE_KEYS:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+                    deny(player);
+                    break;
+                }
                 data.setKeysEnabled(owner, !data.keysEnabled(owner));
                 player.sendStatusMessage(new TextComponentTranslation(
                         data.keysEnabled(owner) ? "pocketmod.msg.keys_enabled" : "pocketmod.msg.keys_disabled"), true);
                 break;
             case TOGGLE_GUEST_TEST:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+                    deny(player);
+                    break;
+                }
                 data.setGuestTestEnabled(owner, !data.guestTestEnabled(owner));
                 player.sendStatusMessage(new TextComponentTranslation(
                         data.guestTestEnabled(owner) ? "pocketmod.msg.guest_test_enabled"
                                 : "pocketmod.msg.guest_test_disabled"), true);
                 break;
             case TOGGLE_PAUSE:
+                if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+                    deny(player);
+                    break;
+                }
                 data.setAccessPaused(owner, !data.accessPaused(owner));
                 player.sendStatusMessage(new TextComponentTranslation(
                         data.accessPaused(owner) ? "pocketmod.msg.access_paused" : "pocketmod.msg.access_resumed"), true);
                 break;
             case KICK_ALL: {
+                if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+                    deny(player);
+                    break;
+                }
                 int dimension = PocketDimensionManager.getDimensionForOwner(server, owner);
                 List<EntityPlayerMP> visitors = new ArrayList<EntityPlayerMP>(server.getPlayerList().getPlayers());
                 for (EntityPlayerMP visitor : visitors) {
@@ -395,6 +411,10 @@ public final class PocketDoorNetwork {
             }
             case ADD_TRUSTED:
             case REMOVE_TRUSTED: {
+                if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+                    deny(player);
+                    break;
+                }
                 String name = message.text.trim();
                 if (!name.matches("[A-Za-z0-9_]{1,16}")) break;
                 boolean add = message.action == ADD_TRUSTED;
