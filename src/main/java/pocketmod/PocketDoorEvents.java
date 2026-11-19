@@ -13,6 +13,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -81,11 +82,38 @@ public final class PocketDoorEvents {
         BlockPos pos = lowerPos(world, event.getPos());
         PocketDoorData data = PocketDoorData.get((WorldServer) world);
         UUID owner = data.owner(world.provider.getDimension(), pos.toLong());
-        if (owner != null && !owner.equals(event.getPlayer().getUniqueID())) {
+        boolean ownerAccess = owner != null && owner.equals(event.getPlayer().getUniqueID());
+        boolean trustedAccess = owner != null && data.isTrusted(owner, event.getPlayer().getName());
+        if (owner != null && !ownerAccess && !trustedAccess) {
             event.setCanceled(true);
             return;
         }
-        data.remove(world.provider.getDimension(), pos.toLong());
+
+        // Remove the physical door mapping after harvest so the drops event can
+        // reliably identify this as a registered pocket door and suppress drops.
+        final int dimension = world.provider.getDimension();
+        final long packedPos = pos.toLong();
+        ((WorldServer) world).addScheduledTask(new Runnable() {
+            @Override public void run() {
+                data.remove(dimension, packedPos);
+            }
+        });
+    }
+
+    @SubscribeEvent
+    public static void onPocketDoorDrops(HarvestDropsEvent event) {
+        World world = event.getWorld();
+        if (world.isRemote || !(world instanceof WorldServer)
+                || !(event.getState().getBlock() instanceof BlockDoor)) return;
+        BlockPos pos = event.getPos();
+        if (event.getState().getValue(BlockDoor.HALF) == BlockDoor.EnumDoorHalf.UPPER) {
+            pos = pos.down();
+        }
+        PocketDoorData data = PocketDoorData.get((WorldServer) world);
+        if (data.pairId(world.provider.getDimension(), pos.toLong()) != null) {
+            event.getDrops().clear();
+            data.remove(world.provider.getDimension(), pos.toLong());
+        }
     }
 
     @SubscribeEvent
