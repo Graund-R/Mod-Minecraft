@@ -65,11 +65,17 @@ public final class PocketKeys {
 
     /** New key bound to one purchased door pair. */
     public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime) {
+        return createKeyFor(owner, pairId, oneTime,
+                PocketDoorData.get(net.minecraftforge.common.DimensionManager.getWorld(0)).keyEpoch(owner));
+    }
+
+    public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime, int epoch) {
         ItemStack stack = new ItemStack(oneTime ? IRON_KEY : GOLD_KEY);
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString("pocket_owner", owner.toString());
         tag.setString("pocket_pair", pairId);
         tag.setBoolean("pocket_one_time", oneTime);
+        tag.setInteger("pocket_key_epoch", Math.max(0, epoch));
         stack.setTagCompound(tag);
         return stack;
     }
@@ -79,9 +85,16 @@ public final class PocketKeys {
     }
 
     public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId) {
+        return opensPair(stack, owner, pairId,
+                PocketDoorData.get(net.minecraftforge.common.DimensionManager.getWorld(0)).keyEpoch(owner));
+    }
+
+    public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId, int currentEpoch) {
         if (!isKeyItem(stack) || pairId == null) return false;
         NBTTagCompound tag = stack.getTagCompound();
         if (tag == null || !owner.toString().equals(tag.getString("pocket_owner"))) return false;
+        // Old NBT keys have no epoch and are treated as epoch 0 for migration.
+        if (tag.getInteger("pocket_key_epoch") != currentEpoch) return false;
         String keyPair = tag.getString("pocket_pair");
         // Old keys only continue to work on doors migrated from the previous system.
         if (keyPair.isEmpty()) return pairId.startsWith("legacy:");
