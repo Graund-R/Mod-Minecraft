@@ -34,14 +34,47 @@ public final class PocketDoorEvents {
         if (world.isRemote || !(event.getPlayer() instanceof EntityPlayerMP)) return;
         ItemStack held = event.getItemInHand();
         if (held.isEmpty() || held.getItem() != PocketDoorItems.DOOR) return;
+
         EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
         if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
             event.setCanceled(true);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
+
+        PocketDoorData data = PocketDoorData.get((WorldServer) world);
+        String pairId = null;
+        String itemOwner = null;
+        if (held.hasTagCompound()) {
+            pairId = held.getTagCompound().getString("pocket_pair_id");
+            itemOwner = held.getTagCompound().getString("pocket_owner");
+        }
+
+        // Old, already-purchased untagged doors are assigned a fresh pair slot on placement.
+        if (pairId == null || pairId.isEmpty()) {
+            pairId = data.createPair(player.getUniqueID());
+            if (pairId == null) {
+                event.setCanceled(true);
+                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
+                return;
+            }
+            net.minecraft.nbt.NBTTagCompound tag = held.getOrCreateSubCompound("PocketDoor");
+            tag.setString("pocket_pair_id", pairId);
+            tag.setString("pocket_owner", player.getUniqueID().toString());
+            // Keep tags at the root as well for items saved by the previous development build.
+            held.getTagCompound().setString("pocket_pair_id", pairId);
+            held.getTagCompound().setString("pocket_owner", player.getUniqueID().toString());
+        } else if (itemOwner == null || !player.getUniqueID().toString().equals(itemOwner)) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_not_yours"), true);
+            return;
+        }
+
         BlockPos pos = lowerPos(world, event.getPos());
-        PocketDoorData.get((WorldServer) world).register(world.provider.getDimension(), pos.toLong(), player.getUniqueID());
+        if (!data.registerDoor(world.provider.getDimension(), pos.toLong(), player.getUniqueID(), pairId)) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_full"), true);
+        }
     }
 
     @SubscribeEvent
@@ -58,21 +91,36 @@ public final class PocketDoorEvents {
         if (world.isRemote || !(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
         BlockPos pos = lowerPos(world, event.getPos());
         if (!(world.getBlockState(pos).getBlock() instanceof BlockDoor)) return;
-        UUID owner = PocketDoorData.get((WorldServer) world).owner(world.provider.getDimension(), pos.toLong());
-        if (owner == null) return;
+
+        PocketDoorData data = PocketDoorData.get((WorldServer) world);
+        UUID owner = data.owner(world.provider.getDimension(), pos.toLong());
+        String pairId = data.pairId(world.provider.getDimension(), pos.toLong());
+        if (owner == null || pairId == null) return;
 
         EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
         boolean ownerAccess = owner.equals(player.getUniqueID());
-        boolean keyAccess = PocketKeys.opensNetwork(event.getItemStack(), owner);
-        if (!ownerAccess && !keyAccess) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_locked"), true);
+        boolean trustedAccess = data.isTrusted(owner, player.getName());
+        boolean keyAccess = data.keysEnabled(owner)
+                && PocketKeys.opensPair(event.getItemStack(), owner, pairId);
+
+        if (!ownerAccess && !trustedAccess && !keyAccess) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    data.keysEnabled(owner) ? "pocketmod.msg.door_locked" : "pocketmod.msg.keys_disabled"), true);
             event.setCanceled(true);
             event.setCancellationResult(EnumActionResult.FAIL);
             return;
         }
-        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
+
+        boolean leavingPocket = PocketDimensionManager.isPocketDimension(player.dimension);
+        if (leavingPocket) {
             PocketTeleporter.toggle(player);
+            event.setCanceled(true);
+            event.setCancellationResult(EnumActionResult.SUCCESS);
         } else if (PocketTeleporter.enterNetwork(player, owner)) {
+            if (keyAccess && PocketKeys.isOneTime(event.getItemStack())) {
+                ItemStack used = player.getHeldItem(event.getHand());
+                if (!used.isEmpty()) used.shrink(1);
+            }
             event.setCanceled(true);
             event.setCancellationResult(EnumActionResult.SUCCESS);
         }

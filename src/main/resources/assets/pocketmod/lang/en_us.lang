@@ -455,3 +455,16 @@ item.pocketmod.pocket_key.name=Pocket Network Key
 pocketmod.msg.door_locked=Door locked. The owner's key is required.
 pocketmod.msg.door_bought=Pocket door purchased.
 pocketmod.msg.key_bought=Pocket network key purchased.
+
+pocketmod.gui.door_manage=Manage doors
+pocketmod.msg.door_pair_limit=Limit reached: at most 5 door pairs.
+pocketmod.msg.door_pair_full=This pair already has two placed doors.
+pocketmod.msg.door_not_yours=Only the owner can place doors from this pair.
+pocketmod.msg.door_pair_bought=Door pair purchased. You received two doors.
+pocketmod.msg.door_pair_missing=This door pair no longer exists.
+pocketmod.msg.temp_key_bought=One-time key for the selected pair purchased.
+pocketmod.msg.keys_enabled=All keys are enabled again.
+pocketmod.msg.keys_disabled=All keys are blocked.
+pocketmod.msg.trusted_added=Player added to access list: %s
+pocketmod.msg.trusted_removed=Player removed from access list: %s
+pocketmod.msg.trusted_unchanged=Access list unchanged: %s

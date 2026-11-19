@@ -455,3 +455,16 @@ item.pocketmod.pocket_key.name=Ключ карманной сети
 pocketmod.msg.door_locked=Дверь закрыта. Нужен ключ владельца.
 pocketmod.msg.door_bought=Карманная дверь куплена.
 pocketmod.msg.key_bought=Ключ карманной сети куплен.
+
+pocketmod.gui.door_manage=Управление дверями
+pocketmod.msg.door_pair_limit=Достигнут лимит: максимум 5 пар дверей.
+pocketmod.msg.door_pair_full=В этой паре уже установлены две двери.
+pocketmod.msg.door_not_yours=Эту пару дверей может устанавливать только владелец.
+pocketmod.msg.door_pair_bought=Пара дверей куплена. Вы получили две двери.
+pocketmod.msg.door_pair_missing=Эта пара дверей больше не существует.
+pocketmod.msg.temp_key_bought=Одноразовый ключ для выбранной пары куплен.
+pocketmod.msg.keys_enabled=Все ключи снова работают.
+pocketmod.msg.keys_disabled=Все ключи заблокированы.
+pocketmod.msg.trusted_added=Игрок добавлен в список доступа: %s
+pocketmod.msg.trusted_removed=Игрок удалён из списка доступа: %s
+pocketmod.msg.trusted_unchanged=Список доступа не изменён: %s

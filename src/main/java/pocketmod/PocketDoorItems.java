@@ -1,9 +1,13 @@
 package pocketmod;
 
+import java.util.UUID;
+
 import net.minecraft.block.BlockDoor;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemDoor;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -12,7 +16,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraft.util.NonNullList;
 
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public final class PocketDoorItems {
@@ -26,6 +29,15 @@ public final class PocketDoorItems {
         DOOR.setUnlocalizedName(PocketMod.MODID + ".pocket_door");
         DOOR.setCreativeTab(net.minecraft.creativetab.CreativeTabs.REDSTONE);
         event.getRegistry().register(DOOR);
+    }
+
+    public static ItemStack createPairItem(UUID owner, String pairId) {
+        ItemStack stack = new ItemStack(DOOR);
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("pocket_owner", owner.toString());
+        tag.setString("pocket_pair_id", pairId);
+        stack.setTagCompound(tag);
+        return stack;
     }
 
     @SideOnly(Side.CLIENT)

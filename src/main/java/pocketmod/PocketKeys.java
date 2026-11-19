@@ -38,10 +38,7 @@ public final class PocketKeys {
         }
     }
 
-    public static ItemStack createOwnerKey(EntityPlayer player) {
-        return createKeyFor(player.getUniqueID());
-    }
-
+    /** Legacy network-wide key, retained only for doors migrated from older saves. */
     public static ItemStack createKeyFor(java.util.UUID owner) {
         ItemStack stack = new ItemStack(POCKET_KEY);
         NBTTagCompound tag = new NBTTagCompound();
@@ -50,6 +47,38 @@ public final class PocketKeys {
         return stack;
     }
 
+    /** New key bound to one purchased door pair. */
+    public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime) {
+        ItemStack stack = new ItemStack(POCKET_KEY);
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("pocket_owner", owner.toString());
+        tag.setString("pocket_pair", pairId);
+        tag.setBoolean("pocket_one_time", oneTime);
+        stack.setTagCompound(tag);
+        return stack;
+    }
+
+    public static ItemStack createOwnerKey(EntityPlayer player) {
+        return createKeyFor(player.getUniqueID());
+    }
+
+    public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId) {
+        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY || pairId == null) return false;
+        NBTTagCompound tag = stack.getTagCompound();
+        if (tag == null || !owner.toString().equals(tag.getString("pocket_owner"))) return false;
+        String keyPair = tag.getString("pocket_pair");
+        // Old keys only continue to work on doors migrated from the previous system.
+        if (keyPair.isEmpty()) return pairId.startsWith("legacy:");
+        return pairId.equals(keyPair);
+    }
+
+    public static boolean isOneTime(ItemStack stack) {
+        if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
+        NBTTagCompound tag = stack.getTagCompound();
+        return tag != null && tag.getBoolean("pocket_one_time");
+    }
+
+    /** Kept for older callers. */
     public static boolean opensNetwork(ItemStack stack, java.util.UUID owner) {
         if (stack.isEmpty() || POCKET_KEY == null || stack.getItem() != POCKET_KEY) return false;
         NBTTagCompound tag = stack.getTagCompound();
