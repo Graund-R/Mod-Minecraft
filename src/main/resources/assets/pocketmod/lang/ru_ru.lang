@@ -446,3 +446,7 @@ pocketmod.cfg.18.waveLevel4=Цена: Волна, ур. 4
 pocketmod.cfg.18.waveLevel4.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
 pocketmod.cfg.18.waveLevel5=Цена: Волна, ур. 5
 pocketmod.cfg.18.waveLevel5.tooltip=Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.
+pocketmod.item.pocket_key=Личный ключ карманного пространства
+pocketmod.msg.need_pocket_key=Для входа нужен твой личный ключ
+pocketmod.msg.key_not_yours=Этот ключ принадлежит другому игроку
+pocketmod.msg.key_created=Личный ключ создан
