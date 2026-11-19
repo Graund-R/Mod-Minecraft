@@ -27,7 +27,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class PocketRules {
 
     private static boolean inPocket(World w) {
-        return w.provider.getDimension() == PocketMod.DIM_ID;
+        return PocketDimensionManager.isPocketDimension(w.provider.getDimension());
     }
 
     /** Любые живые существа, кроме игрока и нашей приманки/тела Спектора, в кармане не появляются. */
