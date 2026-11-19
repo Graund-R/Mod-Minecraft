@@ -65,8 +65,7 @@ public final class PocketKeys {
 
     /** New key bound to one purchased door pair. */
     public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime) {
-        return createKeyFor(owner, pairId, oneTime,
-                PocketDoorData.get(net.minecraftforge.common.DimensionManager.getWorld(0)).keyEpoch(owner));
+        return createKeyFor(owner, pairId, oneTime, 0);
     }
 
     public static ItemStack createKeyFor(java.util.UUID owner, String pairId, boolean oneTime, int epoch) {
@@ -85,8 +84,7 @@ public final class PocketKeys {
     }
 
     public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId) {
-        return opensPair(stack, owner, pairId,
-                PocketDoorData.get(net.minecraftforge.common.DimensionManager.getWorld(0)).keyEpoch(owner));
+        return opensPair(stack, owner, pairId, 0);
     }
 
     public static boolean opensPair(ItemStack stack, java.util.UUID owner, String pairId, int currentEpoch) {
