@@ -37,6 +37,7 @@ public final class PocketDoorNetwork {
     private static final int MORPH_DEMORPH = 11;
 
     private static volatile NBTTagCompound clientState = new NBTTagCompound();
+    private static volatile boolean morphCatalogPending = false;
 
     private PocketDoorNetwork() {}
 
@@ -51,6 +52,28 @@ public final class PocketDoorNetwork {
     public static void requestState() {
         send(REQUEST_STATE, 0, "", "");
     }
+
+    public static void requestMorphCatalog() {
+        morphCatalogPending = true;
+        requestState();
+    }
+
+    static boolean consumeMorphCatalogPending() {
+        boolean pending = morphCatalogPending;
+        morphCatalogPending = false;
+        return pending;
+    }
+
+    public static void upgradeAbility(AbilityType type) {
+        if (type != null) send(12, type.ordinal(), "", "");
+    }
+
+    public static void buyBodyEffect(int index) { send(13, index, "", ""); }
+    public static void toggleBodyRent(int index) { send(14, index, "", ""); }
+    public static void toggleDecoy() { send(15, 0, "", ""); }
+    public static void toggleSilence() { send(16, 0, "", ""); }
+    public static void takeCredit(int amount) { send(17, amount, "", ""); }
+    public static void spinLoot(int tier) { send(18, tier, "", ""); }
 
     public static void buyPair(String selectedPair) { send(BUY_PAIR, 0, selectedPair == null ? "" : selectedPair, ""); }
     public static void buyGoldKey(String pairId, boolean preserveOld) { send(BUY_GOLD_KEY, preserveOld ? 1 : 0, pairId, ""); }
@@ -89,6 +112,28 @@ public final class PocketDoorNetwork {
         state.setBoolean("keysEnabled", data.keysEnabled(owner));
         state.setBoolean("accessPaused", data.accessPaused(owner));
         state.setBoolean("guestTest", data.guestTestEnabled(owner));
+        state.setDouble("mana", Mana.get(player));
+        state.setDouble("priceMultiplier", Mana.getPriceMultiplier(player));
+        state.setDouble("credit", Mana.getCredit(player));
+        state.setLong("creditLeftMs", Mana.getCreditLeftMs(player));
+        state.setBoolean("hasCredit", Mana.hasCredit(player));
+        state.setBoolean("decoyEnabled", Abilities.isDecoyEnabled(player));
+        state.setBoolean("silenceEnabled", Abilities.isSilenceEnabled(player));
+        state.setString("lastLoot", Loot.last(player));
+        int[] abilityLevels = new int[AbilityType.values().length];
+        for (AbilityType type : AbilityType.values()) {
+            abilityLevels[type.ordinal()] = AbilityStorage.getLevel(player, type);
+        }
+        state.setIntArray("abilityLevels", abilityLevels);
+        int[] bodyLevels = new int[BodyEffects.IDS.length];
+        boolean[] bodyRent = new boolean[BodyEffects.IDS.length];
+        for (int i = 0; i < BodyEffects.IDS.length; i++) {
+            bodyLevels[i] = BodyEffects.perm(player, i);
+            bodyRent[i] = BodyEffects.rent(player, i);
+        }
+        state.setIntArray("bodyLevels", bodyLevels);
+        state.setIntArray("bodyRent", new int[] { bodyRent[0] ? 1 : 0, bodyRent[1] ? 1 : 0,
+                bodyRent[2] ? 1 : 0, bodyRent[3] ? 1 : 0, bodyRent[4] ? 1 : 0 });
 
         NBTTagList pairs = new NBTTagList();
         for (String id : data.pairIds(owner)) {
@@ -265,6 +310,41 @@ public final class PocketDoorNetwork {
                 break;
             case MORPH_DEMORPH:
                 MorphIntegration.demorph(player);
+                break;
+            case 12:
+                if (message.value >= 0 && message.value < AbilityType.values().length) {
+                    AbilityStorage.tryUpgrade(player, AbilityType.values()[message.value]);
+                }
+                break;
+            case 13:
+                if (message.value >= 0 && message.value < BodyEffects.IDS.length) {
+                    BodyEffects.buyPerm(player, message.value);
+                }
+                break;
+            case 14:
+                if (message.value >= 0 && message.value < BodyEffects.IDS.length) {
+                    BodyEffects.toggleRent(player, message.value);
+                }
+                break;
+            case 15:
+                Abilities.setDecoyEnabled(player, !Abilities.isDecoyEnabled(player));
+                break;
+            case 16:
+                Abilities.setSilenceEnabled(player, !Abilities.isSilenceEnabled(player));
+                break;
+            case 17:
+                if (message.value >= PocketConfig.creditMin && message.value <= PocketConfig.creditMax
+                        && !Mana.hasCredit(player)) {
+                    double repay = Mana.takeCredit(player, message.value);
+                    if (repay > 0) player.sendStatusMessage(new TextComponentTranslation(
+                            "pocketmod.msg.credit_taken", (int) Math.ceil(repay),
+                            PocketConfig.creditDurationSec / 60), true);
+                }
+                break;
+            case 18:
+                if (message.value >= 0 && message.value < PocketConfig.lootStakes.length) {
+                    Loot.spin(player, message.value);
+                }
                 break;
             default:
                 return;
