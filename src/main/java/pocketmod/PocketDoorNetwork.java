@@ -81,6 +81,11 @@ public final class PocketDoorNetwork {
         UUID owner = player.getUniqueID();
         NBTTagCompound state = new NBTTagCompound();
         state.setInteger("pairCount", data.pairCount(owner));
+        state.setInteger("pairPrice", PocketConfig.doorPairPrice);
+        state.setInteger("goldKeyPrice", PocketConfig.goldKeyPrice);
+        state.setInteger("ironKeyPrice", PocketConfig.ironKeyPrice);
+        state.setBoolean("morphismUnlocked", PocketConfig.morphEnabled
+                && AbilityStorage.isUnlocked(player, AbilityType.MORPHISM));
         state.setBoolean("keysEnabled", data.keysEnabled(owner));
         state.setBoolean("accessPaused", data.accessPaused(owner));
         state.setBoolean("guestTest", data.guestTestEnabled(owner));
@@ -170,7 +175,7 @@ public final class PocketDoorNetwork {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_limit"), true);
                     break;
                 }
-                double price = Mana.shopPrice(player, 1000.0D);
+                double price = Mana.shopPrice(player, PocketConfig.doorPairPrice);
                 if (!Mana.spend(player, price)) {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
                             (int) Math.ceil(price)), true);
@@ -198,7 +203,7 @@ public final class PocketDoorNetwork {
                     break;
                 }
                 boolean oneTime = message.action == BUY_IRON_KEY;
-                double price = Mana.shopPrice(player, oneTime ? 50.0D : 100.0D);
+                double price = Mana.shopPrice(player, oneTime ? PocketConfig.ironKeyPrice : PocketConfig.goldKeyPrice);
                 if (!Mana.spend(player, price)) {
                     player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
                             (int) Math.ceil(price)), true);
