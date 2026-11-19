@@ -31,6 +31,13 @@ public class ServerTick {
             PocketDoorNetwork.syncState(player);
         }
 
+        // A pocket dimension never permits an active Metamorph form,
+        // even when the player arrived by a command or another mod.
+        if (PocketDimensionManager.isPocketDimension(player.dimension)
+                && MorphIntegration.isMorphed(player)) {
+            MorphIntegration.demorph(player);
+        }
+
         // Morphism disables every Pocket Mod ability/passive except shop and totems.
         if (MorphIntegration.isMorphed(player)) {
             MorphIntegration.suppressAbilities(player);
