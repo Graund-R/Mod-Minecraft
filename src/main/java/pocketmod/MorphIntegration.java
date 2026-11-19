@@ -13,49 +13,133 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-/** Необязательная интеграция с Metamorph 1.12.2 через reflection. */
+/**
+ * Optional bridge to Metamorph 1.12.2.
+ *
+ * Metamorph remains an optional dependency, so its classes must not appear in
+ * Pocket Mod's method signatures or be resolved while Metamorph is absent.
+ * Calls below use the exact public API signatures verified against Metamorph
+ * 1.4 for Minecraft 1.12.2, rather than scanning methods by name.
+ */
 public class MorphIntegration {
     public static final double MORPH_COST = 20.0D;
+
+    private static final String API_CLASS = "mchorse.metamorph.api.MorphAPI";
+    private static final String MORPH_CLASS = "mchorse.metamorph.api.morphs.AbstractMorph";
+    private static final String CAPABILITY_CLASS = "mchorse.metamorph.capabilities.morphing.Morphing";
+    private static final String CAPABILITY_INTERFACE = "mchorse.metamorph.capabilities.morphing.IMorphing";
+
     private static final ThreadLocal<Boolean> AUTHORIZED = new ThreadLocal<Boolean>() {
-        @Override protected Boolean initialValue() { return Boolean.FALSE; }
+        @Override
+        protected Boolean initialValue() {
+            return Boolean.FALSE;
+        }
     };
+
+    private static volatile Api api;
+
+    private static final class Api {
+        final Class<?> morphType;
+        final Method getCapability;
+        final Method getAcquiredMorphs;
+        final Method getCurrentMorph;
+        final Method morph;
+        final Method demorph;
+        final Method acquire;
+
+        Api() throws Exception {
+            Class<?> capabilityType = Class.forName(CAPABILITY_CLASS);
+            Class<?> capabilityInterface = Class.forName(CAPABILITY_INTERFACE);
+            Class<?> apiType = Class.forName(API_CLASS);
+            this.morphType = Class.forName(MORPH_CLASS);
+
+            this.getCapability = capabilityType.getMethod("get", EntityPlayer.class);
+            this.getAcquiredMorphs = capabilityInterface.getMethod("getAcquiredMorphs");
+            this.getCurrentMorph = capabilityInterface.getMethod("getCurrentMorph");
+            this.morph = apiType.getMethod("morph", EntityPlayer.class, morphType, boolean.class);
+            this.demorph = apiType.getMethod("demorph", EntityPlayer.class);
+            this.acquire = apiType.getMethod("acquire", EntityPlayer.class, morphType);
+        }
+    }
+
+    private static Api api() {
+        if (!Loader.isModLoaded("metamorph")) {
+            return null;
+        }
+
+        Api value = api;
+        if (value != null) {
+            return value;
+        }
+
+        synchronized (MorphIntegration.class) {
+            if (api == null) {
+                try {
+                    api = new Api();
+                } catch (Throwable error) {
+                    System.err.println("[PocketMod] Metamorph API is unavailable or incompatible: " + error);
+                    return null;
+                }
+            }
+            return api;
+        }
+    }
 
     public static void register() {
         MinecraftForge.EVENT_BUS.register(new MorphIntegration());
     }
 
     public static boolean isAvailable() {
-        return Loader.isModLoaded("metamorph");
+        return api() != null;
     }
 
     private static Object capability(EntityPlayer player) {
-        if (player == null || !isAvailable()) return null;
+        if (player == null) {
+            return null;
+        }
+
+        Api bridge = api();
+        if (bridge == null) {
+            return null;
+        }
+
         try {
-            Class<?> type = Class.forName("mchorse.metamorph.capabilities.morphing.Morphing");
-            return type.getMethod("get", EntityPlayer.class).invoke(null, player);
-        } catch (Throwable ignored) {
+            return bridge.getCapability.invoke(null, player);
+        } catch (Throwable error) {
+            System.err.println("[PocketMod] Could not read Metamorph capability: " + error);
             return null;
         }
     }
 
     @SuppressWarnings("unchecked")
     public static List<Object> getMorphs(EntityPlayer player) {
-        Object cap = capability(player);
-        if (cap == null) return new ArrayList<Object>();
-        try {
-            Object value = cap.getClass().getMethod("getAcquiredMorphs").invoke(cap);
-            if (value instanceof List) return new ArrayList<Object>((List<Object>) value);
-        } catch (Throwable ignored) {
+        Object capability = capability(player);
+        if (capability == null) {
+            return new ArrayList<Object>();
         }
+
+        try {
+            Object value = api().getAcquiredMorphs.invoke(capability);
+            if (value instanceof List) {
+                return new ArrayList<Object>((List<Object>) value);
+            }
+        } catch (Throwable error) {
+            System.err.println("[PocketMod] Could not read acquired morphs: " + error);
+        }
+
         return new ArrayList<Object>();
     }
 
     public static Object getCurrentMorph(EntityPlayer player) {
-        Object cap = capability(player);
-        if (cap == null) return null;
+        Object capability = capability(player);
+        if (capability == null) {
+            return null;
+        }
+
         try {
-            return cap.getClass().getMethod("getCurrentMorph").invoke(cap);
-        } catch (Throwable ignored) {
+            return api().getCurrentMorph.invoke(capability);
+        } catch (Throwable error) {
+            System.err.println("[PocketMod] Could not read current morph: " + error);
             return null;
         }
     }
@@ -65,59 +149,63 @@ public class MorphIntegration {
     }
 
     public static String getMorphName(Object morph) {
-        if (morph == null) return "Unknown";
-        try {
-            Object value = morph.getClass().getMethod("getDisplayName").invoke(morph);
-            if (value != null && !value.toString().isEmpty()) return value.toString();
-        } catch (Throwable ignored) {
+        if (morph == null) {
+            return "Unknown";
         }
+
+        // displayName and name are public fields in AbstractMorph 1.4.
+        // getDisplayName is client-only in Metamorph, so it is only a fallback.
         try {
             Field display = morph.getClass().getField("displayName");
             Object value = display.get(morph);
-            if (value != null && !value.toString().isEmpty()) return value.toString();
+            if (value != null && !value.toString().isEmpty()) {
+                return value.toString();
+            }
         } catch (Throwable ignored) {
         }
+
         try {
             Field name = morph.getClass().getField("name");
             Object value = name.get(morph);
-            if (value != null) return value.toString();
+            if (value != null && !value.toString().isEmpty()) {
+                return value.toString();
+            }
         } catch (Throwable ignored) {
         }
+
+        try {
+            Method displayName = morph.getClass().getMethod("getDisplayName");
+            Object value = displayName.invoke(morph);
+            if (value != null && !value.toString().isEmpty()) {
+                return value.toString();
+            }
+        } catch (Throwable ignored) {
+        }
+
         return "Unknown";
     }
 
-    private static Object invokeMorphApi(String methodName, Object... args) throws Exception {
-        Class<?> api = Class.forName("mchorse.metamorph.api.MorphAPI");
-        for (Method method : api.getMethods()) {
-            if (!method.getName().equals(methodName) || method.getParameterTypes().length != args.length) continue;
-            Class<?>[] types = method.getParameterTypes();
-            boolean matches = true;
-            for (int i = 0; i < types.length; i++) {
-                if (args[i] == null) {
-                    if (types[i].isPrimitive()) matches = false;
-                } else if (!types[i].isInstance(args[i])
-                        && !(types[i] == boolean.class && args[i] instanceof Boolean)) {
-                    matches = false;
-                }
-            }
-            if (matches) return method.invoke(null, args);
-        }
-        throw new NoSuchMethodException("Metamorph API method: " + methodName);
-    }
-
     public static boolean transform(EntityPlayerMP player, int index) {
-        if (player == null) return false;
+        if (player == null) {
+            return false;
+        }
+
         if (!AbilityStorage.isUnlocked(player, AbilityType.MORPHISM)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return false;
         }
-        if (!isAvailable()) {
+
+        Api bridge = api();
+        if (bridge == null) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_need_metamorph"), true);
             return false;
         }
 
         List<Object> morphs = getMorphs(player);
-        if (index < 0 || index >= morphs.size()) return false;
+        if (index < 0 || index >= morphs.size()) {
+            return false;
+        }
+
         Object morph = morphs.get(index);
         Object current = getCurrentMorph(player);
 
@@ -136,12 +224,12 @@ public class MorphIntegration {
         boolean success = false;
         AUTHORIZED.set(Boolean.TRUE);
         try {
-            Object result = invokeMorphApi("morph", player, morph, Boolean.FALSE);
+            Object result = bridge.morph.invoke(null, player, morph, Boolean.FALSE);
             success = Boolean.TRUE.equals(result);
         } catch (Throwable error) {
             System.err.println("[PocketMod] Metamorph transformation failed: " + error);
         } finally {
-            AUTHORIZED.set(Boolean.FALSE);
+            AUTHORIZED.remove();
         }
 
         if (!success) {
@@ -149,44 +237,71 @@ public class MorphIntegration {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_failed"), true);
             return false;
         }
+
         player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_on",
                 getMorphName(morph), (int) Math.ceil(cost)), true);
         return true;
     }
 
     public static void demorph(EntityPlayerMP player) {
-        if (player == null || !isAvailable() || getCurrentMorph(player) == null) return;
+        if (player == null || getCurrentMorph(player) == null) {
+            return;
+        }
+
+        Api bridge = api();
+        if (bridge == null) {
+            return;
+        }
+
         try {
             AUTHORIZED.set(Boolean.TRUE);
-            invokeMorphApi("demorph", player);
+            bridge.demorph.invoke(null, player);
         } catch (Throwable error) {
             System.err.println("[PocketMod] Metamorph demorph failed: " + error);
         } finally {
-            AUTHORIZED.set(Boolean.FALSE);
+            AUTHORIZED.remove();
         }
     }
 
     @SubscribeEvent
     public void onMetamorphEvent(Event event) {
-        String name = event.getClass().getName();
-        if ("mchorse.metamorph.api.events.SpawnGhostEvent$Pre".equals(name)) {
+        String eventName = event.getClass().getName();
+
+        // Metamorph normally creates a ghost entity after a kill. Replace that
+        // with direct acquisition in the player's permanent morph catalogue.
+        if ("mchorse.metamorph.api.events.SpawnGhostEvent$Pre".equals(eventName)) {
+            Api bridge = api();
+            if (bridge == null) {
+                return;
+            }
+
             try {
                 EntityPlayer player = (EntityPlayer) event.getClass().getField("player").get(event);
                 Object morph = event.getClass().getField("morph").get(event);
+
                 if (player != null && !player.world.isRemote && morph != null) {
-                    Object acquired = invokeMorphApi("acquire", player, morph);
-                    if (Boolean.TRUE.equals(acquired)) event.setCanceled(true);
+                    Object acquired = bridge.acquire.invoke(null, player, morph);
+                    if (Boolean.TRUE.equals(acquired)) {
+                        event.setCanceled(true);
+                    }
                 }
             } catch (Throwable error) {
                 System.err.println("[PocketMod] Metamorph acquire hook failed: " + error);
             }
             return;
         }
-        if ("mchorse.metamorph.api.events.MorphEvent$Pre".equals(name) && !AUTHORIZED.get()) {
+
+        // Prevent the native Metamorph keybind from bypassing mana payment.
+        // Pocket Mod's own paid transformation is allowed for this call only.
+        if ("mchorse.metamorph.api.events.MorphEvent$Pre".equals(eventName)
+                && !AUTHORIZED.get()) {
             try {
                 Object morph = event.getClass().getField("morph").get(event);
-                if (morph != null) event.setCanceled(true);
-            } catch (Throwable ignored) {
+                if (morph != null) {
+                    event.setCanceled(true);
+                }
+            } catch (Throwable error) {
+                System.err.println("[PocketMod] Could not validate Metamorph morph event: " + error);
             }
         }
     }
