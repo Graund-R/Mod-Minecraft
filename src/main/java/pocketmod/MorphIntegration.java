@@ -202,6 +202,11 @@ public class MorphIntegration {
             return false;
         }
 
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_no_pocket"), true);
+            return false;
+        }
+
         Api bridge = api();
         if (bridge == null) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_need_metamorph"), true);
@@ -248,6 +253,44 @@ public class MorphIntegration {
         suppressAbilities(player);
         player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_on",
                 getMorphName(morph), (int) Math.ceil(cost)), true);
+        return true;
+    }
+
+    /** Быстрое превращение (Alt+V): в последний полученный образ, а если уже в облике, обратно. */
+    public static void quickToggle(EntityPlayerMP player) {
+        if (player == null) return;
+        if (isMorphed(player)) {
+            demorph(player);
+            return;
+        }
+        List<Object> morphs = getMorphs(player);
+        if (morphs.isEmpty()) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_none"), true);
+            return;
+        }
+        transform(player, morphs.size() - 1);
+    }
+
+    /** Превращение из родного меню Metamorph: те же условия и та же плата, что у нашего каталога. */
+    private static boolean payForNativeMorph(EntityPlayerMP player) {
+        if (!isEnabled()) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_disabled"), true);
+            return false;
+        }
+        if (!AbilityStorage.isUnlocked(player, AbilityType.MORPHISM)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+            return false;
+        }
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.morph_no_pocket"), true);
+            return false;
+        }
+        double cost = morphCost() * Mana.getPriceMultiplier(player);
+        if (!Mana.spend(player, cost)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
+                    (int) Math.ceil(cost)), true);
+            return false;
+        }
         return true;
     }
 
@@ -309,7 +352,10 @@ public class MorphIntegration {
                 EntityPlayer player = (EntityPlayer) event.getClass().getField("player").get(event);
                 if (player == null || player.world.isRemote) return;
                 Object morph = event.getClass().getField("morph").get(event);
-                if (morph != null) event.setCanceled(true);
+                // Родное меню Metamorph (Shift+V) работает, но каждое превращение платное.
+                if (morph != null && !(player instanceof EntityPlayerMP && payForNativeMorph((EntityPlayerMP) player))) {
+                    event.setCanceled(true);
+                }
             } catch (Throwable error) {
                 System.err.println("[PocketMod] Could not validate Metamorph morph event: " + error);
             }

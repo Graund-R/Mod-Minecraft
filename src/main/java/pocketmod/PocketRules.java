@@ -18,6 +18,8 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.EnderTeleportEvent;
+import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraft.entity.EntityLiving;
 import net.minecraftforge.event.entity.player.BonemealEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
@@ -45,6 +47,12 @@ public class PocketRules {
         if (world.isRemote || !inPocket(world)) return;
         EntityPlayer player = event.getPlayer();
         if (player == null) return;
+
+        if (event.getPlacedBlock().getBlock() instanceof net.minecraft.block.BlockBed) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_no_bed"), true);
+            return;
+        }
 
         if (!PocketAccess.canBuild(player, world)) {
             event.setCanceled(true);
@@ -116,6 +124,21 @@ public class PocketRules {
         if (w.getBlockState(e.getPos()).getBlock() == Blocks.BED) {
             e.setCanceled(true);
         }
+    }
+
+    /** В кармане не появляются никакие мобы (в том числе из других модов): естественный спавн запрещён. */
+    @SubscribeEvent
+    public static void onCheckSpawn(LivingSpawnEvent.CheckSpawn e) {
+        if (!e.getWorld().isRemote && inPocket(e.getWorld())) e.setResult(Event.Result.DENY);
+    }
+
+    /** Яйца, спавнеры, раздатчики, команды: любое существо (EntityLiving), кроме приманки мода, не входит в карман. */
+    @SubscribeEvent
+    public static void onEntityJoin(EntityJoinWorldEvent e) {
+        World w = e.getWorld();
+        if (w.isRemote || !inPocket(w)) return;
+        Entity ent = e.getEntity();
+        if (ent instanceof EntityLiving && !(ent instanceof EntityDecoy)) e.setCanceled(true);
     }
 
     /** Жемчуг эндера и плод хоруса работают только внутри кармана. */

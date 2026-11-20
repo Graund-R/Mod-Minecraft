@@ -12,6 +12,7 @@ import net.minecraft.util.ResourceLocation;
 import java.awt.image.BufferedImage;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -159,10 +160,47 @@ public class ClientHandler {
         return ev;
     }
 
+    private static boolean mmKeysFixed;
+    private static boolean mmMenuBound;
+
+    /**
+     * Клавиши Metamorph по умолчанию совпадают с клавишами мода (меню образов на B перехватывало щит).
+     * Один раз после загрузки настроек переносим меню образов на Shift+V, а любую другую клавишу Metamorph,
+     * совпавшую с клавишей Pocket Mod, на Alt+та же клавиша. Уже изменённые игроком клавиши не трогаем.
+     */
+    private static void fixMetamorphKeys(Minecraft mc) {
+        if (mmKeysFixed) return;
+        mmKeysFixed = true;
+        try {
+            KeyBinding[] own = new KeyBinding[] { keyPocket, keyTeleport, keyInvis, keyShop, keySlow,
+                    keySpector, keyPhase, keyThermal, keyShield };
+            for (KeyBinding kb : mc.gameSettings.keyBindings) {
+                String d = kb.getKeyDescription();
+                if (d == null || !d.startsWith("key.metamorph.")) continue;
+                if (d.equals("key.metamorph.survival_menu")) mmMenuBound = true;
+                if (kb.getKeyCode() <= 0 || kb.getKeyModifier() != KeyModifier.NONE) continue;
+                boolean conflict = false;
+                for (KeyBinding pk : own) {
+                    if (pk != null && pk.getKeyCode() == kb.getKeyCode()) conflict = true;
+                }
+                if (!conflict) continue;
+                if (d.equals("key.metamorph.survival_menu")) {
+                    kb.setKeyModifierAndCode(KeyModifier.SHIFT, Keyboard.KEY_V);
+                } else {
+                    kb.setKeyModifierAndCode(KeyModifier.ALT, kb.getKeyCode());
+                }
+            }
+            KeyBinding.resetKeyBindingArrayAndHash();
+        } catch (Throwable ignored) {
+            // привязки Metamorph не критичны для работы мода
+        }
+    }
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null) fixMetamorphKeys(mc);
         if (mc.player == null) {
             if (slowShaderOn) updateSlowShader(mc, false);
             return;
@@ -217,9 +255,14 @@ public class ClientHandler {
         }
 
         boolean vDown = raw(keyInvis);
-        // Shift+V открывает каталог форм; обычный короткий V переключает невидимость.
-        if (vDown && !hV.was && !hV.wait && GuiScreen.isShiftKeyDown()) {
-            PocketDoorNetwork.requestMorphCatalog();
+        // Alt+V: быстрое превращение в последний полученный образ и обратно.
+        // Shift+V: меню образов (родное меню Metamorph; если его клавиши не найдены, наш каталог).
+        // Обычный короткий V переключает невидимость.
+        if (vDown && !hV.was && !hV.wait && (Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU))) {
+            PocketDoorNetwork.quickMorph();
+            hV.wait = true;
+        } else if (vDown && !hV.was && !hV.wait && GuiScreen.isShiftKeyDown()) {
+            if (!mmMenuBound) PocketDoorNetwork.requestMorphCatalog();
             hV.wait = true;
         }
         int v = poll(vDown, hV, now, holdMs);

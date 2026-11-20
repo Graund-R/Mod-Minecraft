@@ -35,6 +35,7 @@ public final class PocketDoorNetwork {
     private static final int REMOVE_TRUSTED = 9;
     private static final int MORPH_TRANSFORM = 10;
     private static final int MORPH_DEMORPH = 11;
+    private static final int QUICK_MORPH = 36;
 
     private static volatile NBTTagCompound clientState = new NBTTagCompound();
     private static volatile boolean morphCatalogPending = false;
@@ -112,6 +113,7 @@ public final class PocketDoorNetwork {
     public static void removeTrusted(String name) { send(REMOVE_TRUSTED, 0, "", name); }
     public static void transform(int index) { send(MORPH_TRANSFORM, index, "", ""); }
     public static void demorph() { send(MORPH_DEMORPH, 0, "", ""); }
+    public static void quickMorph() { send(QUICK_MORPH, 0, "", ""); }
 
     private static void send(int action, int value, String pair, String text) {
         CHANNEL.sendToServer(new ActionMessage(action, value, pair, text));
@@ -316,6 +318,7 @@ public final class PocketDoorNetwork {
         // Боевые/перемещающие способности (19-29) во время формы не выполняются.
         boolean shopAction = message.action >= BUY_PAIR && message.action <= REMOVE_TRUSTED
                 || message.action == MORPH_TRANSFORM || message.action == MORPH_DEMORPH
+                || message.action == QUICK_MORPH
                 || message.action >= 12 && message.action <= 18
                 || message.action >= 30 && message.action <= 35;
         if (MorphIntegration.isMorphed(player)
@@ -447,6 +450,9 @@ public final class PocketDoorNetwork {
             }
             case MORPH_TRANSFORM:
                 MorphIntegration.transform(player, message.value);
+                break;
+            case QUICK_MORPH:
+                MorphIntegration.quickToggle(player);
                 break;
             case MORPH_DEMORPH:
                 MorphIntegration.demorph(player);

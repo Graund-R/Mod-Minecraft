@@ -92,6 +92,12 @@ public class CommonEvents {
         if (world.isRemote) {
             return;
         }
+        // В кармане слитки не превращаются в ману по ПКМ в воздух: при удержании ПКМ у стены
+        // луч иногда не попадает в блок, и вся стопка уходила в ману вместо покупки стены.
+        // Сдача от покупки стены (Mana.add(excess) в onRightClickBlock) не затрагивается.
+        if (PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
+            return;
+        }
         ItemStack stack = event.getItemStack();
         if (!ManaItems.isManaItem(stack)) {
             return;

@@ -49,6 +49,11 @@ public class PocketTeleporter implements ITeleporter {
 
     /** Вход гостя в измерение владельца сети через проверенную дверь. */
     public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner) {
+        return enterNetwork(player, owner, null);
+    }
+
+    /** Вход через внешнюю дверь пары: гость появляется у внутренней двери этой же пары. */
+    public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner, String pairId) {
         MinecraftServer server = player.getServer();
         if (server == null) return false;
         // The door owner already had to unlock the pocket ability before placing this door.
@@ -62,6 +67,22 @@ public class PocketTeleporter implements ITeleporter {
         if (target == null) return false;
         Pocket.buildIfNeeded(target);
         PocketData.get(target);
+        double destX = 2.5D, destY = 64.0D, destZ = 2.5D;
+        if (pairId != null) {
+            PocketDoorData doors = PocketDoorData.get(server.getWorld(0));
+            String inner = doors.roleDoor(pairId, true);
+            if (inner == null || PocketDoorData.keyDim(inner) != targetId) {
+                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_incomplete"), true);
+                return false;
+            }
+            BlockPos ip = BlockPos.fromLong(PocketDoorData.keyPos(inner));
+            double[] spot = findStandable(target, ip.getX() + 0.5D, ip.getY(), ip.getZ() + 0.5D);
+            if (spot != null) {
+                destX = spot[0];
+                destY = spot[1];
+                destZ = spot[2];
+            }
+        }
         // Door guests always enter for free. The owner's free-entry-on-death
         // flag belongs only to the owner's own pocket and is never consumed here.
         MorphIntegration.demorph(player);
@@ -73,7 +94,35 @@ public class PocketTeleporter implements ITeleporter {
         Spector.forceReturnIfActive(player);
         Flight.stop(player);
         Dash.onTeleport(player);
-        player.changeDimension(targetId, new PocketTeleporter(2.5D, 64.0D, 2.5D));
+        player.changeDimension(targetId, new PocketTeleporter(destX, destY, destZ));
+        return true;
+    }
+
+    /** Выход через внутреннюю дверь: игрок оказывается у внешней двери той же пары. */
+    public static boolean exitThroughDoor(EntityPlayerMP player, String pairId) {
+        MinecraftServer server = player.getServer();
+        if (server == null || pairId == null) return false;
+        String outer = PocketDoorData.get(server.getWorld(0)).roleDoor(pairId, false);
+        if (outer == null) return false;
+        int dim = PocketDoorData.keyDim(outer);
+        WorldServer target = server.getWorld(dim);
+        if (target == null) {
+            net.minecraftforge.common.DimensionManager.initDimension(dim);
+            target = server.getWorld(dim);
+        }
+        if (target == null) return false;
+        BlockPos op = BlockPos.fromLong(PocketDoorData.keyPos(outer));
+        double[] spot = findStandable(target, op.getX() + 0.5D, op.getY(), op.getZ() + 0.5D);
+        if (spot == null) spot = new double[] { op.getX() + 0.5D, op.getY(), op.getZ() + 0.5D };
+
+        NBTTagCompound data = PlayerData.root(player);
+        PocketAccess.clear(player);
+        data.setDouble("pocket_inner_x", player.posX);
+        data.setDouble("pocket_inner_y", player.posY);
+        data.setDouble("pocket_inner_z", player.posZ);
+        Dash.onTeleport(player);
+        player.changeDimension(dim, new PocketTeleporter(spot[0], spot[1], spot[2]));
+        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
         return true;
     }
 

@@ -51,6 +51,12 @@ public final class PocketAccess {
         if (owner != null && owner.equals(player.getUniqueID())) {
             if (world instanceof WorldServer
                     && PocketDoorData.get((WorldServer) world).guestTestEnabled(player.getUniqueID())) {
+                // Test mode: the owner has exactly the level the key used at the door granted (never trusted).
+                net.minecraft.nbt.NBTTagCompound own = PlayerData.root(player);
+                if (own.getInteger(DIM_KEY) == world.provider.getDimension()
+                        && owner.toString().equals(own.getString(OWNER_KEY))) {
+                    return Math.max(TEMPORARY, Math.min(BUILDER, own.getInteger(LEVEL_KEY)));
+                }
                 return TEMPORARY;
             }
             return TRUSTED;

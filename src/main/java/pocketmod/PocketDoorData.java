@@ -107,10 +107,42 @@ public class PocketDoorData extends WorldSavedData {
         String key = doorKey(dim, pos);
         String current = doorPairs.get(key);
         if (pairId.equals(current)) return true;
-        if (current != null || doorCount(pairId) >= 2) return false;
+        if (current != null) return false;
+        // Strict pair: one door on the pocket side (inner) and one in the world (outer).
+        boolean inner = PocketDimensionManager.isPocketDimension(dim);
+        if (roleDoor(pairId, inner) != null) return false;
         doorPairs.put(key, pairId);
         markDirty();
         return true;
+    }
+
+    /** Key "dim:pos" of the pair's inner (pocket side) or outer (world side) door, or null. */
+    public String roleDoor(String pairId, boolean inner) {
+        for (Map.Entry<String, String> entry : doorPairs.entrySet()) {
+            if (!pairId.equals(entry.getValue())) continue;
+            if (PocketDimensionManager.isPocketDimension(keyDim(entry.getKey())) == inner) return entry.getKey();
+        }
+        return null;
+    }
+
+    public boolean pairComplete(String pairId) {
+        return pairId != null && roleDoor(pairId, true) != null && roleDoor(pairId, false) != null;
+    }
+
+    public int completePairs(UUID owner) {
+        int count = 0;
+        for (String id : pairIds(owner)) {
+            if (pairComplete(id)) count++;
+        }
+        return count;
+    }
+
+    public static int keyDim(String key) {
+        return Integer.parseInt(key.substring(0, key.indexOf(':')));
+    }
+
+    public static long keyPos(String key) {
+        return Long.parseLong(key.substring(key.indexOf(':') + 1));
     }
 
     public UUID owner(int dim, long pos) {

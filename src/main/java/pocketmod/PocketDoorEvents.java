@@ -6,6 +6,8 @@ import net.minecraft.block.BlockDoor;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
@@ -44,6 +46,14 @@ public final class PocketDoorEvents {
         }
 
         PocketDoorData data = PocketDoorData.get((WorldServer) world);
+        // The inner door of a pair may only be placed in the placer's own pocket.
+        int placeDim = world.provider.getDimension();
+        if (PocketDimensionManager.isPocketDimension(placeDim)
+                && placeDim != PocketDimensionManager.getDimensionForOwner(player.getServer(), player.getUniqueID())) {
+            event.setCanceled(true);
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_inner_only_own"), true);
+            return;
+        }
         String pairId = null;
         String itemOwner = null;
         if (held.hasTagCompound()) {
@@ -93,15 +103,62 @@ public final class PocketDoorEvents {
             return;
         }
 
+        // The last inner door of an active pair cannot be broken while its outer door exists,
+        // otherwise visitors could be trapped. Break the outer door first to dismantle a pair.
+        final String brokenPair = data.pairId(world.provider.getDimension(), pos.toLong());
+        if (owner != null && brokenPair != null
+                && PocketDimensionManager.isPocketDimension(world.provider.getDimension())
+                && data.roleDoor(brokenPair, false) != null && data.completePairs(owner) <= 1) {
+            event.setCanceled(true);
+            event.getPlayer().sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_last_inner"), true);
+            return;
+        }
+
         // Remove the physical door mapping after harvest so the drops event can
         // reliably identify this as a registered pocket door and suppress drops.
         final int dimension = world.provider.getDimension();
         final long packedPos = pos.toLong();
+        final UUID doorOwner = owner;
         ((WorldServer) world).addScheduledTask(new Runnable() {
             @Override public void run() {
                 data.remove(dimension, packedPos);
+                // No active pair left: everyone except the owner is sent out so nobody is trapped.
+                if (doorOwner != null && data.completePairs(doorOwner) == 0) {
+                    ejectVisitors((WorldServer) world, doorOwner);
+                }
             }
         });
+    }
+
+    private static void ejectVisitors(WorldServer world, UUID owner) {
+        MinecraftServer server = world.getMinecraftServer();
+        if (server == null) return;
+        int dim = PocketDimensionManager.getDimensionForOwner(server, owner);
+        java.util.List<EntityPlayerMP> players = new java.util.ArrayList<EntityPlayerMP>(server.getPlayerList().getPlayers());
+        for (EntityPlayerMP p : players) {
+            if (p.dimension == dim && !p.getUniqueID().equals(owner)) PocketTeleporter.toggle(p);
+        }
+    }
+
+    /** Door items of a pair that is already fully placed are removed (e.g. leftovers from creative mode). */
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        EntityPlayer player = event.player;
+        if (player.world.isRemote || !(player.world instanceof WorldServer)
+                || player.ticksExisted % 20 != 0 || PocketDoorItems.DOOR == null) return;
+        PocketDoorData data = PocketDoorData.get((WorldServer) player.world);
+        java.util.List<java.util.List<ItemStack>> lists = new java.util.ArrayList<java.util.List<ItemStack>>();
+        lists.add(player.inventory.mainInventory);
+        lists.add(player.inventory.offHandInventory);
+        for (java.util.List<ItemStack> list : lists) {
+            for (int i = 0; i < list.size(); i++) {
+                ItemStack s = list.get(i);
+                if (s.isEmpty() || s.getItem() != PocketDoorItems.DOOR || !s.hasTagCompound()) continue;
+                String pid = s.getTagCompound().getString("pocket_pair_id");
+                if (!pid.isEmpty() && data.pairComplete(pid)) list.set(i, ItemStack.EMPTY);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -133,7 +190,8 @@ public final class PocketDoorEvents {
         if (owner == null || pairId == null) return;
 
         EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
-        boolean ownerAccess = owner.equals(player.getUniqueID());
+        // In the temporary guest-test mode the owner is treated as a guest at the door as well.
+        boolean ownerAccess = owner.equals(player.getUniqueID()) && !data.guestTestEnabled(owner);
         boolean trustedAccess = data.isTrusted(owner, player.getName());
         boolean keyAccess = data.keysEnabled(owner)
                 && PocketKeys.opensPair(event.getItemStack(), owner, pairId, data.keyEpoch(owner));
@@ -161,13 +219,14 @@ public final class PocketDoorEvents {
 
         if (leavingOwnerPocket) {
             // Leaving the pocket entered through this owner's door never consumes a key.
-            PocketTeleporter.toggle(player);
+            // Exit through the inner door leads to the outer door of the same pair.
+            if (!PocketTeleporter.exitThroughDoor(player, pairId)) PocketTeleporter.toggle(player);
             event.setCanceled(true);
             event.setCancellationResult(EnumActionResult.SUCCESS);
             return;
         }
 
-        boolean entered = PocketTeleporter.enterNetwork(player, owner);
+        boolean entered = PocketTeleporter.enterNetwork(player, owner, pairId);
         if (entered) {
             int accessLevel = trustedAccess ? PocketAccess.TRUSTED
                     : (keyAccess && !PocketKeys.isOneTime(event.getItemStack())
