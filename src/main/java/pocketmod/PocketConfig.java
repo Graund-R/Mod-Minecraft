@@ -148,6 +148,8 @@ public class PocketConfig {
     public static int heartsMaxBuys = 5;
     public static int heartsRent = 2;
     public static int regenMaxBuys = 3;
+    public static int[] regenCosts = { 600, 1200, 1800 };
+    public static int regenSaturationPercent = 25;
     public static int warehouseDeathCost = 50;
     public static float oreScannerDrain = 3.0f;
     public static int[] oreScannerRadius = { 16, 24, 32 };
@@ -347,6 +349,16 @@ public class PocketConfig {
         heartsMaxBuys = cfg.getInt("heartsMaxBuys", "тело", 5, 1, 50, "Max permanent heart purchases (+1 heart each)");
         heartsRent = cfg.getInt("heartsRent", "тело", 2, 1, 50, "Extra hearts while renting");
         regenMaxBuys = cfg.getInt("regenMaxBuys", "тело", 3, 1, 3, "Maximum permanent regeneration levels");
+        int oldRegenCost = Math.max(0, Math.min(1000000, bodyPermCost[BodyEffects.REGENERATION]));
+        int[] regenDefaults = { oldRegenCost / 2, oldRegenCost, oldRegenCost + (oldRegenCost + 1) / 2 };
+        int[] configuredRegenCosts = cfg.get("тело", "regenCosts", regenDefaults,
+                "Permanent regeneration prices for levels I, II and III").getIntList();
+        regenCosts = regenDefaults;
+        for (int i = 0; i < Math.min(regenCosts.length, configuredRegenCosts.length); i++) {
+            regenCosts[i] = Math.max(0, configuredRegenCosts[i]);
+        }
+        regenSaturationPercent = cfg.getInt("regenSaturationPercent", "тело", 25, 0, 1000,
+                "Extra saturation from food at all regeneration levels, percent");
         warehouseDeathCost = cfg.getInt("warehouseDeathCost", "склад", 50, 0, 1000000, "Mana per occupied warehouse slot on death.");
         oreScannerDrain = cfg.getFloat("oreScannerDrain", "сканер", 3.0f, 0f, 10000f, "Mana per second while scanning.");
         oreScannerVertical = cfg.getInt("oreScannerVertical", "сканер", 12, 4, 64, "Vertical scan distance.");
