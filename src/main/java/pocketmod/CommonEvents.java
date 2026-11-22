@@ -1,6 +1,7 @@
 package pocketmod;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
@@ -9,6 +10,7 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -17,6 +19,13 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public class CommonEvents {
+
+    @SubscribeEvent
+    public static void onFinishEating(LivingEntityUseItemEvent.Finish event) {
+        if (event.getEntityLiving() instanceof EntityPlayerMP) {
+            BodyEffects.addFoodSaturation((EntityPlayerMP) event.getEntityLiving(), event.getItem());
+        }
+    }
 
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
