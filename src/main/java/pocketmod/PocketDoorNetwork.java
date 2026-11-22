@@ -141,6 +141,15 @@ public final class PocketDoorNetwork {
         UUID owner = player.getUniqueID();
         NBTTagCompound state = new NBTTagCompound();
         state.setInteger("pairCount", data.pairCount(owner));
+        int pocketId = PocketDimensionManager.getDimensionForOwner(player.getServer(), owner);
+        net.minecraft.world.WorldServer pocket = pocketId == -1 ? null
+                : net.minecraftforge.common.DimensionManager.getWorld(pocketId);
+        state.setDouble("pocketEntryDiscount", PocketConfig.pocketDiscountL2);
+        if (pocketId == -1 || pocket != null) {
+            int rings = pocket == null ? 0 : PocketData.get(pocket).maxRing;
+            state.setDouble("pocketEntryPrice1", PocketTeleporter.baseEntryPrice(rings, 1));
+            state.setDouble("pocketEntryPrice2", PocketTeleporter.baseEntryPrice(rings, 2));
+        }
         state.setBoolean("ready", true);
         state.setInteger("pairPrice", PocketConfig.doorPairPrice);
         state.setInteger("goldKeyPrice", PocketConfig.goldKeyPrice);

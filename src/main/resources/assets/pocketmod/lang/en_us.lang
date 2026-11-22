@@ -648,3 +648,5 @@ pocketmod.info.shield.change.cost=Mana per point of damage absorbed: %s → %s
 pocketmod.info.slow.change.factor=Minimum time speed: ×%s → ×%s
 pocketmod.info.slow.change.stop=Drain while time is stopped: %s mana/s
 pocketmod.info.warehouse.change.slots=Warehouse slots: %s → %s
+pocketmod.info.pocket.change.entry=Standard entry with K: %s → %s mana
+pocketmod.info.pocket.change.discount=Discount on standard entry with K: %s%%

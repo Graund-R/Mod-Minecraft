@@ -648,3 +648,5 @@ pocketmod.info.shield.change.cost=Мана за единицу поглощён�
 pocketmod.info.slow.change.factor=Минимальная скорость времени: ×%s → ×%s
 pocketmod.info.slow.change.stop=Расход при остановке времени: %s маны/с
 pocketmod.info.warehouse.change.slots=Слоты склада: %s → %s
+pocketmod.info.pocket.change.entry=Обычный вход по K: %s → %s маны
+pocketmod.info.pocket.change.discount=Скидка на обычный вход по K: %s%%

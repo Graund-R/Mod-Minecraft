@@ -58,7 +58,11 @@ public class ShopInfo {
         String k = "pocketmod.info." + t.id + ".l" + lvl;
         switch (t) {
             case POCKET:
-                return lvl == 2 ? Tr.format(k, (int) Math.round(PocketConfig.pocketDiscountL2 * 100)) : Tr.format(k);
+                if (lvl == 1) return Tr.format(k);
+                net.minecraft.nbt.NBTTagCompound pocket = PocketDoorNetwork.getClientState();
+                double discount = pocket.hasKey("pocketEntryDiscount") ? pocket.getDouble("pocketEntryDiscount")
+                        : PocketConfig.pocketDiscountL2;
+                return Tr.format(k, n(discount * 100));
             case TELEPORT:
                 String range = Tr.format("pocketmod.info.teleport.range", n(Abilities.teleportRangeForLevel(lvl)));
                 if (lvl != PocketConfig.silenceMinLevel) return range;
@@ -111,6 +115,18 @@ public class ShopInfo {
 
     static List<String> levelChanges(AbilityType ability, int current, EntityPlayer player) {
         double multiplier = Mana.getPriceMultiplier(player);
+        if (ability == AbilityType.POCKET) {
+            net.minecraft.nbt.NBTTagCompound state = PocketDoorNetwork.getClientState();
+            if (state.hasKey("pocketEntryPrice1") && state.hasKey("pocketEntryPrice2")) {
+                return java.util.Collections.singletonList(Tr.format("pocketmod.info.pocket.change.entry",
+                        n(state.getDouble("pocketEntryPrice1") * multiplier),
+                        n(state.getDouble("pocketEntryPrice2") * multiplier)));
+            }
+            double discount = state.hasKey("pocketEntryDiscount") ? state.getDouble("pocketEntryDiscount")
+                    : PocketConfig.pocketDiscountL2;
+            return java.util.Collections.singletonList(Tr.format("pocketmod.info.pocket.change.discount",
+                    n(discount * 100)));
+        }
         if (ability == AbilityType.THERMAL) {
             return thermalChanges(current, multiplier, AbilityStorage.getLevel(player, AbilityType.ORE_SCANNER));
         }

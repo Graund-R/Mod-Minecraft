@@ -135,7 +135,7 @@ public class CommonEvents {
                 diedInOwnPocket = owner != null && owner.equals(old.getUniqueID());
             }
             if (diedInOwnPocket) {
-                // Старое бесплатное возвращение сохраняем в данных, хотя K теперь бесплатен всегда.
+                // Один бесплатный возврат в свой карман после смерти.
                 Mana.setFreeEntry(now, true);
             }
 
