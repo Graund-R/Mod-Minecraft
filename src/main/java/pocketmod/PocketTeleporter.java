@@ -132,12 +132,6 @@ public class PocketTeleporter implements ITeleporter {
         }
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (!PocketDimensionManager.isPocketDimension(player.dimension)) {
-            // Вход в карман снимает морф и отключает полёт/Спектор.
-            MorphIntegration.demorph(player);
-            Spector.forceReturnIfActive(player);
-            Flight.stop(player);
-        }
         if (PocketDimensionManager.isPocketDimension(player.dimension)) {
             leave(player, server);
         } else {
@@ -159,19 +153,9 @@ public class PocketTeleporter implements ITeleporter {
 
         int pocketDimension = PocketDimensionManager.getOrCreateDimension(server, player.getUniqueID());
         WorldServer pocket = server.getWorld(pocketDimension);
+        if (pocket == null) return;
         Pocket.buildIfNeeded(pocket);
         PocketData pd = PocketData.get(pocket);
-
-        // Вход через K в личное измерение бесплатный.
-        // Флаг бесплатного входа после смерти оставлен для совместимости со старыми сохранениями.
-
-        // Мобы вокруг точки ухода теряют цель
-        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
-
-        data.setInteger("pocket_return_dim", player.dimension);
-        data.setDouble("pocket_return_x", player.posX);
-        data.setDouble("pocket_return_y", player.posY);
-        data.setDouble("pocket_return_z", player.posZ);
 
         // Входим туда, откуда вышли в прошлый раз (если там ещё безопасно), иначе в центр
         double ix = 2.5, iy = 64, iz = 2.5;
@@ -187,8 +171,38 @@ public class PocketTeleporter implements ITeleporter {
             }
         }
 
+        boolean freeEntry = Mana.hasFreeEntry(player);
+        double price = freeEntry ? 0.0 : entryPrice(player, pd);
+        if (!Mana.spend(player, price)) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "pocketmod.msg.no_mana", (int) Math.ceil(price)), true);
+            return;
+        }
+
+        MorphIntegration.demorph(player);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        int returnDimension = player.dimension;
+        double returnX = player.posX;
+        double returnY = player.posY;
+        double returnZ = player.posZ;
+        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
         Dash.onTeleport(player);
-        player.changeDimension(pocketDimension, new PocketTeleporter(ix, iy, iz));
+
+        try {
+            player.changeDimension(pocketDimension, new PocketTeleporter(ix, iy, iz));
+        } finally {
+            if (player.dimension == pocketDimension) {
+                NBTTagCompound destinationData = PlayerData.root(player);
+                destinationData.setInteger("pocket_return_dim", returnDimension);
+                destinationData.setDouble("pocket_return_x", returnX);
+                destinationData.setDouble("pocket_return_y", returnY);
+                destinationData.setDouble("pocket_return_z", returnZ);
+                if (freeEntry) Mana.setFreeEntry(player, false);
+            } else if (price > 0.0) {
+                Mana.add(player, price);
+            }
+        }
     }
 
     private static void leave(EntityPlayerMP player, MinecraftServer server) {
