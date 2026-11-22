@@ -30,8 +30,17 @@ public class AbilityStorage {
         return getLevel(player, type) > 0;
     }
 
+    /** Учитывает уровни, предоставленные другой способностью, при выводе цены и покупке. */
+    static int getUpgradeLevel(EntityPlayer player, AbilityType type) {
+        int purchasedLevel = getLevel(player, type);
+        if (type == AbilityType.ORE_SCANNER && getLevel(player, AbilityType.THERMAL) >= 3) {
+            return Math.max(2, purchasedLevel);
+        }
+        return purchasedLevel;
+    }
+
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
-        int cur = getLevel(player, type);
+        int cur = getUpgradeLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {
             if (player instanceof EntityPlayerMP) {

@@ -9,7 +9,7 @@ final class ShopCatalog {
                 AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.DASH),
         new Tab("space", Page.ABILITIES, AbilityType.POCKET, AbilityType.TOTEM,
                 AbilityType.SLOW, AbilityType.WAREHOUSE),
-        new Tab("sense", Page.ABILITIES, AbilityType.SPECTOR, AbilityType.THERMAL),
+        new Tab("sense", Page.ABILITIES, AbilityType.SPECTOR, AbilityType.THERMAL, AbilityType.ORE_SCANNER),
         new Tab("guard", Page.ABILITIES, AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD),
         new Tab("body", Page.BODY_EFFECTS, AbilityType.BLOODSUCKER),
         new Tab("luck", Page.LOOT)

@@ -13,6 +13,10 @@ public class ShopInfo {
     }
 
     public static String desc(AbilityType t) {
+        if (t == AbilityType.ORE_SCANNER) {
+            return Tr.format("pocketmod.info.scanner.desc", n(PocketConfig.oreScannerPeriodTicks / 20.0),
+                    PocketConfig.oreScannerVertical);
+        }
         return Tr.format("pocketmod.info." + t.id + ".desc");
     }
 
@@ -32,7 +36,7 @@ public class ShopInfo {
             case SPECTOR:
                 return Tr.format(k, ClientHandler.keyName("spector"), ClientHandler.keyName("spector"));
             case THERMAL:
-                return Tr.format(k, ClientHandler.keyName("thermal"), ClientHandler.keyName("scanner"), ClientHandler.keyName("thermal"));
+                return Tr.format(k, ClientHandler.keyName("thermal"));
             case SHIELD:
                 return Tr.format(k, ClientHandler.keyName("shield"));
             case TOTEM:
@@ -65,8 +69,7 @@ public class ShopInfo {
                 return Tr.format(k, PocketConfig.decoyMaxSec, PocketConfig.decoyCost);
             case THERMAL:
                 if (lvl >= 3) {
-                    return Tr.format(k, n(PocketConfig.oreScannerRadius[Math.min(1, PocketConfig.oreScannerRadius.length - 1)]),
-                            n(PocketConfig.oreScannerDrain), PocketConfig.oreScannerVertical);
+                    return Tr.format(k, OreScanner.radiusForLevel(2));
                 }
                 return lvl == 1
                         ? Tr.format(k, n(PocketConfig.thermalRadius1), n(PocketConfig.thermalDrain1))
@@ -92,10 +95,8 @@ public class ShopInfo {
                         : Tr.format(k, n(PocketConfig.magnetRadius2));
             case BLOODSUCKER:
                 return Tr.format(k);
-            case ORE_SCANNER: {
-                int i = Math.max(0, Math.min(PocketConfig.oreScannerRadius.length - 1, lvl - 1));
-                return Tr.format(k, PocketConfig.oreScannerRadius[i], n(PocketConfig.oreScannerDrain));
-            }
+            case ORE_SCANNER:
+                return Tr.format(k, OreScanner.radiusForLevel(lvl), n(PocketConfig.oreScannerDrain));
             case WAREHOUSE:
                 return Tr.format(k, lvl);
             case DASH:

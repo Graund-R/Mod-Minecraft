@@ -203,7 +203,7 @@ public class ShopGui extends GuiScreen {
 
     private String buyLabel(AbilityType t) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         if (lvl >= t.maxLevel) return Tr.format("pocketmod.gui.max");
         int cost = t.costForNextLevel(lvl);
         if (cost < 0) return "-";
@@ -222,7 +222,7 @@ public class ShopGui extends GuiScreen {
 
     private String cardLabel(AbilityType t, boolean sel) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         String st = lvl == 0 ? TextFormatting.DARK_GRAY + "· " + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + "· L" + lvl + "/" + t.maxLevel;
         String name = (sel ? TextFormatting.GOLD : TextFormatting.WHITE) + Tr.format(t.titleKey());
@@ -276,7 +276,7 @@ public class ShopGui extends GuiScreen {
 
         int y = top;
         fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()), x, y, COL_ACCENT);
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         String badge = lvl == 0
                 ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
@@ -632,7 +632,7 @@ public class ShopGui extends GuiScreen {
                     b.displayString = "-";
                 } else {
                     AbilityType t = lst[Math.min(selected, lst.length - 1)];
-                    int lvl = AbilityStorage.getLevel(dp, t);
+                    int lvl = AbilityStorage.getUpgradeLevel(dp, t);
                     int cost = t.costForNextLevel(lvl);
                     b.displayString = buyLabel(t);
                     // активна пока не MAX; нехватка маны не блокирует клик (сообщение при покупке)
