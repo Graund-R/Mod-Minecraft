@@ -253,7 +253,10 @@ public class Abilities {
     }
 
     public static double teleportRange(EntityPlayer player) {
-        int lvl = AbilityStorage.getLevel(player, AbilityType.TELEPORT);
+        return teleportRangeForLevel(AbilityStorage.getLevel(player, AbilityType.TELEPORT));
+    }
+
+    static double teleportRangeForLevel(int lvl) {
         if (lvl >= 3) return PocketConfig.teleportRange3;
         if (lvl == 2) return PocketConfig.teleportRange2;
         return PocketConfig.teleportBaseRange;

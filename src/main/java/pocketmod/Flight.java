@@ -29,6 +29,14 @@ public class Flight {
         return Math.max(1, Math.min(3, AbilityStorage.getLevel(p, AbilityType.FLIGHT)));
     }
 
+    static int heightForLevel(int level) {
+        return PocketConfig.flightHeight[level - 1];
+    }
+
+    static float speedForLevel(int level) {
+        return PocketConfig.flightSpeed[level - 1];
+    }
+
     /** Базовый расход (висение у точки взлёта). */
     public static double baseDrain(EntityPlayer p) {
         return PocketConfig.flightDrain * Mana.getPriceMultiplier(p);
@@ -61,7 +69,7 @@ public class Flight {
         p.getEntityData().setInteger(GRACE, 0);
         p.capabilities.allowFlying = true;
         p.capabilities.isFlying = true;
-        p.capabilities.setFlySpeed(PocketConfig.flightSpeed[level(p) - 1]);
+        p.capabilities.setFlySpeed(speedForLevel(level(p)));
         p.sendPlayerAbilities();
     }
 
@@ -120,7 +128,7 @@ public class Flight {
         }
         p.fallDistance = 0f;
         int ground = p.world.getHeight(new BlockPos(p.posX, p.posY, p.posZ)).getY();
-        double cap = ground + PocketConfig.flightHeight[level(p) - 1];
+        double cap = ground + heightForLevel(level(p));
         if (p.posY > cap) {
             p.motionY = Math.min(0.0, p.motionY);
             p.connection.setPlayerLocation(p.posX, cap, p.posZ, p.rotationYaw, p.rotationPitch);

@@ -60,9 +60,9 @@ public class ShopInfo {
             case POCKET:
                 return lvl == 2 ? Tr.format(k, (int) Math.round(PocketConfig.pocketDiscountL2 * 100)) : Tr.format(k);
             case TELEPORT:
-                if (lvl == 1) return Tr.format(k, n(PocketConfig.teleportBaseRange));
-                if (lvl == 2) return Tr.format(k, n(PocketConfig.teleportRange2), n(PocketConfig.silenceTicks / 20.0));
-                return Tr.format(k, n(PocketConfig.teleportRange3));
+                String range = Tr.format("pocketmod.info.teleport.range", n(Abilities.teleportRangeForLevel(lvl)));
+                if (lvl != PocketConfig.silenceMinLevel) return range;
+                return range + " " + Tr.format("pocketmod.info.teleport.silence", n(PocketConfig.silenceTicks / 20.0));
             case INVISIBILITY:
                 return Tr.format(k, n(Abilities.noticeRangeFor(lvl)), n(Abilities.invisDrainFor(lvl)));
             case SLOW:
@@ -80,10 +80,8 @@ public class ShopInfo {
                 return Tr.format(k, n(PocketConfig.shieldManaPerDamage * (lvl >= 2 ? PocketConfig.shieldL2Factor : 1.0)),
                         n(PocketConfig.shieldUpkeepBase), n(PocketConfig.shieldUpkeepRamp),
                         n(PocketConfig.shieldUpkeepBase * 30 + PocketConfig.shieldUpkeepRamp * 450));
-            case FLIGHT: {
-                int i = Math.max(0, Math.min(2, lvl - 1));
-                return Tr.format(k, PocketConfig.flightHeight[i], n(PocketConfig.flightSpeed[i] / 0.05));
-            }
+            case FLIGHT:
+                return Tr.format(k, Flight.heightForLevel(lvl), n(Flight.speedForLevel(lvl) / 0.05));
             case TOTEM:
                 return Tr.format(k, Totems.slotsForLevel(lvl), n(Totems.discountForLevel(lvl) * 100));
             case SOFTFALL:
@@ -131,6 +129,23 @@ public class ShopInfo {
         int next = current + 1;
         List<String> lines = new ArrayList<>();
         switch (ability) {
+            case FLIGHT:
+                addChange(lines, "flight", "height", Flight.heightForLevel(current), Flight.heightForLevel(next));
+                addChange(lines, "flight", "speed", Flight.speedForLevel(current) / 0.05,
+                        Flight.speedForLevel(next) / 0.05);
+                break;
+            case TELEPORT:
+                addChange(lines, "teleport", "range", Abilities.teleportRangeForLevel(current),
+                        Abilities.teleportRangeForLevel(next));
+                if (next == PocketConfig.silenceMinLevel) {
+                    lines.add(Tr.format("pocketmod.info.teleport.silence", n(PocketConfig.silenceTicks / 20.0)));
+                }
+                break;
+            case INVISIBILITY:
+                addChange(lines, "invis", "notice", Abilities.noticeRangeFor(current), Abilities.noticeRangeFor(next));
+                addChange(lines, "invis", "drain", Abilities.invisDrainFor(current) * multiplier,
+                        Abilities.invisDrainFor(next) * multiplier);
+                break;
             case MAGNET:
                 addChange(lines, "magnet", "radius", Magnet.radiusForLevel(current), Magnet.radiusForLevel(next));
                 break;
