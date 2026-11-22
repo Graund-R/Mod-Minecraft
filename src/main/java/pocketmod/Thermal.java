@@ -18,16 +18,19 @@ public class Thermal {
     }
 
     public static int radius(EntityPlayer p) {
-        return AbilityStorage.getLevel(p, AbilityType.THERMAL) >= 2
-                ? PocketConfig.thermalRadius2
-                : PocketConfig.thermalRadius1;
+        return radiusForLevel(AbilityStorage.getLevel(p, AbilityType.THERMAL));
+    }
+
+    static int radiusForLevel(int level) {
+        return level >= 2 ? PocketConfig.thermalRadius2 : PocketConfig.thermalRadius1;
     }
 
     public static double drainPerSec(EntityPlayer p) {
-        double d = AbilityStorage.getLevel(p, AbilityType.THERMAL) >= 2
-                ? PocketConfig.thermalDrain2
-                : PocketConfig.thermalDrain1;
-        return d * Mana.getPriceMultiplier(p);
+        return baseDrainForLevel(AbilityStorage.getLevel(p, AbilityType.THERMAL)) * Mana.getPriceMultiplier(p);
+    }
+
+    static double baseDrainForLevel(int level) {
+        return level >= 2 ? PocketConfig.thermalDrain2 : PocketConfig.thermalDrain1;
     }
 
     public static void toggle(EntityPlayerMP p) {

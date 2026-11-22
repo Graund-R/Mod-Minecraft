@@ -3,6 +3,7 @@ package pocketmod;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -74,9 +75,7 @@ public class ShopInfo {
                 if (lvl >= 3) {
                     return Tr.format(k, OreScanner.radiusForLevel(2));
                 }
-                return lvl == 1
-                        ? Tr.format(k, n(PocketConfig.thermalRadius1), n(PocketConfig.thermalDrain1))
-                        : Tr.format(k, n(PocketConfig.thermalRadius2), n(PocketConfig.thermalDrain2));
+                return Tr.format(k, Thermal.radiusForLevel(lvl), n(Thermal.baseDrainForLevel(lvl)));
             case SHIELD:
                 return Tr.format(k, n(PocketConfig.shieldManaPerDamage * (lvl >= 2 ? PocketConfig.shieldL2Factor : 1.0)),
                         n(PocketConfig.shieldUpkeepBase), n(PocketConfig.shieldUpkeepRamp),
@@ -119,7 +118,11 @@ public class ShopInfo {
         }
     }
 
-    static List<String> levelChanges(AbilityType ability, int current, double multiplier) {
+    static List<String> levelChanges(AbilityType ability, int current, EntityPlayer player) {
+        double multiplier = Mana.getPriceMultiplier(player);
+        if (ability == AbilityType.THERMAL) {
+            return thermalChanges(current, multiplier, AbilityStorage.getLevel(player, AbilityType.ORE_SCANNER));
+        }
         if (ability == AbilityType.DASH) return dashChanges(current, multiplier);
         if (ability == AbilityType.WAVE) return waveChanges(current, multiplier);
         if (ability == AbilityType.ORE_SCANNER) {
@@ -131,6 +134,25 @@ public class ShopInfo {
             }
         }
         return java.util.Collections.emptyList();
+    }
+
+    private static List<String> thermalChanges(int current, double multiplier, int scannerLevel) {
+        int next = current + 1;
+        List<String> lines = new ArrayList<>();
+        addChange(lines, "thermal", "radius", Thermal.radiusForLevel(current), Thermal.radiusForLevel(next));
+        addChange(lines, "thermal", "drain", Thermal.baseDrainForLevel(current) * multiplier,
+                Thermal.baseDrainForLevel(next) * multiplier);
+        if (next == 3) {
+            if (scannerLevel >= 2) {
+                lines.add(Tr.format("pocketmod.info.thermal.change.scanner_owned"));
+            } else if (scannerLevel == 1) {
+                lines.add(Tr.format("pocketmod.info.thermal.change.scanner_radius",
+                        OreScanner.radiusForLevel(1), OreScanner.radiusForLevel(2)));
+            } else {
+                lines.add(Tr.format("pocketmod.info.thermal.change.scanner_unlock", OreScanner.radiusForLevel(2)));
+            }
+        }
+        return lines;
     }
 
     private static List<String> waveChanges(int current, double multiplier) {
