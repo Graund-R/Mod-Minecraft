@@ -85,16 +85,11 @@ public class ShopInfo {
                 return Tr.format(k, PocketConfig.flightHeight[i], n(PocketConfig.flightSpeed[i] / 0.05));
             }
             case TOTEM:
-                if (lvl == 1) return Tr.format(k, PocketConfig.totemSlots1);
-                if (lvl == 2) return Tr.format(k, PocketConfig.totemSlots2, (int) Math.round(PocketConfig.totemDiscount2 * 100));
-                return Tr.format(k, PocketConfig.totemSlots3, (int) Math.round(PocketConfig.totemDiscount3 * 100));
+                return Tr.format(k, Totems.slotsForLevel(lvl), n(Totems.discountForLevel(lvl) * 100));
             case SOFTFALL:
-                if (lvl == 1) return Tr.format(k, n(PocketConfig.softFallMinDist), n(PocketConfig.softFallDrain));
-                return Tr.format(k, n(PocketConfig.softFallMinDistL2), n(PocketConfig.softFallDrain * PocketConfig.softFallL2Factor));
+                return Tr.format(k, n(SoftFall.thresholdForLevel(lvl)), n(SoftFall.baseDrainForLevel(lvl)));
             case MAGNET:
-                return lvl == 1
-                        ? Tr.format(k, n(PocketConfig.magnetRadius1))
-                        : Tr.format(k, n(PocketConfig.magnetRadius2));
+                return Tr.format(k, n(Magnet.radiusForLevel(lvl)));
             case BLOODSUCKER:
                 return Tr.format(k);
             case ORE_SCANNER:
@@ -133,7 +128,26 @@ public class ShopInfo {
                         Tr.format("pocketmod.info.scanner.change.radius", before, after));
             }
         }
-        return java.util.Collections.emptyList();
+        int next = current + 1;
+        List<String> lines = new ArrayList<>();
+        switch (ability) {
+            case MAGNET:
+                addChange(lines, "magnet", "radius", Magnet.radiusForLevel(current), Magnet.radiusForLevel(next));
+                break;
+            case SOFTFALL:
+                addChange(lines, "softfall", "threshold", SoftFall.thresholdForLevel(current), SoftFall.thresholdForLevel(next));
+                addChange(lines, "softfall", "drain", SoftFall.baseDrainForLevel(current) * multiplier,
+                        SoftFall.baseDrainForLevel(next) * multiplier);
+                break;
+            case TOTEM:
+                addChange(lines, "totem", "slots", Totems.slotsForLevel(current), Totems.slotsForLevel(next));
+                addChange(lines, "totem", "discount", Totems.discountForLevel(current) * 100,
+                        Totems.discountForLevel(next) * 100);
+                break;
+            default:
+                break;
+        }
+        return lines;
     }
 
     private static List<String> thermalChanges(int current, double multiplier, int scannerLevel) {
