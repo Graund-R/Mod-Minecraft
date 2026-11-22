@@ -15,8 +15,7 @@ public final class OreScanner {
     private OreScanner() {}
 
     public static boolean available(EntityPlayer player) {
-        return AbilityStorage.getLevel(player, AbilityType.THERMAL) >= 3
-                || AbilityStorage.isUnlocked(player, AbilityType.ORE_SCANNER);
+        return AbilityStorage.getUpgradeLevel(player, AbilityType.ORE_SCANNER) > 0;
     }
 
     public static boolean isOn(EntityPlayer player) {
@@ -28,10 +27,12 @@ public final class OreScanner {
     }
 
     public static int radius(EntityPlayer player) {
-        int level = AbilityStorage.getLevel(player, AbilityType.ORE_SCANNER);
-        if (level <= 0) level = 2; // доступ через тепловизор 3 уровня
-        level = Math.max(1, Math.min(3, level));
-        return PocketConfig.oreScannerRadius[Math.min(PocketConfig.oreScannerRadius.length - 1, level - 1)];
+        return radiusForLevel(AbilityStorage.getUpgradeLevel(player, AbilityType.ORE_SCANNER));
+    }
+
+    static int radiusForLevel(int level) {
+        int index = Math.max(0, Math.min(PocketConfig.oreScannerRadius.length - 1, level - 1));
+        return PocketConfig.oreScannerRadius[index];
     }
 
     public static int disabledMask(EntityPlayer player) {

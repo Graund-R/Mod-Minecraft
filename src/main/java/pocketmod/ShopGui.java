@@ -1,6 +1,10 @@
 package pocketmod;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.lwjgl.input.Mouse;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
@@ -11,41 +15,44 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-/** Магазин с вкладками: Движение / Время / Восприятие / Защита / Тело / Удача. */
+/** Экран магазина. */
 @SideOnly(Side.CLIENT)
 public class ShopGui extends GuiScreen {
 
     private static final int BTN_CLOSE = 0, BTN_TAKE = 1;
-    private static final int BTN_TAB = 10;       // 10..15
-    private static final int BTN_BUY = 100;      // 100..
+    private static final int BTN_PREV_TAB = 10, BTN_NEXT_TAB = 11;
+    private static final int BTN_BODY_EFFECTS = 12;
     private static final int BTN_DECOY = 150;
     private static final int BTN_SILENCE = 151;
     private static final int BTN_BUYSEL = 160;
     private static final int BTN_OPEN_WAREHOUSE = 161;
-    private static final int BTN_BLOOD = 165;   // кровосися на вкладке «Тело»
     private static final int BTN_PERM = 200;     // 200..204
     private static final int BTN_RENT = 210;     // 210..214
     private static final int BTN_STAKE = 220;    // 220..222
     private static final int BTN_DOOR_MANAGE = 232;
     private static final int BTN_MORPHISM = 233;
 
-    private static final String[] TAB_KEYS = { "move", "space", "sense", "guard", "body", "luck" };
-    private static final AbilityType[][] TAB_ABIL = {
-            { AbilityType.TELEPORT, AbilityType.FLIGHT, AbilityType.SOFTFALL, AbilityType.MAGNET, AbilityType.WAVE, AbilityType.BLOODSUCKER, AbilityType.DASH },
-            { AbilityType.POCKET, AbilityType.TOTEM, AbilityType.SLOW, AbilityType.WAREHOUSE },
-            { AbilityType.SPECTOR, AbilityType.THERMAL },
-            { AbilityType.INVISIBILITY, AbilityType.DECOY, AbilityType.SHIELD },
-            {}, {} };
+    private static ShopCatalog.Tab tab = ShopCatalog.TABS[0];
+    private static int selected = initialSelection();
+    private final Map<GuiButton, ShopCatalog.Tab> tabButtons = new HashMap<>();
+    private final Map<GuiButton, Integer> cardButtons = new HashMap<>();
+    private int tabOffset;
+    private int cardOffset;
+    private int detailScroll;
+    private int detailMaxScroll;
+    private int bodyOffset;
+    private boolean alignSelectedTab = true;
 
-    private static int tab = 0;
-    private static int selected = 0;
+    private static int initialSelection() {
+        return tab.page == ShopCatalog.Page.BODY_EFFECTS ? -1 : 0;
+    }
 
     private final EntityPlayer player;
     private int creditAmount = 0;
     private boolean dragging = false;
     private int sliderX, sliderY, sliderW, sliderH;
     private final int top = 66;
-    private int rowH = 20;
+    private static final int CARD_STEP = 22;
     private int spinTicks = 0;
     private String shownResult = "";
 
@@ -56,55 +63,119 @@ public class ShopGui extends GuiScreen {
     private EntityPlayer dataPlayer() { return player; }
 
     private AbilityType[] list() {
-        return TAB_ABIL[tab];
+        return tab.abilities;
+    }
+
+    private AbilityType selectedAbility() {
+        return selected >= 0 && selected < list().length ? list()[selected] : null;
+    }
+
+    private boolean showsBodyEffects() {
+        return tab.page == ShopCatalog.Page.BODY_EFFECTS && selected < 0;
+    }
+
+    private int visibleTabCount() {
+        return Math.min(ShopCatalog.TABS.length, Math.max(1, (width - 40) / 55));
+    }
+
+    private int cardsTop() {
+        return tab.page == ShopCatalog.Page.BODY_EFFECTS ? top + CARD_STEP : top;
+    }
+
+    private int contentBottom() {
+        return height - 76;
+    }
+
+    private int visibleRows(int start) {
+        return Math.max(0, (contentBottom() - start) / CARD_STEP);
     }
 
     @Override
     public void initGui() {
         PocketDoorNetwork.requestState();
-        buttonList.clear();
-        int cx = width / 2;
+        rebuildButtons();
+    }
 
-        int tw = Math.min(72, (width - 8) / 6);
-        for (int i = 0; i < 6; i++) {
-            GuiButton b = new GuiButton(BTN_TAB + i, cx - tw * 3 + i * tw, 2, tw - 2, 16, Tr.format("pocketmod.tab." + TAB_KEYS[i]));
-            b.enabled = i != tab;
-            buttonList.add(b);
+    private void rebuildButtons() {
+        buttonList.clear();
+        tabButtons.clear();
+        cardButtons.clear();
+        int cx = width / 2;
+        int count = visibleTabCount();
+        int maxTabOffset = ShopCatalog.TABS.length - count;
+        if (alignSelectedTab) {
+            for (int i = 0; i < ShopCatalog.TABS.length; i++) {
+                if (ShopCatalog.TABS[i] == tab) {
+                    tabOffset = Math.max(0, i - count + 1);
+                    break;
+                }
+            }
+            alignSelectedTab = false;
+        }
+        tabOffset = Math.min(tabOffset, maxTabOffset);
+        int tw = Math.min(84, (width - 40) / count);
+        int startX = cx - count * tw / 2;
+        for (int i = 0; i < count; i++) {
+            ShopCatalog.Tab item = ShopCatalog.TABS[tabOffset + i];
+            GuiButton button = new GuiButton(-1, startX + i * tw, 2, tw - 2, 16,
+                    Tr.format("pocketmod.tab." + item.id));
+            button.enabled = item != tab;
+            tabButtons.put(button, item);
+            buttonList.add(button);
+        }
+        if (maxTabOffset > 0) {
+            GuiButton previous = new GuiButton(BTN_PREV_TAB, startX - 17, 2, 16, 16, "<");
+            previous.enabled = tabOffset > 0;
+            buttonList.add(previous);
+            GuiButton next = new GuiButton(BTN_NEXT_TAB, startX + count * tw, 2, 16, 16, ">");
+            next.enabled = tabOffset < maxTabOffset;
+            buttonList.add(next);
         }
 
-        rowH = Math.max(14, Math.min(20, (height - 80 - top) / 7));
-        int bx = cx + 10;
-        if (tab <= 3) {
-            AbilityType[] l = list();
-            if (selected >= l.length) selected = 0;
-            for (int i = 0; i < l.length; i++) {
-                buttonList.add(new GuiButton(BTN_BUY + i, 8, top + i * 22, LIST_W, 20, cardLabel(l[i], i == selected)));
+        int px = panelX();
+        int pw = width - px - 8;
+        if (tab.page == ShopCatalog.Page.BODY_EFFECTS) {
+            GuiButton effects = new GuiButton(BTN_BODY_EFFECTS, 8, top, listWidth(), 20,
+                    Tr.format("pocketmod.gui.body_effects"));
+            effects.enabled = !showsBodyEffects();
+            buttonList.add(effects);
+        }
+        int visibleCards = visibleRows(cardsTop());
+        cardOffset = Math.min(cardOffset, Math.max(0, list().length - visibleCards));
+        for (int i = cardOffset; i < Math.min(list().length, cardOffset + visibleCards); i++) {
+            GuiButton button = new GuiButton(-1, 8, cardsTop() + (i - cardOffset) * CARD_STEP,
+                    listWidth(), 20, cardLabel(list()[i], i == selected));
+            cardButtons.put(button, i);
+            buttonList.add(button);
+        }
+
+        AbilityType ability = selectedAbility();
+        if (ability != null) {
+            int buyWidth = pw / 2 - 2;
+            int actionX = px + pw / 2;
+            int y = contentBottom() + 3;
+            buttonList.add(new GuiButton(BTN_BUYSEL, px, y, buyWidth, 20, buyLabel(ability)));
+            if (ability == AbilityType.WAREHOUSE) {
+                buttonList.add(new GuiButton(BTN_OPEN_WAREHOUSE, actionX, y, buyWidth, 20, Tr.format("pocketmod.gui.warehouse_open")));
+            } else if (ability == AbilityType.POCKET) {
+                buttonList.add(new GuiButton(BTN_DOOR_MANAGE, actionX, y, buyWidth, 20,
+                        Tr.format("pocketmod.gui.pocket_doors")));
+            } else if (ability == AbilityType.DECOY) {
+                buttonList.add(new GuiButton(BTN_DECOY, actionX, y, buyWidth, 20, decoyLabel()));
+            } else if (ability == AbilityType.TELEPORT) {
+                buttonList.add(new GuiButton(BTN_SILENCE, actionX, y, buyWidth, 20, silenceLabel()));
             }
-            int px = panelX();
-            GuiButton buy = new GuiButton(BTN_BUYSEL, px, height - 78, 160, 20, buyLabel(l[selected]));
-            buy.enabled = true;
-            buttonList.add(buy);
-            if (l[selected] == AbilityType.WAREHOUSE) {
-                buttonList.add(new GuiButton(BTN_OPEN_WAREHOUSE, px + 164, height - 78, 150, 20, Tr.format("pocketmod.gui.warehouse_open")));
+        } else if (showsBodyEffects()) {
+            int controlWidth = pw / 3 - 2;
+            int visible = visibleRows(top + CARD_STEP);
+            bodyOffset = Math.min(bodyOffset, Math.max(0, BodyEffects.IDS.length - visible));
+            buttonList.add(new GuiButton(BTN_MORPHISM, px, top, pw, 20, morphismLabel()));
+            for (int i = bodyOffset; i < Math.min(BodyEffects.IDS.length, bodyOffset + visible); i++) {
+                int y = top + (i - bodyOffset + 1) * CARD_STEP;
+                buttonList.add(new GuiButton(BTN_PERM + i, px + pw / 3, y, controlWidth, 20, permLabel(i)));
+                buttonList.add(new GuiButton(BTN_RENT + i, px + 2 * pw / 3, y, controlWidth, 20, rentLabel(i)));
             }
-            if (tab == 1) {
-                buttonList.add(new GuiButton(BTN_DOOR_MANAGE, px, top - 22, 256, 18,
-                        "Управление карманными дверями"));
-            }
-            if (l[selected] == AbilityType.DECOY) {
-                buttonList.add(new GuiButton(BTN_DECOY, px + 156, height - 66, 120, 18, decoyLabel()));
-            } else if (l[selected] == AbilityType.TELEPORT) {
-                buttonList.add(new GuiButton(BTN_SILENCE, px + 156, height - 66, 120, 18, silenceLabel()));
-            }
-        } else if (tab == 4) {
-            buttonList.add(new GuiButton(BTN_MORPHISM, bx, top - 22, 196, 18, morphismLabel()));
-            // только эффекты тела — без наложений
-            for (int i = 0; i < BodyEffects.IDS.length; i++) {
-                int ry = top + i * rowH;
-                buttonList.add(new GuiButton(BTN_PERM + i, bx, ry, 90, rowH - 2, permLabel(i)));
-                buttonList.add(new GuiButton(BTN_RENT + i, bx + 94, ry, 96, rowH - 2, rentLabel(i)));
-            }
-        } else {
+        } else if (tab.page == ShopCatalog.Page.LOOT) {
             for (int i = 0; i < 3; i++) {
                 int w = 90;
                 buttonList.add(new GuiButton(BTN_STAKE + i, cx - 140 + i * (w + 4), top, w, 18, stakeLabel(i)));
@@ -132,7 +203,7 @@ public class ShopGui extends GuiScreen {
 
     private String buyLabel(AbilityType t) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         if (lvl >= t.maxLevel) return Tr.format("pocketmod.gui.max");
         int cost = t.costForNextLevel(lvl);
         if (cost < 0) return "-";
@@ -141,15 +212,17 @@ public class ShopGui extends GuiScreen {
         return (Mana.get(dp) < real ? TextFormatting.RED.toString() : "") + s;
     }
 
-    private static final int LIST_W = 150;
+    private int listWidth() {
+        return Math.min(150, width / 3);
+    }
 
     private int panelX() {
-        return 8 + LIST_W + 10;
+        return 18 + listWidth();
     }
 
     private String cardLabel(AbilityType t, boolean sel) {
         EntityPlayer dp = dataPlayer();
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         String st = lvl == 0 ? TextFormatting.DARK_GRAY + "· " + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + "· L" + lvl + "/" + t.maxLevel;
         String name = (sel ? TextFormatting.GOLD : TextFormatting.WHITE) + Tr.format(t.titleKey());
@@ -165,8 +238,6 @@ public class ShopGui extends GuiScreen {
     private static final int COL_PANEL_EDGE = 0xFF2A3340;
     private static final int COL_ACCENT = 0xFFE0A040;
     private static final int COL_ACCENT_DIM = 0xFF8A6030;
-    private static final int COL_ROW = 0xAA151A22;
-    private static final int COL_ROW_SEL = 0xCC243044;
     private static final int COL_OK = 0xFF6BCB77;
     private static final int COL_MUTED = 0xFF8A93A0;
 
@@ -176,10 +247,6 @@ public class ShopGui extends GuiScreen {
         Gui.drawRect(x1, y2 - 1, x2, y2, edge);
         Gui.drawRect(x1, y1, x1 + 1, y2, edge);
         Gui.drawRect(x2 - 1, y1, x2, y2, edge);
-    }
-
-    private void drawAccentBar(int x, int y, int h) {
-        Gui.drawRect(x, y, x + 3, y + h, COL_ACCENT);
     }
 
     private void drawManaChip(EntityPlayer dp, int cx, int y) {
@@ -199,46 +266,60 @@ public class ShopGui extends GuiScreen {
     }
 
     private void drawAbilityPanel(EntityPlayer dp) {
-        AbilityType t = list()[Math.min(selected, list().length - 1)];
+        AbilityType t = selectedAbility();
         int x = panelX();
         int w = Math.max(80, width - x - 10);
         int y0 = top - 4;
-        int y1 = height - 72;
+        int y1 = contentBottom();
         drawFrame(x - 6, y0, x + w + 4, y1, COL_PANEL, COL_PANEL_EDGE);
         Gui.drawRect(x - 6, y0, x + w + 4, y0 + 2, COL_ACCENT_DIM);
 
         int y = top;
         fontRenderer.drawStringWithShadow(Tr.format(t.titleKey()), x, y, COL_ACCENT);
-        int lvl = AbilityStorage.getLevel(dp, t);
+        int lvl = AbilityStorage.getUpgradeLevel(dp, t);
         String badge = lvl == 0
                 ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
         fontRenderer.drawStringWithShadow(badge, x + w - fontRenderer.getStringWidth(badge), y, 0xFFFFFF);
         y += 14;
         Gui.drawRect(x, y, x + w, y + 1, COL_PANEL_EDGE);
-        y += 6;
+        int textTop = y + 6;
+        int textBottom = y1 - 4;
+        y = textTop - detailScroll;
 
         for (Object o : fontRenderer.listFormattedStringToWidth(ShopInfo.desc(t), w)) {
-            fontRenderer.drawStringWithShadow((String) o, x, y, 0xC8CDD5);
+            drawDetailLine((String) o, x, y, textTop, textBottom, 0xC8CDD5);
             y += 10;
         }
         y += 4;
         for (Object o : fontRenderer.listFormattedStringToWidth(
                 TextFormatting.AQUA + Tr.format("pocketmod.gui.key_line", ShopInfo.keys(t)), w)) {
-            fontRenderer.drawStringWithShadow((String) o, x, y, 0x7EC8E3);
+            drawDetailLine((String) o, x, y, textTop, textBottom, 0x7EC8E3);
             y += 10;
         }
         y += 8;
-        fontRenderer.drawStringWithShadow(TextFormatting.YELLOW + "——", x, y, COL_MUTED);
-        y += 12;
+
+        if (lvl > 0 && lvl < t.maxLevel) {
+            java.util.List<String> changes = ShopInfo.levelChanges(t, lvl, dp);
+            if (!changes.isEmpty()) {
+                drawDetailLine(Tr.format("pocketmod.gui.next_level_changes", lvl + 1),
+                        x, y, textTop, textBottom, COL_ACCENT);
+                y += 12;
+                for (String change : changes) {
+                    for (String line : fontRenderer.listFormattedStringToWidth(change, w)) {
+                        drawDetailLine(line, x, y, textTop, textBottom, 0xFFE8C070);
+                        y += 10;
+                    }
+                }
+                y += 6;
+            }
+        }
 
         for (int L = 1; L <= t.maxLevel; L++) {
             int cost = t.costForNextLevel(L - 1);
             String text;
             int color;
-            int rowY = y - 1;
             if (L <= lvl) {
-                Gui.drawRect(x - 2, rowY, x + w, rowY + 11, 0x33204030);
                 text = Tr.format("pocketmod.gui.lvl_done", L, ShopInfo.level(t, L));
                 color = COL_OK;
             } else {
@@ -246,16 +327,29 @@ public class ShopGui extends GuiScreen {
                 String pr = String.valueOf((int) Math.ceil(real));
                 text = Tr.format(L == lvl + 1 ? "pocketmod.gui.lvl_next" : "pocketmod.gui.lvl_later", L, pr, ShopInfo.level(t, L));
                 color = L == lvl + 1 ? 0xFFE8C070 : COL_MUTED;
-                if (L == lvl + 1) {
-                    Gui.drawRect(x - 2, rowY, x + w, rowY + 11, 0x33403020);
-                }
             }
             for (Object o : fontRenderer.listFormattedStringToWidth(text, w)) {
-                fontRenderer.drawStringWithShadow((String) o, x, y, color);
+                drawDetailLine((String) o, x, y, textTop, textBottom, color);
                 y += 10;
             }
             y += 3;
         }
+        detailMaxScroll = Math.max(0, y + detailScroll - textBottom);
+        detailScroll = Math.min(detailScroll, detailMaxScroll);
+        drawScrollIndicator(x + w + 1, textTop, textBottom, detailScroll, detailMaxScroll);
+    }
+
+    private void drawDetailLine(String text, int x, int y, int start, int end, int color) {
+        if (y >= start && y + fontRenderer.FONT_HEIGHT <= end) {
+            fontRenderer.drawStringWithShadow(text, x, y, color);
+        }
+    }
+
+    private void drawScrollIndicator(int x, int start, int end, int offset, int maxOffset) {
+        if (maxOffset <= 0 || end <= start + 8) return;
+        int y = start + (end - start - 8) * offset / maxOffset;
+        Gui.drawRect(x, start, x + 2, end, COL_PANEL_EDGE);
+        Gui.drawRect(x, y, x + 2, y + 8, COL_ACCENT);
     }
 
     private String decoyLabel() {
@@ -349,44 +443,31 @@ public class ShopGui extends GuiScreen {
             }
         }
 
-        // подложка вкладок
-        int tw = Math.min(72, (width - 8) / 6);
-        int tabY = 2;
-        for (int i = 0; i < 6; i++) {
-            int tx = cx - tw * 3 + i * tw;
-            if (i == tab) {
-                Gui.drawRect(tx, tabY, tx + tw - 2, tabY + 18, 0xCC2A2218);
-                Gui.drawRect(tx, tabY + 16, tx + tw - 2, tabY + 18, COL_ACCENT);
-            } else {
-                Gui.drawRect(tx, tabY, tx + tw - 2, tabY + 16, 0x66101820);
+        for (Map.Entry<GuiButton, ShopCatalog.Tab> entry : tabButtons.entrySet()) {
+            GuiButton button = entry.getKey();
+            if (entry.getValue() == tab) {
+                Gui.drawRect(button.x, 18, button.x + button.width, 20, COL_ACCENT);
             }
         }
 
-        int lx = 8;
-        if (tab <= 3) {
-            // список способностей слева
-            int listH = list().length * 22 + 8;
-            drawFrame(4, top - 6, 8 + LIST_W + 4, top - 6 + listH, COL_PANEL, COL_PANEL_EDGE);
-            AbilityType[] l = list();
-            for (int i = 0; i < l.length; i++) {
-                int ry = top + i * 22;
-                if (i == selected) {
-                    Gui.drawRect(6, ry, 6 + LIST_W, ry + 20, COL_ROW_SEL);
-                    drawAccentBar(6, ry, 20);
-                } else {
-                    Gui.drawRect(6, ry, 6 + LIST_W, ry + 20, COL_ROW);
-                }
-            }
+        drawScrollIndicator(8 + listWidth(), cardsTop(), contentBottom(),
+                cardOffset, list().length - visibleRows(cardsTop()));
+        if (selectedAbility() != null) {
             drawAbilityPanel(dp);
-        } else if (tab == 4) {
-            drawFrame(4, top - 6, width - 4, height - 72, COL_PANEL, COL_PANEL_EDGE);
-            for (int i = 0; i < BodyEffects.IDS.length; i++) {
-                int y = top + i * rowH;
+        } else if (showsBodyEffects()) {
+            int px = panelX();
+            drawFrame(px - 4, top - 4, width - 4, contentBottom(), COL_PANEL, COL_PANEL_EDGE);
+            int visible = visibleRows(top + CARD_STEP);
+            for (int i = bodyOffset; i < Math.min(BodyEffects.IDS.length, bodyOffset + visible); i++) {
+                int y = top + (i - bodyOffset + 1) * CARD_STEP;
                 int have = BodyEffects.perm(dp, i);
-                String st = have > 0 ? TextFormatting.GREEN + " x" + have : "";
-                fontRenderer.drawStringWithShadow(Tr.format("pocketmod.body." + BodyEffects.IDS[i]) + st, lx + 6, y + (rowH - 10) / 2, 0xE8ECF0);
+                String status = have > 0 ? TextFormatting.GREEN + " x" + have : "";
+                fontRenderer.drawStringWithShadow(Tr.format("pocketmod.body." + BodyEffects.IDS[i]) + status,
+                        px, y + 6, 0xE8ECF0);
             }
-        } else {
+            drawScrollIndicator(width - 7, top + CARD_STEP, contentBottom(),
+                    bodyOffset, BodyEffects.IDS.length - visible);
+        } else if (tab.page == ShopCatalog.Page.LOOT) {
             drawFrame(4, top - 6, width - 4, height - 72, COL_PANEL, COL_PANEL_EDGE);
             drawLoot(dp, cx);
         }
@@ -434,6 +515,28 @@ public class ShopGui extends GuiScreen {
     }
 
     @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int wheel = Mouse.getEventDWheel();
+        if (wheel == 0) return;
+        int x = Mouse.getEventX() * width / mc.displayWidth;
+        int y = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        if (y < top || y >= contentBottom()) return;
+        int direction = wheel > 0 ? -1 : 1;
+        if (x < panelX()) {
+            cardOffset = Math.max(0, Math.min(cardOffset + direction,
+                    list().length - visibleRows(cardsTop())));
+            rebuildButtons();
+        } else if (showsBodyEffects()) {
+            bodyOffset = Math.max(0, Math.min(bodyOffset + direction,
+                    BodyEffects.IDS.length - visibleRows(top + CARD_STEP)));
+            rebuildButtons();
+        } else {
+            detailScroll = Math.max(0, Math.min(detailScroll + direction * 16, detailMaxScroll));
+        }
+    }
+
+    @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (mouseButton == 0 && inSlider(mouseX, mouseY) && !Mana.hasCredit(dataPlayer())) {
@@ -471,11 +574,25 @@ public class ShopGui extends GuiScreen {
             else PocketDoorNetwork.upgradeAbility(AbilityType.MORPHISM);
             return;
         }
-        if (button.id >= BTN_TAB && button.id < BTN_TAB + 6) {
-            tab = button.id - BTN_TAB; selected = 0; initGui(); return;
+        if (button.id == BTN_PREV_TAB || button.id == BTN_NEXT_TAB) {
+            tabOffset += button.id == BTN_PREV_TAB ? -1 : 1;
+            rebuildButtons();
+            return;
         }
-        if (button.id >= BTN_BUY && button.id < BTN_BUY + 10 && tab <= 3) {
-            selected = button.id - BTN_BUY; initGui(); return;
+        ShopCatalog.Tab targetTab = tabButtons.get(button);
+        if (targetTab != null) {
+            tab = targetTab;
+            selected = initialSelection();
+            cardOffset = bodyOffset = detailScroll = 0;
+            rebuildButtons();
+            return;
+        }
+        Integer targetCard = cardButtons.get(button);
+        if (targetCard != null || button.id == BTN_BODY_EFFECTS) {
+            selected = targetCard != null ? targetCard : -1;
+            detailScroll = 0;
+            rebuildButtons();
+            return;
         }
         if (button.id == BTN_TAKE) {
             if (!Mana.hasCredit(dataPlayer())) NetworkHandler.action(NetAction.TAKE_CREDIT, 0, 0, creditAmount, "");
@@ -483,10 +600,9 @@ public class ShopGui extends GuiScreen {
         }
         if (button.id == BTN_DECOY) { NetworkHandler.action(NetAction.TOGGLE_DECOY, 0, 0, 0, ""); return; }
         if (button.id == BTN_SILENCE) { NetworkHandler.action(NetAction.TOGGLE_SILENCE, 0, 0, 0, ""); return; }
-        if (button.id == BTN_BLOOD) { NetworkHandler.action(NetAction.UPGRADE_BLOODSUCKER, 0, 0, 0, ""); return; }
-        if (button.id == BTN_BUYSEL && tab <= 3) {
-            AbilityType[] abilities = list();
-            if (abilities.length > 0) NetworkHandler.action(NetAction.UPGRADE_ABILITY, abilities[Math.min(selected, abilities.length - 1)].ordinal(), 0, 0, "");
+        if (button.id == BTN_BUYSEL) {
+            AbilityType ability = selectedAbility();
+            if (ability != null) NetworkHandler.action(NetAction.UPGRADE_ABILITY, ability.ordinal(), 0, 0, "");
             return;
         }
         if (button.id >= BTN_PERM && button.id < BTN_PERM + BodyEffects.IDS.length) {
@@ -519,8 +635,8 @@ public class ShopGui extends GuiScreen {
             }
         }
         for (GuiButton b : buttonList) {
-            if (b.id >= BTN_BUY && b.id < BTN_BUY + 10 && tab <= 3) {
-                int idx = b.id - BTN_BUY;
+            Integer idx = cardButtons.get(b);
+            if (idx != null) {
                 b.displayString = cardLabel(list()[idx], idx == selected);
             } else if (b.id == BTN_MORPHISM) {
                 b.displayString = morphismLabel();
@@ -532,7 +648,7 @@ public class ShopGui extends GuiScreen {
                     b.displayString = "-";
                 } else {
                     AbilityType t = lst[Math.min(selected, lst.length - 1)];
-                    int lvl = AbilityStorage.getLevel(dp, t);
+                    int lvl = AbilityStorage.getUpgradeLevel(dp, t);
                     int cost = t.costForNextLevel(lvl);
                     b.displayString = buyLabel(t);
                     // активна пока не MAX; нехватка маны не блокирует клик (сообщение при покупке)

@@ -63,7 +63,10 @@ public class Totems {
 
     // ===== Уровни улучшений =====
     public static int maxSlots(EntityPlayer p) {
-        int lvl = AbilityStorage.getLevel(p, AbilityType.TOTEM);
+        return slotsForLevel(AbilityStorage.getLevel(p, AbilityType.TOTEM));
+    }
+
+    static int slotsForLevel(int lvl) {
         if (lvl >= 3) return PocketConfig.totemSlots3;
         if (lvl == 2) return PocketConfig.totemSlots2;
         if (lvl == 1) return PocketConfig.totemSlots1;
@@ -71,7 +74,10 @@ public class Totems {
     }
 
     public static double discount(EntityPlayer p) {
-        int lvl = AbilityStorage.getLevel(p, AbilityType.TOTEM);
+        return discountForLevel(AbilityStorage.getLevel(p, AbilityType.TOTEM));
+    }
+
+    static double discountForLevel(int lvl) {
         if (lvl >= 3) return PocketConfig.totemDiscount3;
         if (lvl == 2) return PocketConfig.totemDiscount2;
         return 0.0;

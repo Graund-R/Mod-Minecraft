@@ -31,9 +31,15 @@ public class SoftFall {
     }
 
     public static double drainPerSec(EntityPlayer p) {
-        double d = PocketConfig.softFallDrain;
-        if (AbilityStorage.getLevel(p, AbilityType.SOFTFALL) >= 2) d *= PocketConfig.softFallL2Factor;
-        return d * Mana.getPriceMultiplier(p);
+        return baseDrainForLevel(AbilityStorage.getLevel(p, AbilityType.SOFTFALL)) * Mana.getPriceMultiplier(p);
+    }
+
+    static double baseDrainForLevel(int level) {
+        return PocketConfig.softFallDrain * (level >= 2 ? PocketConfig.softFallL2Factor : 1.0);
+    }
+
+    static float thresholdForLevel(int level) {
+        return level >= 2 ? PocketConfig.softFallMinDistL2 : PocketConfig.softFallMinDist;
     }
 
     private static boolean falling(EntityPlayerMP p) {
@@ -97,8 +103,7 @@ public class SoftFall {
             if (act) setActive(p, false);
             return;
         }
-        float minDist = AbilityStorage.getLevel(p, AbilityType.SOFTFALL) >= 2
-                ? PocketConfig.softFallMinDistL2 : PocketConfig.softFallMinDist;
+        float minDist = thresholdForLevel(AbilityStorage.getLevel(p, AbilityType.SOFTFALL));
         if (!act && mode != 2 && p.fallDistance < minDist) return;
         if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
             if (act) {

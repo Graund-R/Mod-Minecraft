@@ -83,36 +83,60 @@ public final class Dash {
         return Math.max(1, Math.min(AbilityType.DASH.maxLevel, AbilityStorage.getLevel(p, AbilityType.DASH)));
     }
 
-    private static double pick(double[] a, EntityPlayer p) {
-        return a[Math.min(a.length - 1, level(p) - 1)];
+    private static double pick(double[] values, int level) {
+        return values[Math.min(values.length, Math.max(1, level)) - 1];
     }
 
     public static double speed(EntityPlayer p) {
-        return Math.max(0.2, pick(PocketConfig.dashSpeed, p));
+        return speed(level(p));
+    }
+
+    static double speed(int level) {
+        return Math.max(0.2, pick(PocketConfig.dashSpeed, level));
     }
 
     public static int ticks(EntityPlayer p) {
-        return Math.max(1, (int) Math.round(pick(PocketConfig.dashTicks, p)));
+        return ticks(level(p));
+    }
+
+    static int ticks(int level) {
+        return Math.max(1, (int) Math.round(pick(PocketConfig.dashTicks, level)));
     }
 
     public static double distance(EntityPlayer p) {
-        return speed(p) * ticks(p);
+        return distance(level(p));
+    }
+
+    static double distance(int level) {
+        return speed(level) * ticks(level);
     }
 
     public static double cost(EntityPlayer p) {
-        return pick(PocketConfig.dashCost, p);
+        return cost(level(p));
+    }
+
+    static double cost(int level) {
+        return pick(PocketConfig.dashCost, level);
     }
 
     public static int chargesMax(EntityPlayer p) {
-        return Math.max(1, (int) Math.round(pick(PocketConfig.dashCharges, p)));
+        return chargesMax(level(p));
+    }
+
+    static int chargesMax(int level) {
+        return Math.max(1, (int) Math.round(pick(PocketConfig.dashCharges, level)));
     }
 
     public static double rechargeSec(EntityPlayer p) {
-        return pick(PocketConfig.dashRechargeSec, p);
+        return pick(PocketConfig.dashRechargeSec, level(p));
     }
 
     public static double damage(EntityPlayer p) {
-        return pick(PocketConfig.dashDamage, p);
+        return damage(level(p));
+    }
+
+    static double damage(int level) {
+        return pick(PocketConfig.dashDamage, level);
     }
 
     private static int maxCharges(EntityPlayer p) {
@@ -120,7 +144,24 @@ public final class Dash {
     }
 
     private static int rechargeTicks(EntityPlayer p) {
-        return Math.max(1, (int) Math.round(rechargeSec(p) * 20.0));
+        return rechargeTicks(level(p));
+    }
+
+    static int rechargeTicks(int level) {
+        return Math.max(1, (int) Math.round(pick(PocketConfig.dashRechargeSec, level) * 20.0));
+    }
+
+    static int reflectionTicks(int level) {
+        int configured = (int) Math.round(pick(PocketConfig.dashReflectTicks, level));
+        return Math.max(0, Math.min(configured, ticks(level) + 3));
+    }
+
+    static int graceTicks(int level) {
+        return Math.max(0, (int) Math.round(pick(PocketConfig.dashGraceTicks, level)));
+    }
+
+    static boolean refundsCharge(int level) {
+        return damage(level) > 0.0 && pick(PocketConfig.dashRefund, level) >= 1.0;
     }
 
     /** Текущее число зарядов с учётом восстановления. */
@@ -230,7 +271,7 @@ public final class Dash {
                 t.attackEntityFrom(DamageSource.causePlayerDamage(p), (float) dmg);
                 t.knockBack(p, 0.9F, -dx, -dz);
                 // высший уровень: каждый сбитый враг возвращает заряд
-                if (pick(PocketConfig.dashRefund, p) >= 1.0) {
+                if (refundsCharge(level(p))) {
                     int max = maxCharges(p);
                     long now = p.world.getTotalWorldTime();
                     e.setInteger(CHARGES, Math.min(max, charges(p, now) + 1));
@@ -238,7 +279,7 @@ public final class Dash {
             }
         }
 
-        int reflect = (int) Math.round(pick(PocketConfig.dashReflectTicks, p));
+        int reflect = reflectionTicks(level(p));
         if (reflect > 0 && st.age <= reflect) {
             AxisAlignedBB rb = p.getEntityBoundingBox().grow(2.5);
             for (Entity pr : p.world.getEntitiesWithinAABB(Entity.class, rb)) {
@@ -264,7 +305,7 @@ public final class Dash {
         if (st.age > dashTicks + 2) {
             ACTIVE.remove(p.getUniqueID());
             // короткая неуязвимость после рывка (с 3 уровня), чтобы выйти из схватки
-            int grace = (int) Math.round(pick(PocketConfig.dashGraceTicks, p));
+            int grace = graceTicks(level(p));
             if (grace > 0) e.setLong(GRACE_UNTIL, p.world.getTotalWorldTime() + grace);
         }
     }

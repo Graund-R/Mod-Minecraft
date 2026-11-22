@@ -89,9 +89,7 @@ public class Shield {
         if (s.canHarmInCreative()) return;
         float dmg = e.getAmount();
         if (dmg <= 0f) return;
-        double per = PocketConfig.shieldManaPerDamage;
-        if (AbilityStorage.getLevel(p, AbilityType.SHIELD) >= 2) per *= PocketConfig.shieldL2Factor;
-        double cost = dmg * per * Mana.getPriceMultiplier(p);
+        double cost = dmg * manaPerDamage(AbilityStorage.getLevel(p, AbilityType.SHIELD)) * Mana.getPriceMultiplier(p);
         WorldServer ws = (WorldServer) p.world;
         if (Mana.spend(p, cost)) {
             e.setCanceled(true);
@@ -101,5 +99,8 @@ public class Shield {
             off(p);
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.shield_broke"), true);
         }
+    }
+    static double manaPerDamage(int level) {
+        return PocketConfig.shieldManaPerDamage * (level >= 2 ? PocketConfig.shieldL2Factor : 1.0);
     }
 }

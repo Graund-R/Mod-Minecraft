@@ -13,7 +13,10 @@ import net.minecraft.util.math.AxisAlignedBB;
 public class Magnet {
 
     public static double radius(EntityPlayerMP p) {
-        int lvl = AbilityStorage.getLevel(p, AbilityType.MAGNET);
+        return radiusForLevel(AbilityStorage.getLevel(p, AbilityType.MAGNET));
+    }
+
+    static double radiusForLevel(int lvl) {
         if (lvl >= 2) return PocketConfig.magnetRadius2;
         if (lvl >= 1) return PocketConfig.magnetRadius1;
         return 0.0;

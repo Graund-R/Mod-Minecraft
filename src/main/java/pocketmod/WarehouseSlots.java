@@ -8,7 +8,11 @@ public final class WarehouseSlots {
     private WarehouseSlots() {}
 
     public static int slots(net.minecraft.entity.player.EntityPlayer p) {
-        return Math.max(0, Math.min(3, AbilityStorage.getLevel(p, AbilityType.WAREHOUSE)));
+        return slotsForLevel(AbilityStorage.getLevel(p, AbilityType.WAREHOUSE));
+    }
+
+    static int slotsForLevel(int level) {
+        return Math.max(0, Math.min(3, level));
     }
 
     /** flags: бит 0 — правая кнопка, бит 1 — Shift. */
