@@ -118,7 +118,20 @@ public class ShopInfo {
         }
     }
 
-    static List<String> dashChanges(int current, double multiplier) {
+    static List<String> levelChanges(AbilityType ability, int current, double multiplier) {
+        if (ability == AbilityType.DASH) return dashChanges(current, multiplier);
+        if (ability == AbilityType.ORE_SCANNER) {
+            int before = OreScanner.radiusForLevel(current);
+            int after = OreScanner.radiusForLevel(current + 1);
+            if (before != after) {
+                return java.util.Collections.singletonList(
+                        Tr.format("pocketmod.info.scanner.change.radius", before, after));
+            }
+        }
+        return java.util.Collections.emptyList();
+    }
+
+    private static List<String> dashChanges(int current, double multiplier) {
         List<String> lines = new ArrayList<>();
         int next = current + 1;
         addChange(lines, "distance", Dash.distance(current), Dash.distance(next));

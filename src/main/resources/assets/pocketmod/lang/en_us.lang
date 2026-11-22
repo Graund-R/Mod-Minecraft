@@ -604,3 +604,4 @@ pocketmod.info.dash.change.damage=Damage: %s → %s
 pocketmod.info.dash.change.reflect=Projectile reflection (s): %s → %s
 pocketmod.info.dash.change.grace=Protection after the dash (s): %s → %s
 pocketmod.info.dash.change.refund=Charge refund per enemy hit: %s → %s
+pocketmod.info.scanner.change.radius=Radius: %s → %s blocks

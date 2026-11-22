@@ -604,3 +604,4 @@ pocketmod.info.dash.change.damage=Урон: %s → %s
 pocketmod.info.dash.change.reflect=Отражение снарядов (с): %s → %s
 pocketmod.info.dash.change.grace=Защита после рывка (с): %s → %s
 pocketmod.info.dash.change.refund=Возврат заряда за задетого врага: %s → %s
+pocketmod.info.scanner.change.radius=Радиус: %s → %s бл.

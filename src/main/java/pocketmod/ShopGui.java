@@ -299,8 +299,8 @@ public class ShopGui extends GuiScreen {
         }
         y += 8;
 
-        if (t == AbilityType.DASH && lvl > 0 && lvl < t.maxLevel) {
-            java.util.List<String> changes = ShopInfo.dashChanges(lvl, Mana.getPriceMultiplier(dp));
+        if (lvl > 0 && lvl < t.maxLevel) {
+            java.util.List<String> changes = ShopInfo.levelChanges(t, lvl, Mana.getPriceMultiplier(dp));
             if (!changes.isEmpty()) {
                 drawDetailLine(Tr.format("pocketmod.gui.next_level_changes", lvl + 1),
                         x, y, textTop, textBottom, COL_ACCENT);
