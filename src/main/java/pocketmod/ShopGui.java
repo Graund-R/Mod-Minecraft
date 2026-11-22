@@ -299,6 +299,22 @@ public class ShopGui extends GuiScreen {
         }
         y += 8;
 
+        if (t == AbilityType.DASH && lvl > 0 && lvl < t.maxLevel) {
+            java.util.List<String> changes = ShopInfo.dashChanges(lvl, Mana.getPriceMultiplier(dp));
+            if (!changes.isEmpty()) {
+                drawDetailLine(Tr.format("pocketmod.gui.next_level_changes", lvl + 1),
+                        x, y, textTop, textBottom, COL_ACCENT);
+                y += 12;
+                for (String change : changes) {
+                    for (String line : fontRenderer.listFormattedStringToWidth(change, w)) {
+                        drawDetailLine(line, x, y, textTop, textBottom, 0xFFE8C070);
+                        y += 10;
+                    }
+                }
+                y += 6;
+            }
+        }
+
         for (int L = 1; L <= t.maxLevel; L++) {
             int cost = t.costForNextLevel(L - 1);
             String text;

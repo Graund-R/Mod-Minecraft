@@ -1,5 +1,8 @@
 package pocketmod;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -100,16 +103,10 @@ public class ShopInfo {
             case WAREHOUSE:
                 return Tr.format(k, lvl);
             case DASH:
-            {
-                int i = Math.max(0, Math.min(PocketConfig.dashCost.length - 1, lvl - 1));
-                double secs = Math.round(PocketConfig.dashTicks[Math.min(PocketConfig.dashTicks.length - 1, i)]) / 20.0;
-                double dist = PocketConfig.dashSpeed[Math.min(PocketConfig.dashSpeed.length - 1, i)]
-                        * Math.round(PocketConfig.dashTicks[Math.min(PocketConfig.dashTicks.length - 1, i)]);
-                return Tr.format(k, n(dist), n(secs), n(PocketConfig.dashCost[i]),
-                        n(PocketConfig.dashCharges[Math.min(PocketConfig.dashCharges.length - 1, i)]),
-                        n(PocketConfig.dashRechargeSec[Math.min(PocketConfig.dashRechargeSec.length - 1, i)]),
-                        n(PocketConfig.dashDamage[Math.min(PocketConfig.dashDamage.length - 1, i)]));
-            }
+                return Tr.format("pocketmod.info.dash.stats", n(Dash.distance(lvl)), n(Dash.ticks(lvl) / 20.0),
+                        n(Dash.cost(lvl)), Dash.chargesMax(lvl), n(Dash.rechargeTicks(lvl) / 20.0),
+                        n(Dash.damage(lvl)), n(Dash.reflectionTicks(lvl) / 20.0),
+                        n(Dash.graceTicks(lvl) / 20.0), refundLabel(Dash.refundsCharge(lvl)));
             case WAVE: {
                 int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
                 return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),
@@ -119,5 +116,33 @@ public class ShopInfo {
             default:
                 return Tr.format(k);
         }
+    }
+
+    static List<String> dashChanges(int current, double multiplier) {
+        List<String> lines = new ArrayList<>();
+        int next = current + 1;
+        addChange(lines, "distance", Dash.distance(current), Dash.distance(next));
+        addChange(lines, "duration", Dash.ticks(current) / 20.0, Dash.ticks(next) / 20.0);
+        addChange(lines, "cost", Dash.cost(current) * multiplier, Dash.cost(next) * multiplier);
+        addChange(lines, "charges", Dash.chargesMax(current), Dash.chargesMax(next));
+        addChange(lines, "recharge", Dash.rechargeTicks(current) / 20.0, Dash.rechargeTicks(next) / 20.0);
+        addChange(lines, "damage", Dash.damage(current), Dash.damage(next));
+        addChange(lines, "reflect", Dash.reflectionTicks(current) / 20.0, Dash.reflectionTicks(next) / 20.0);
+        addChange(lines, "grace", Dash.graceTicks(current) / 20.0, Dash.graceTicks(next) / 20.0);
+        if (Dash.refundsCharge(current) != Dash.refundsCharge(next)) {
+            lines.add(Tr.format("pocketmod.info.dash.change.refund",
+                    refundLabel(Dash.refundsCharge(current)), refundLabel(Dash.refundsCharge(next))));
+        }
+        return lines;
+    }
+
+    private static void addChange(List<String> lines, String key, double current, double next) {
+        String before = n(current);
+        String after = n(next);
+        if (!before.equals(after)) lines.add(Tr.format("pocketmod.info.dash.change." + key, before, after));
+    }
+
+    private static String refundLabel(boolean refund) {
+        return Tr.format(refund ? "pocketmod.info.dash.refund_on" : "pocketmod.info.dash.refund_off");
     }
 }
