@@ -389,7 +389,7 @@ public class Abilities {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
-        int wl = Math.max(1, Math.min(AbilityType.WAVE.maxLevel, AbilityStorage.getLevel(p, AbilityType.WAVE))) - 1;
+        WaveLevel wave = new WaveLevel(AbilityStorage.getLevel(p, AbilityType.WAVE));
         long nowTick = p.world.getTotalWorldTime();
         long readyTick = p.getEntityData().getLong("pm_wave_ready");
         if (nowTick < readyTick) {
@@ -397,19 +397,13 @@ public class Abilities {
                     (int) Math.ceil((readyTick - nowTick) / 20.0)), true);
             return;
         }
-        double cost = PocketConfig.waveCost[wl] * Mana.getPriceMultiplier(p);
+        double cost = wave.manaCost * Mana.getPriceMultiplier(p);
         if (!Mana.spend(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
-        p.getEntityData().setLong("pm_wave_ready", nowTick + Math.round(PocketConfig.waveCooldown[wl] * 20.0));
-        double r = PocketConfig.waveRadius[wl];
-        float dmg = (float) PocketConfig.waveDamage[wl];
-        double knock = PocketConfig.waveKnock[wl];
-        int slowTicks = (int) Math.round(PocketConfig.waveSlowSec[wl] * 20.0);
-        int slowAmp = (int) Math.round(PocketConfig.waveSlowAmp[wl]);
-        int nauseaTicks = (int) Math.round(PocketConfig.waveNauseaSec[wl] * 20.0);
-        int weakTicks = (int) Math.round(PocketConfig.waveWeakSec[wl] * 20.0);
+        p.getEntityData().setLong("pm_wave_ready", nowTick + wave.cooldownTicks);
+        double r = wave.radius;
         AxisAlignedBB box = p.getEntityBoundingBox().grow(r, r * 0.6, r);
         List<EntityLivingBase> list = p.world.getEntitiesWithinAABB(EntityLivingBase.class, box);
         WorldServer ws = (WorldServer) p.world;
@@ -423,20 +417,20 @@ public class Abilities {
             double dz = e.posZ - p.posZ;
             double dist = Math.sqrt(dx * dx + dz * dz);
             if (dist < 0.1) dist = 0.1;
-            double str = (1.0 - Math.min(1.0, dist / r)) * knock;
+            double str = (1.0 - Math.min(1.0, dist / r)) * wave.knockback;
             e.motionX += (dx / dist) * str;
             e.motionY += 0.35 * str;
             e.motionZ += (dz / dist) * str;
             e.velocityChanged = true;
-            e.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(p), dmg);
-            if (slowTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.SLOWNESS, slowTicks, slowAmp));
+            e.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(p), wave.damage);
+            if (wave.slowTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.SLOWNESS, wave.slowTicks, wave.slowAmplifier));
             }
-            if (nauseaTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NAUSEA, nauseaTicks, 0));
+            if (wave.nauseaTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NAUSEA, wave.nauseaTicks, 0));
             }
-            if (weakTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.WEAKNESS, weakTicks, 0));
+            if (wave.weaknessTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.WEAKNESS, wave.weaknessTicks, 0));
             }
         }
         ws.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, p.posX, p.posY + 0.2, p.posZ, 1, 0.0, 0.0, 0.0, 0.0);

@@ -108,10 +108,11 @@ public class ShopInfo {
                         n(Dash.damage(lvl)), n(Dash.reflectionTicks(lvl) / 20.0),
                         n(Dash.graceTicks(lvl) / 20.0), refundLabel(Dash.refundsCharge(lvl)));
             case WAVE: {
-                int i = Math.max(0, Math.min(PocketConfig.waveRadius.length - 1, lvl - 1));
-                return Tr.format(k, n(PocketConfig.waveRadius[i]), n(PocketConfig.waveDamage[i]),
-                        n(PocketConfig.waveSlowAmp[i] + 1), n(PocketConfig.waveSlowSec[i]), n(PocketConfig.waveCost[i]),
-                        n(PocketConfig.waveCooldown[i]));
+                WaveLevel wave = new WaveLevel(lvl);
+                return Tr.format("pocketmod.info.wave.stats", n(wave.radius), n(wave.damage),
+                        n(wave.knockback), n(wave.manaCost), n(wave.cooldownTicks / 20.0),
+                        wave.slowTicks > 0 ? wave.slowAmplifier + 1 : 0, n(wave.slowTicks / 20.0),
+                        n(wave.nauseaTicks / 20.0), n(wave.weaknessTicks / 20.0));
             }
             default:
                 return Tr.format(k);
@@ -120,6 +121,7 @@ public class ShopInfo {
 
     static List<String> levelChanges(AbilityType ability, int current, double multiplier) {
         if (ability == AbilityType.DASH) return dashChanges(current, multiplier);
+        if (ability == AbilityType.WAVE) return waveChanges(current, multiplier);
         if (ability == AbilityType.ORE_SCANNER) {
             int before = OreScanner.radiusForLevel(current);
             int after = OreScanner.radiusForLevel(current + 1);
@@ -131,17 +133,34 @@ public class ShopInfo {
         return java.util.Collections.emptyList();
     }
 
+    private static List<String> waveChanges(int current, double multiplier) {
+        WaveLevel before = new WaveLevel(current);
+        WaveLevel after = new WaveLevel(current + 1);
+        List<String> lines = new ArrayList<>();
+        addChange(lines, "wave", "radius", before.radius, after.radius);
+        addChange(lines, "wave", "damage", before.damage, after.damage);
+        addChange(lines, "wave", "knockback", before.knockback, after.knockback);
+        addChange(lines, "wave", "cost", before.manaCost * multiplier, after.manaCost * multiplier);
+        addChange(lines, "wave", "cooldown", before.cooldownTicks / 20.0, after.cooldownTicks / 20.0);
+        addChange(lines, "wave", "slow_level", before.slowTicks > 0 ? before.slowAmplifier + 1 : 0,
+                after.slowTicks > 0 ? after.slowAmplifier + 1 : 0);
+        addChange(lines, "wave", "slow_time", before.slowTicks / 20.0, after.slowTicks / 20.0);
+        addChange(lines, "wave", "nausea", before.nauseaTicks / 20.0, after.nauseaTicks / 20.0);
+        addChange(lines, "wave", "weakness", before.weaknessTicks / 20.0, after.weaknessTicks / 20.0);
+        return lines;
+    }
+
     private static List<String> dashChanges(int current, double multiplier) {
         List<String> lines = new ArrayList<>();
         int next = current + 1;
-        addChange(lines, "distance", Dash.distance(current), Dash.distance(next));
-        addChange(lines, "duration", Dash.ticks(current) / 20.0, Dash.ticks(next) / 20.0);
-        addChange(lines, "cost", Dash.cost(current) * multiplier, Dash.cost(next) * multiplier);
-        addChange(lines, "charges", Dash.chargesMax(current), Dash.chargesMax(next));
-        addChange(lines, "recharge", Dash.rechargeTicks(current) / 20.0, Dash.rechargeTicks(next) / 20.0);
-        addChange(lines, "damage", Dash.damage(current), Dash.damage(next));
-        addChange(lines, "reflect", Dash.reflectionTicks(current) / 20.0, Dash.reflectionTicks(next) / 20.0);
-        addChange(lines, "grace", Dash.graceTicks(current) / 20.0, Dash.graceTicks(next) / 20.0);
+        addChange(lines, "dash", "distance", Dash.distance(current), Dash.distance(next));
+        addChange(lines, "dash", "duration", Dash.ticks(current) / 20.0, Dash.ticks(next) / 20.0);
+        addChange(lines, "dash", "cost", Dash.cost(current) * multiplier, Dash.cost(next) * multiplier);
+        addChange(lines, "dash", "charges", Dash.chargesMax(current), Dash.chargesMax(next));
+        addChange(lines, "dash", "recharge", Dash.rechargeTicks(current) / 20.0, Dash.rechargeTicks(next) / 20.0);
+        addChange(lines, "dash", "damage", Dash.damage(current), Dash.damage(next));
+        addChange(lines, "dash", "reflect", Dash.reflectionTicks(current) / 20.0, Dash.reflectionTicks(next) / 20.0);
+        addChange(lines, "dash", "grace", Dash.graceTicks(current) / 20.0, Dash.graceTicks(next) / 20.0);
         if (Dash.refundsCharge(current) != Dash.refundsCharge(next)) {
             lines.add(Tr.format("pocketmod.info.dash.change.refund",
                     refundLabel(Dash.refundsCharge(current)), refundLabel(Dash.refundsCharge(next))));
@@ -149,10 +168,10 @@ public class ShopInfo {
         return lines;
     }
 
-    private static void addChange(List<String> lines, String key, double current, double next) {
+    private static void addChange(List<String> lines, String ability, String key, double current, double next) {
         String before = n(current);
         String after = n(next);
-        if (!before.equals(after)) lines.add(Tr.format("pocketmod.info.dash.change." + key, before, after));
+        if (!before.equals(after)) lines.add(Tr.format("pocketmod.info." + ability + ".change." + key, before, after));
     }
 
     private static String refundLabel(boolean refund) {
