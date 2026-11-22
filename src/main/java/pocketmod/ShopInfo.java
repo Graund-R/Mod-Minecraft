@@ -66,9 +66,8 @@ public class ShopInfo {
             case INVISIBILITY:
                 return Tr.format(k, n(Abilities.noticeRangeFor(lvl)), n(Abilities.invisDrainFor(lvl)));
             case SLOW:
-                if (lvl == 1) return Tr.format(k, "0.25");
-                if (lvl == 2) return Tr.format(k, "0.1");
-                return Tr.format(k, n(PocketConfig.slowZeroDrain));
+                if (Abilities.minSlowFactorForLevel(lvl) == 0) return Tr.format(k, n(PocketConfig.slowZeroDrain));
+                return Tr.format(k, n(Abilities.minSlowFactorForLevel(lvl)));
             case DECOY:
                 return Tr.format(k, PocketConfig.decoyMaxSec, PocketConfig.decoyCost);
             case THERMAL:
@@ -77,9 +76,7 @@ public class ShopInfo {
                 }
                 return Tr.format(k, Thermal.radiusForLevel(lvl), n(Thermal.baseDrainForLevel(lvl)));
             case SHIELD:
-                return Tr.format(k, n(PocketConfig.shieldManaPerDamage * (lvl >= 2 ? PocketConfig.shieldL2Factor : 1.0)),
-                        n(PocketConfig.shieldUpkeepBase), n(PocketConfig.shieldUpkeepRamp),
-                        n(PocketConfig.shieldUpkeepBase * 30 + PocketConfig.shieldUpkeepRamp * 450));
+                return Tr.format(k, n(Shield.manaPerDamage(lvl)));
             case FLIGHT:
                 return Tr.format(k, Flight.heightForLevel(lvl), n(Flight.speedForLevel(lvl) / 0.05));
             case TOTEM:
@@ -89,11 +86,12 @@ public class ShopInfo {
             case MAGNET:
                 return Tr.format(k, n(Magnet.radiusForLevel(lvl)));
             case BLOODSUCKER:
-                return Tr.format(k);
+                return Tr.format("pocketmod.info.bloodsucker.stats", percent(ModEvents.bloodHealthThreshold(lvl)),
+                        percent(ModEvents.bloodHealFraction(lvl)));
             case ORE_SCANNER:
                 return Tr.format(k, OreScanner.radiusForLevel(lvl), n(PocketConfig.oreScannerDrain));
             case WAREHOUSE:
-                return Tr.format(k, lvl);
+                return Tr.format(k, WarehouseSlots.slotsForLevel(lvl));
             case DASH:
                 return Tr.format("pocketmod.info.dash.stats", n(Dash.distance(lvl)), n(Dash.ticks(lvl) / 20.0),
                         n(Dash.cost(lvl)), Dash.chargesMax(lvl), n(Dash.rechargeTicks(lvl) / 20.0),
@@ -129,6 +127,26 @@ public class ShopInfo {
         int next = current + 1;
         List<String> lines = new ArrayList<>();
         switch (ability) {
+            case SHIELD:
+                addChange(lines, "shield", "cost", Shield.manaPerDamage(current) * multiplier,
+                        Shield.manaPerDamage(next) * multiplier);
+                break;
+            case SLOW:
+                addChange(lines, "slow", "factor", Abilities.minSlowFactorForLevel(current),
+                        Abilities.minSlowFactorForLevel(next));
+                if (Abilities.minSlowFactorForLevel(next) == 0) {
+                    lines.add(Tr.format("pocketmod.info.slow.change.stop", n(PocketConfig.slowZeroDrain * multiplier)));
+                }
+                break;
+            case BLOODSUCKER:
+                addChange(lines, "bloodsucker", "threshold", percent(ModEvents.bloodHealthThreshold(current)),
+                        percent(ModEvents.bloodHealthThreshold(next)));
+                addChange(lines, "bloodsucker", "heal", percent(ModEvents.bloodHealFraction(current)),
+                        percent(ModEvents.bloodHealFraction(next)));
+                break;
+            case WAREHOUSE:
+                addChange(lines, "warehouse", "slots", WarehouseSlots.slotsForLevel(current), WarehouseSlots.slotsForLevel(next));
+                break;
             case FLIGHT:
                 addChange(lines, "flight", "height", Flight.heightForLevel(current), Flight.heightForLevel(next));
                 addChange(lines, "flight", "speed", Flight.speedForLevel(current) / 0.05,
@@ -217,6 +235,10 @@ public class ShopInfo {
                     refundLabel(Dash.refundsCharge(current)), refundLabel(Dash.refundsCharge(next))));
         }
         return lines;
+    }
+
+    private static int percent(float fraction) {
+        return Math.round(fraction * 100);
     }
 
     private static void addChange(List<String> lines, String ability, String key, double current, double next) {

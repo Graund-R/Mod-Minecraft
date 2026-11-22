@@ -238,8 +238,11 @@ public class Abilities {
 
     /** Минимальный множитель времени: 0.1, а на уровне 3 замедление доходит до полного нуля (стоп). */
     public static float minSlowFactor(EntityPlayer player) {
-        int l = AbilityStorage.getLevel(player, AbilityType.SLOW);
-        return l >= 3 ? 0.0f : l == 2 ? 0.1f : 0.25f;
+        return minSlowFactorForLevel(AbilityStorage.getLevel(player, AbilityType.SLOW));
+    }
+
+    static float minSlowFactorForLevel(int level) {
+        return level >= 3 ? 0.0f : level == 2 ? 0.1f : 0.25f;
     }
 
     public static float getSlowFactor(EntityPlayer player) {
