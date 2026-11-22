@@ -584,3 +584,5 @@ item.pocketmod.pocket_iron_key.name=Железный ключ (одноразо�
 item.pocketmod.pocket_gold_key.name=Золотой ключ
 pocketmod.msg.morph_no_pocket=В кармане превращаться нельзя
 pocketmod.msg.morph_none=У тебя ещё нет ни одного образа
+pocketmod.gui.body_effects=Эффекты тела
+pocketmod.gui.pocket_doors=Двери кармана

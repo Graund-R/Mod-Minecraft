@@ -584,3 +584,5 @@ item.pocketmod.pocket_iron_key.name=Iron Key (single use)
 item.pocketmod.pocket_gold_key.name=Gold Key
 pocketmod.msg.morph_no_pocket=You cannot morph in the pocket
 pocketmod.msg.morph_none=You have no morphs yet
+pocketmod.gui.body_effects=Body effects
+pocketmod.gui.pocket_doors=Pocket doors
