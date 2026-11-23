@@ -12,6 +12,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override public void init() {
         ClientHandler.register();
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new ExileClient());
     }
 
     @Override public void registerClientMessages() {

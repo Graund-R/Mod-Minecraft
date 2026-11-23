@@ -204,6 +204,7 @@ public class PocketConfig {
             ConfigMigrations.run(config);
         }
         Configuration cfg = config;
+        ExileConfig.load(cfg);
 
         valueIron = cfg.getInt("valueIron", "мана", 10, 0, 1000000, "Mana for one iron ingot");
         valueGold = cfg.getInt("valueGold", "мана", 30, 0, 1000000, "Mana for one gold ingot");

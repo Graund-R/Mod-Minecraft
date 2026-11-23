@@ -207,7 +207,7 @@ public final class Dash {
             return;
         }
         double cost = cost(p) * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }

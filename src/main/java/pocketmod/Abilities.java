@@ -69,7 +69,7 @@ public class Abilities {
     private static void spawnDecoy(EntityPlayerMP p) {
         if (!AbilityStorage.isUnlocked(p, AbilityType.DECOY) || !isDecoyEnabled(p)) return;
         double cost = PocketConfig.decoyCost * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.decoy_no_mana", (int) Math.ceil(cost)), true);
             return;
         }
@@ -169,7 +169,7 @@ public class Abilities {
             return;
         }
         double drain = invisDrain(player) * Mana.getPriceMultiplier(player) / 20.0;
-        if (!Mana.spend(player, drain)) {
+        if (!Mana.spendAbility(player, drain)) {
             player.getEntityData().setBoolean(KEY_INVIS, false);
             player.removePotionEffect(MobEffects.INVISIBILITY);
             player.setInvisible(false);
@@ -306,7 +306,7 @@ public class Abilities {
 
         double dist = Math.sqrt(player.getDistanceSq(land.getX() + 0.5, land.getY(), land.getZ() + 0.5));
         double cost = dist * PocketConfig.teleportCostPerBlock * Mana.getPriceMultiplier(player);
-        if (!Mana.spend(player, cost)) {
+        if (!Mana.spendAbility(player, cost)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
@@ -404,7 +404,7 @@ public class Abilities {
             return;
         }
         double cost = wave.manaCost * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }

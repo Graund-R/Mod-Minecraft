@@ -46,7 +46,7 @@ public final class ActiveAbilities {
         for (ActiveAbility a : ALL) {
             if (a.chargedByRegistry() && a.isActive(p)) {
                 double d = a.drainPerSec(p);
-                if (d > 0.0 && !Mana.spend(p, d / 20.0)) {
+                if (d > 0.0 && !Mana.spendAbility(p, d / 20.0)) {
                     a.onManaExhausted(p);
                     continue;
                 }

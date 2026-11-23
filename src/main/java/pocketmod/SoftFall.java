@@ -105,7 +105,7 @@ public class SoftFall {
         }
         float minDist = thresholdForLevel(AbilityStorage.getLevel(p, AbilityType.SOFTFALL));
         if (!act && mode != 2 && p.fallDistance < minDist) return;
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
+        if (!Mana.spendAbility(p, drainPerSec(p) / 20.0)) {
             if (act) {
                 setActive(p, false);
                 p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.softfall_empty"), true);
