@@ -36,6 +36,7 @@ public class Spector {
     }
 
     public static void start(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         if (isActive(p)) return;
         if (!AbilityStorage.isUnlocked(p, AbilityType.SPECTOR)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
@@ -114,9 +115,10 @@ public class Spector {
     }
 
     /** Фазовый шаг: тело появляется в переданных координатах духа (клиентская камера). */
-    public static void phaseStep(EntityPlayerMP p, double x, double y, double z, float yaw, float pitch) {
+    public static void phaseStep(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) return;
         try {
-            doPhaseStep(p, x, y, z, yaw, pitch);
+            doPhaseStep(p);
         } catch (Throwable t) {
             System.err.println("[PocketMod] phase step failed:");
             t.printStackTrace();
@@ -142,12 +144,25 @@ public class Spector {
         return null;
     }
 
-    private static void doPhaseStep(EntityPlayerMP p, double x, double y, double z, float yaw, float pitch) {
+    private static void doPhaseStep(EntityPlayerMP p) {
         if (!isActive(p)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_need"), true);
             return;
         }
-        if (p.world.provider.getDimension() == PocketMod.DIM_ID) {
+        // Берём позицию из серверного объекта игрока, а не из пользовательского пакета.
+        double x = p.posX, y = p.posY, z = p.posZ;
+        float yaw = p.rotationYaw, pitch = p.rotationPitch;
+        net.minecraft.util.math.BlockPos target = new net.minecraft.util.math.BlockPos(
+                net.minecraft.util.math.MathHelper.floor(x),
+                net.minecraft.util.math.MathHelper.floor(y),
+                net.minecraft.util.math.MathHelper.floor(z));
+        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
+                || y < 0.0 || y > 254.0 || !p.world.getWorldBorder().contains(target)
+                || !p.world.isBlockLoaded(target)) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_blocked"), true);
+            return;
+        }
+        if (PocketDimensionManager.isPocketDimension(p.world.provider.getDimension())) {
             PocketData pd = PocketData.get(p.world);
             net.minecraft.util.math.BlockPos f = new net.minecraft.util.math.BlockPos(
                     net.minecraft.util.math.MathHelper.floor(x),
@@ -167,15 +182,19 @@ public class Spector {
         x = spot[0];
         y = spot[1];
         z = spot[2];
-        // Подтянуть серверную позицию к камере, иначе дистанция и точка шага — старое тело.
-        p.setPositionAndRotation(x, y, z, yaw, pitch);
         EntityDecoy b = body(p);
-        double dist = b == null ? 0.0 : p.getDistance(b);
+        double dist = 0.0;
+        if (b != null) {
+            double dx = x - b.posX, dy = y - b.posY, dz = z - b.posZ;
+            dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
         double cost = (PocketConfig.phaseBase + PocketConfig.phasePerBlock * dist) * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
+        // Позиция меняется только после успешного списания маны.
+        p.setPositionAndRotation(x, y, z, yaw, pitch);
         NBTTagCompound d = p.getEntityData();
         if (b != null) b.setDead();
         GameType prev = GameType.getByID(d.getInteger(GM));
@@ -201,16 +220,33 @@ public class Spector {
         }
     }
 
+    /** Дух платит ману, только пока цело тело (вызывает реестр способностей). */
+    public static boolean isPaying(EntityPlayer p) {
+        return isActive(p) && body(p) != null;
+    }
+
+    /** Мана кончилась (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_off"), true);
+        end(p, true);
+    }
+
+    /** Каждый тик: проверка тела и частицы. Ману списывает реестр до вызова. */
     public static void tick(EntityPlayerMP p) {
         if (!isActive(p)) return;
         if (body(p) == null) {
             end(p, true);
             return;
         }
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.spector_off"), true);
-            end(p, true);
-            return;
+        // Spectator movement is not collision-bound; keep it inside every personal pocket.
+        if (PocketDimensionManager.isPocketDimension(p.dimension)) {
+            PocketData pocket = PocketData.get(p.world);
+            net.minecraft.util.math.BlockPos feet = p.getPosition();
+            if (!pocket.interior.contains(feet) || !pocket.interior.contains(feet.up())) {
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_limits"), true);
+                end(p, true);
+                return;
+            }
         }
         if (p.ticksExisted % 10 == 0) {
             ((WorldServer) p.world).spawnParticle(EnumParticleTypes.SPELL_MOB, p.posX, p.posY + 1.0, p.posZ,

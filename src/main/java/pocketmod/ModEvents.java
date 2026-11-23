@@ -75,8 +75,8 @@ public class ModEvents {
         if (src.isProjectile() || src.isExplosion()) return;
         int bl = AbilityStorage.getLevel(killer, AbilityType.BLOODSUCKER);
         // L1: <50% HP, 25% maxHP моба; L2: <60%, 35%; L3: <75%, 45%
-        float hpGate = bl >= 3 ? 0.75f : (bl >= 2 ? 0.60f : 0.50f);
-        float healPct = bl >= 3 ? 0.45f : (bl >= 2 ? 0.35f : 0.25f);
+        float hpGate = bloodHealthThreshold(bl);
+        float healPct = bloodHealFraction(bl);
         if (killer.getHealth() >= killer.getMaxHealth() * hpGate) return;
         float heal = dead.getMaxHealth() * healPct;
         if (heal <= 0f) return;
@@ -89,6 +89,21 @@ public class ModEvents {
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent e) {
         if (e.player instanceof EntityPlayerMP) {
             Spector.recoverOnLogin((EntityPlayerMP) e.player);
+            Totems.promptIfPending((EntityPlayerMP) e.player);
         }
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent e) {
+        if (e.player instanceof EntityPlayerMP) {
+            Totems.promptIfPending((EntityPlayerMP) e.player);
+        }
+    }
+    static float bloodHealthThreshold(int level) {
+        return level >= 3 ? 0.75f : level >= 2 ? 0.60f : 0.50f;
+    }
+
+    static float bloodHealFraction(int level) {
+        return level >= 3 ? 0.45f : level >= 2 ? 0.35f : 0.25f;
     }
 }

@@ -10,6 +10,12 @@ public class PlayerData {
 
     public static final String KEY = "PlayerPersisted";
 
+    public static void replace(EntityPlayer player, NBTTagCompound snapshot) {
+        NBTTagCompound data = snapshot == null ? new NBTTagCompound() : snapshot.copy();
+        player.getEntityData().setTag(KEY, data);
+        SyncedState.read(player, data);
+    }
+
     public static NBTTagCompound root(EntityPlayer player) {
         NBTTagCompound e = player.getEntityData();
         if (!e.hasKey(KEY, 10)) {

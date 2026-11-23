@@ -29,6 +29,14 @@ public class Flight {
         return Math.max(1, Math.min(3, AbilityStorage.getLevel(p, AbilityType.FLIGHT)));
     }
 
+    static int heightForLevel(int level) {
+        return PocketConfig.flightHeight[level - 1];
+    }
+
+    static float speedForLevel(int level) {
+        return PocketConfig.flightSpeed[level - 1];
+    }
+
     /** Базовый расход (висение у точки взлёта). */
     public static double baseDrain(EntityPlayer p) {
         return PocketConfig.flightDrain * Mana.getPriceMultiplier(p);
@@ -61,7 +69,7 @@ public class Flight {
         p.getEntityData().setInteger(GRACE, 0);
         p.capabilities.allowFlying = true;
         p.capabilities.isFlying = true;
-        p.capabilities.setFlySpeed(PocketConfig.flightSpeed[level(p) - 1]);
+        p.capabilities.setFlySpeed(speedForLevel(level(p)));
         p.sendPlayerAbilities();
     }
 
@@ -81,6 +89,19 @@ public class Flight {
         }
     }
 
+    /** Полёт платит ману только в полёте, не в креативе и не во время мягкого парения (вызывает реестр способностей). */
+    public static boolean paying(EntityPlayer p) {
+        return isArmed(p) && !p.isCreative() && !p.isSpectator()
+                && p.getEntityData().getInteger(GRACE) <= 0 && p.capabilities.isFlying;
+    }
+
+    /** Мана кончилась: мягкое парение без расхода (вызывает реестр способностей). */
+    public static void onManaExhausted(EntityPlayerMP p) {
+        p.getEntityData().setInteger(GRACE, Math.max(1, PocketConfig.flightGraceSec * 20));
+        p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.flight_empty"), true);
+    }
+
+    /** Каждый тик: парение, потолок высоты, частицы. Ману списывает реестр до вызова. */
     public static void tick(EntityPlayerMP p) {
         if (p.getEntityData().getBoolean(NOFALL) && p.onGround) {
             p.getEntityData().setBoolean(NOFALL, false);
@@ -105,14 +126,9 @@ public class Flight {
             if (p.onGround) disarm(p);
             return;
         }
-        if (!Mana.spend(p, drainPerSec(p) / 20.0)) {
-            p.getEntityData().setInteger(GRACE, Math.max(1, PocketConfig.flightGraceSec * 20));
-            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.flight_empty"), true);
-            return;
-        }
         p.fallDistance = 0f;
         int ground = p.world.getHeight(new BlockPos(p.posX, p.posY, p.posZ)).getY();
-        double cap = ground + PocketConfig.flightHeight[level(p) - 1];
+        double cap = ground + heightForLevel(level(p));
         if (p.posY > cap) {
             p.motionY = Math.min(0.0, p.motionY);
             p.connection.setPlayerLocation(p.posX, cap, p.posZ, p.rotationYaw, p.rotationPitch);

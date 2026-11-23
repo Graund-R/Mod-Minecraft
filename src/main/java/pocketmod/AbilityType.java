@@ -8,14 +8,18 @@ public enum AbilityType {
     SLOW("slow", 200, 500, 1000),
     DECOY("decoy", 250),
     SPECTOR("spector", 300),
-    THERMAL("thermal", 180, 450),
+    THERMAL("thermal", 180, 450, 800),
     SHIELD("shield", 220, 550),
     FLIGHT("flight", 400, 800, 1500),
     TOTEM("totem", 150, 350, 700),
     SOFTFALL("softfall", 200, 450),
     BLOODSUCKER("bloodsucker", 350, 550, 800),
     MAGNET("magnet", 200, 500),
-    WAVE("wave", 280, 450, 700, 1000, 1500);
+    WAVE("wave", 280, 450, 700, 1000, 1500),
+    ORE_SCANNER("scanner", 250, 500, 900),
+    WAREHOUSE("warehouse", 200, 400, 700),
+    DASH("dash", 300, 550, 900, 1400),
+    MORPHISM("morphism", 500);
 
     public final String id;
     public final int[] levelCosts;

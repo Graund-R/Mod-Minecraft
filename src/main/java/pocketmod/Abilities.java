@@ -50,11 +50,11 @@ public class Abilities {
     private static final String KEY_SILENCE_OFF = "pm_silence_off";
 
     public static boolean isSilenceEnabled(EntityPlayer p) {
-        return !p.getEntityData().getBoolean(KEY_SILENCE_OFF);
+        return !PlayerData.root(p).getBoolean(KEY_SILENCE_OFF);
     }
 
     public static void setSilenceEnabled(EntityPlayer p, boolean on) {
-        p.getEntityData().setBoolean(KEY_SILENCE_OFF, !on);
+        PlayerData.root(p).setBoolean(KEY_SILENCE_OFF, !on);
     }
 
     public static boolean isDecoyEnabled(EntityPlayer p) {
@@ -69,7 +69,7 @@ public class Abilities {
     private static void spawnDecoy(EntityPlayerMP p) {
         if (!AbilityStorage.isUnlocked(p, AbilityType.DECOY) || !isDecoyEnabled(p)) return;
         double cost = PocketConfig.decoyCost * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.decoy_no_mana", (int) Math.ceil(cost)), true);
             return;
         }
@@ -109,6 +109,7 @@ public class Abilities {
     }
 
     public static void toggleInvisibility(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.INVISIBILITY)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -141,6 +142,17 @@ public class Abilities {
                 now ? "pocketmod.msg.invis_on" : "pocketmod.msg.invis_off"), true);
     }
 
+    /** Сбрасывает активные эффекты, которые несовместимы с обликом Metamorph. */
+    public static void disableForMorph(EntityPlayerMP player) {
+        player.getEntityData().setBoolean(KEY_INVIS, false);
+        player.getEntityData().setBoolean(KEY_SLOW, false);
+        player.getEntityData().setInteger(KEY_SILENT, 0);
+        player.getEntityData().setInteger(KEY_BREAK, 0);
+        player.removePotionEffect(MobEffects.INVISIBILITY);
+        player.setInvisible(false);
+        EntityDecoy.removeDecoys(player);
+    }
+
     public static boolean isInvisible(EntityPlayer player) {
         return player.getEntityData().getBoolean(KEY_INVIS);
     }
@@ -157,7 +169,7 @@ public class Abilities {
             return;
         }
         double drain = invisDrain(player) * Mana.getPriceMultiplier(player) / 20.0;
-        if (!Mana.spend(player, drain)) {
+        if (!Mana.spendAbility(player, drain)) {
             player.getEntityData().setBoolean(KEY_INVIS, false);
             player.removePotionEffect(MobEffects.INVISIBILITY);
             player.setInvisible(false);
@@ -186,6 +198,7 @@ public class Abilities {
     }
 
     public static void toggleSlow(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.SLOW)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -215,25 +228,21 @@ public class Abilities {
     }
 
     public static double totalDrainPerSec(EntityPlayer player) {
-        double d = 0.0;
-        if (isInvisible(player)) {
-            d += invisDrain(player) * Mana.getPriceMultiplier(player);
-        }
-        if (isSlow(player)) {
-            d += TimeSlow.drainPerSec(player);
-        }
-        if (Thermal.isOn(player)) d += Thermal.drainPerSec(player);
-        if (Spector.isActive(player)) d += Spector.drainPerSec(player);
-        if (Flight.isArmed(player) && player.capabilities.isFlying) d += Flight.drainPerSec(player);
-        if (SoftFall.isActive(player)) d += SoftFall.drainPerSec(player);
-        d += BodyEffects.totalRentDrain(player);
-        return d;
+        return ActiveAbilities.totalDrainPerSec(player);
+    }
+
+    /** Расход невидимости в секунду (для суммы в магазине). */
+    public static double invisDrainPerSec(EntityPlayer player) {
+        return invisDrain(player) * Mana.getPriceMultiplier(player);
     }
 
     /** Минимальный множитель времени: 0.1, а на уровне 3 замедление доходит до полного нуля (стоп). */
     public static float minSlowFactor(EntityPlayer player) {
-        int l = AbilityStorage.getLevel(player, AbilityType.SLOW);
-        return l >= 3 ? 0.0f : l == 2 ? 0.1f : 0.25f;
+        return minSlowFactorForLevel(AbilityStorage.getLevel(player, AbilityType.SLOW));
+    }
+
+    static float minSlowFactorForLevel(int level) {
+        return level >= 3 ? 0.0f : level == 2 ? 0.1f : 0.25f;
     }
 
     public static float getSlowFactor(EntityPlayer player) {
@@ -247,13 +256,17 @@ public class Abilities {
     }
 
     public static double teleportRange(EntityPlayer player) {
-        int lvl = AbilityStorage.getLevel(player, AbilityType.TELEPORT);
+        return teleportRangeForLevel(AbilityStorage.getLevel(player, AbilityType.TELEPORT));
+    }
+
+    static double teleportRangeForLevel(int lvl) {
         if (lvl >= 3) return PocketConfig.teleportRange3;
         if (lvl == 2) return PocketConfig.teleportRange2;
         return PocketConfig.teleportBaseRange;
     }
 
     public static void teleportLook(EntityPlayerMP player) {
+        if (MorphIntegration.isMorphed(player)) return;
         if (!AbilityStorage.isUnlocked(player, AbilityType.TELEPORT)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
@@ -269,7 +282,7 @@ public class Abilities {
         Vec3d look = player.getLook(1.0f);
         Vec3d end = eye.addVector(look.x * range, look.y * range, look.z * range);
 
-        boolean inPocket = world.provider.getDimension() == PocketMod.DIM_ID;
+        boolean inPocket = PocketDimensionManager.isPocketDimension(world.provider.getDimension());
         RayTraceResult hit = inPocket ? null : world.rayTraceBlocks(eye, end, false, true, false);
         BlockPos land = null;
         if (inPocket) {
@@ -293,7 +306,7 @@ public class Abilities {
 
         double dist = Math.sqrt(player.getDistanceSq(land.getX() + 0.5, land.getY(), land.getZ() + 0.5));
         double cost = dist * PocketConfig.teleportCostPerBlock * Mana.getPriceMultiplier(player);
-        if (!Mana.spend(player, cost)) {
+        if (!Mana.spendAbility(player, cost)) {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
@@ -303,6 +316,7 @@ public class Abilities {
         clearMobTargets(player, 16.0);
         player.dismountRidingEntity();
         player.fallDistance = 0f;
+        Dash.onTeleport(player);
         player.connection.setPlayerLocation(land.getX() + 0.5, land.getY(), land.getZ() + 0.5,
                 player.rotationYaw, player.rotationPitch);
         teleportFx((WorldServer) world, from, to);
@@ -381,19 +395,21 @@ public class Abilities {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
-        int wl = Math.max(1, Math.min(AbilityType.WAVE.maxLevel, AbilityStorage.getLevel(p, AbilityType.WAVE))) - 1;
-        double cost = PocketConfig.waveCost[wl] * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        WaveLevel wave = new WaveLevel(AbilityStorage.getLevel(p, AbilityType.WAVE));
+        long nowTick = p.world.getTotalWorldTime();
+        long readyTick = p.getEntityData().getLong("pm_wave_ready");
+        if (nowTick < readyTick) {
+            p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.wave_cooldown",
+                    (int) Math.ceil((readyTick - nowTick) / 20.0)), true);
+            return;
+        }
+        double cost = wave.manaCost * Mana.getPriceMultiplier(p);
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }
-        double r = PocketConfig.waveRadius[wl];
-        float dmg = (float) PocketConfig.waveDamage[wl];
-        double knock = PocketConfig.waveKnock[wl];
-        int slowTicks = (int) Math.round(PocketConfig.waveSlowSec[wl] * 20.0);
-        int slowAmp = (int) Math.round(PocketConfig.waveSlowAmp[wl]);
-        int nauseaTicks = (int) Math.round(PocketConfig.waveNauseaSec[wl] * 20.0);
-        int weakTicks = (int) Math.round(PocketConfig.waveWeakSec[wl] * 20.0);
+        p.getEntityData().setLong("pm_wave_ready", nowTick + wave.cooldownTicks);
+        double r = wave.radius;
         AxisAlignedBB box = p.getEntityBoundingBox().grow(r, r * 0.6, r);
         List<EntityLivingBase> list = p.world.getEntitiesWithinAABB(EntityLivingBase.class, box);
         WorldServer ws = (WorldServer) p.world;
@@ -407,20 +423,20 @@ public class Abilities {
             double dz = e.posZ - p.posZ;
             double dist = Math.sqrt(dx * dx + dz * dz);
             if (dist < 0.1) dist = 0.1;
-            double str = (1.0 - Math.min(1.0, dist / r)) * knock;
+            double str = (1.0 - Math.min(1.0, dist / r)) * wave.knockback;
             e.motionX += (dx / dist) * str;
             e.motionY += 0.35 * str;
             e.motionZ += (dz / dist) * str;
             e.velocityChanged = true;
-            e.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(p), dmg);
-            if (slowTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.SLOWNESS, slowTicks, slowAmp));
+            e.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(p), wave.damage);
+            if (wave.slowTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.SLOWNESS, wave.slowTicks, wave.slowAmplifier));
             }
-            if (nauseaTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NAUSEA, nauseaTicks, 0));
+            if (wave.nauseaTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.NAUSEA, wave.nauseaTicks, 0));
             }
-            if (weakTicks > 0) {
-                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.WEAKNESS, weakTicks, 0));
+            if (wave.weaknessTicks > 0) {
+                e.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.init.MobEffects.WEAKNESS, wave.weaknessTicks, 0));
             }
         }
         ws.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, p.posX, p.posY + 0.2, p.posZ, 1, 0.0, 0.0, 0.0, 0.0);

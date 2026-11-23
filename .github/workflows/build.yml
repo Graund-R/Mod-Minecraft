@@ -69,28 +69,26 @@ jobs:
           sed -i -E "s/version\s*=\s*\"[0-9]+(\.[0-9]+)*\"/version = \"$MODVER\"/" src/main/java/pocketmod/PocketMod.java
 
       - name: Optional JourneyMap API (totem waypoints)
+        if: hashFiles('optional/journeymap/JmPlugin.java') != ''
         run: |
-          if [ -f optional/journeymap/JmPlugin.java ] && git clone -q --depth 1 -b 1.12.2 https://github.com/TeamJM/journeymap-api.git jmapi; then
-            cp -r jmapi/src/main/java/journeymap mdk/src/main/java/journeymap
-            cp optional/journeymap/JmPlugin.java mdk/src/main/java/pocketmod/JmPlugin.java
-            printf '\njar { exclude "journeymap/**" }\n' >> mdk/build.gradle
-            echo "JM=1" >> "$GITHUB_ENV"
-          else
-            echo "JourneyMap API not used"
-          fi
+          set -e
+          cp optional/journeymap/JmPlugin.java mdk/src/main/java/pocketmod/JmPlugin.java
+          cat >> mdk/build.gradle <<'GRADLE'
+
+          repositories {
+              mavenCentral()
+          }
+
+          // JourneyMap documents this as a compile-time-only dependency.
+          // The API classes are not copied into the mod jar.
+          dependencies {
+              compile 'info.journeymap:journeymap-api:1.12-1.4'
+          }
+          GRADLE
 
       - name: Build
         working-directory: mdk
-        run: |
-          if ! ./gradlew build --no-daemon; then
-            if [ "$JM" = "1" ]; then
-              echo "Build with JourneyMap failed, retrying without it"
-              rm -rf src/main/java/journeymap src/main/java/pocketmod/JmPlugin.java
-              ./gradlew build --no-daemon
-            else
-              exit 1
-            fi
-          fi
+        run: ./gradlew build --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:

@@ -38,6 +38,13 @@ public class PocketConfig {
     public static float expandRingStep = 0.2f;
     public static String wallBlock = "minecraft:quartz_block";
 
+    // Metamorph и карманные двери
+    public static boolean morphEnabled = true;
+    public static int morphCost = 20;
+    public static int doorPairPrice = 1000;
+    public static int goldKeyPrice = 100;
+    public static int ironKeyPrice = 50;
+
     public static int teleportBaseRange = 50;
     public static int teleportRange2 = 100;
     public static int teleportRange3 = 200;
@@ -45,6 +52,30 @@ public class PocketConfig {
 
     // Тотемы
     public static int totemCreateCost = 30;
+    /** Плата за создание тотема смерти после возрождения (0 = бесплатно; траты только на телепорт x10). */
+    public static int deathTotemCreateCost = 0;
+    /** Период импульса сканера руд в тиках (найденные руды остаются на экране до следующего импульса). */
+    public static int oreScannerPeriodTicks = 100;
+    /** Замедлять ли текущую воду и лаву (отложенные обновления жидкостей) рядом с игроком. */
+    public static boolean slowFluids = true;
+    public static int slowFluidRadius = 48;
+    /** Радиус пузыря замедления вокруг каждого игрока (блоков). */
+    public static int slowBubbleRadius = 48;
+    /** Сколько пузырей замедления одновременно обрабатывает сервер (нагрузка). */
+    public static int slowMaxBubbles = 8;
+
+    // Рывок
+    // По уровням 1..4. Дальность = скорость x тики: на 2 уровне она уже максимальная (8 блоков), дальше растут
+    // скорость (рывок короче по времени), число зарядов, перезарядка, урон, отражение и бонусы.
+    public static double[] dashCost = { 14, 12, 10, 8 };
+    public static double[] dashCharges = { 1, 2, 2, 3 };
+    public static double[] dashRechargeSec = { 6.0, 3.0, 2.2, 1.5 };
+    public static double[] dashDamage = { 0, 4, 6, 8 };
+    public static double[] dashSpeed = { 1.1, 1.6, 2.0, 2.7 };
+    public static double[] dashTicks = { 5, 5, 4, 3 };
+    public static double[] dashReflectTicks = { 0, 8, 10, 14 };
+    public static double[] dashGraceTicks = { 0, 0, 6, 12 };
+    public static double[] dashRefund = { 0, 0, 0, 1 };
     public static int totemDeleteCost = 10;
     public static int totemTeleportBase = 20;
     public static float totemTeleportPerBlock = 0.02f;
@@ -81,6 +112,12 @@ public class PocketConfig {
     // Щит
     public static float shieldManaPerDamage = 15f;
     public static float shieldL2Factor = 0.7f;
+    /** Расход щита (мана/сек) сразу после включения, даже если урона нет. */
+    public static float shieldUpkeepBase = 3.0f;
+    /** Прирост расхода щита за каждую секунду, пока он включён. */
+    public static float shieldUpkeepRamp = 0.4f;
+    /** Остывание щита: сколько секунд «нагрева» уходит за секунду, пока щит выключен. */
+    public static float shieldHeatDecay = 0.5f;
 
     // Полёт
     public static float flightDrain = 1.5f;
@@ -102,12 +139,27 @@ public class PocketConfig {
     public static double[] waveNauseaSec = { 3, 4, 5, 6, 6 };
     public static double[] waveWeakSec = { 0, 0, 0, 6, 8 };
     public static double[] waveCost = { 25, 30, 35, 45, 60 };
+    /** Перезарядка волны по уровням, секунды (дольше, чем длится замедление). */
+    public static double[] waveCooldown = { 4, 5, 5, 6, 7 };
 
     // Тело: сердца, скорость, сила, огнестойкость, дыхание
-    public static int[] bodyPermCost = { 300, 500, 600, 150, 150 };
-    public static double[] bodyRentPerSec = { 0.8, 1.0, 1.2, 0.3, 0.3 };
+    public static int[] bodyPermCost = { 300, 500, 600, 150, 150, 1200 };
+    public static double[] bodyRentPerSec = { 0.8, 1.0, 1.2, 0.3, 0.3, 2.5 };
     public static int heartsMaxBuys = 5;
     public static int heartsRent = 2;
+    public static int regenMaxBuys = 3;
+    public static int[] regenCosts = { 600, 1200, 1800 };
+    public static int regenSaturationPercent = 25;
+    public static int warehouseDeathCost = 50;
+    public static float oreScannerDrain = 3.0f;
+    public static int[] oreScannerRadius = { 16, 24, 32 };
+    public static int oreScannerVertical = 12;
+    /** Добавлять в сканер все руды из OreDictionary (oreXxx), в том числе из других модов. */
+    public static boolean oreScannerAuto = true;
+    private static boolean oreTargetsReady = false;
+    private static String[] oreScannerBase = new String[0];
+    public static String[] oreScannerTargets = { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" };
+    public static float pocketTickCost = 0.0f;
 
     // Лутка
     public static int[] lootStakes = { 50, 150, 400 };
@@ -152,6 +204,7 @@ public class PocketConfig {
             ConfigMigrations.run(config);
         }
         Configuration cfg = config;
+        ExileConfig.load(cfg);
 
         valueIron = cfg.getInt("valueIron", "мана", 10, 0, 1000000, "Mana for one iron ingot");
         valueGold = cfg.getInt("valueGold", "мана", 30, 0, 1000000, "Mana for one gold ingot");
@@ -192,12 +245,33 @@ public class PocketConfig {
         expandRingStep = cfg.getFloat("expandRingStep", "карман", 0.2f, 0f, 100f, "Ring cost growth");
         wallBlock = cfg.getString("wallBlock", "карман", "minecraft:quartz_block", "Блок стен кармана (кварц; измерение всегда яркое)");
 
+        morphEnabled = cfg.getBoolean("morphEnabled", "морфизм", true, "Включить совместимость с Metamorph");
+        morphCost = cfg.getInt("morphCost", "морфизм", 20, 0, 1000000, "Разовая стоимость каждого превращения в мане");
+        doorPairPrice = cfg.getInt("doorPairPrice", "двери", 1000, 0, 1000000, "Цена комплекта из двух дверей");
+        goldKeyPrice = cfg.getInt("goldKeyPrice", "двери", 100, 0, 1000000, "Цена постоянного золотого ключа");
+        ironKeyPrice = cfg.getInt("ironKeyPrice", "двери", 50, 0, 1000000, "Цена одноразового железного ключа");
+        pocketTickCost = cfg.getFloat("pocketTickCost", "карман", 0.0f, 0f, 100000f, "Мана в секунду за нахождение в кармане; 0 = бесплатно.");
+
         teleportBaseRange = cfg.getInt("teleportBaseRange", "способности", 50, 5, 500, "Teleport range, level 1");
         teleportRange2 = cfg.getInt("teleportRange2", "способности", 100, 5, 1000, "Teleport range, level 2");
         teleportRange3 = cfg.getInt("teleportRange3", "способности", 200, 5, 2000, "Teleport range, level 3");
         teleportCostPerBlock = cfg.getFloat("teleportCostPerBlock", "способности", 0.4f, 0f, 1000f, "Mana per block of teleport distance");
 
         totemCreateCost = cfg.getInt("totemCreateCost", "тотемы", 30, 0, 1000000, "Mana to create a totem");
+        deathTotemCreateCost = cfg.getInt("deathTotemCreateCost", "тотемы", 0, 0, 1000000, "Mana to create the death totem after respawn (0 = free; only the x10 teleport costs mana)");
+        slowFluids = cfg.getBoolean("slowFluids", "замедление", true, "Also slow flowing water and lava near the player");
+        slowFluidRadius = cfg.getInt("slowFluidRadius", "замедление", 48, 8, 96, "Radius (blocks) in which fluids are slowed");
+        slowBubbleRadius = cfg.getInt("slowBubbleRadius", "замедление", 48, 8, 128, "Radius of the slow-time bubble around each player");
+        slowMaxBubbles = cfg.getInt("slowMaxBubbles", "замедление", 8, 1, 64, "How many slow-time bubbles the server processes at once");
+        dashCost = arr(cfg, "levelCost", "рывок", dashCost, "Мана за рывок по уровням 1..4");
+        dashCharges = arr(cfg, "levelCharges", "рывок", dashCharges, "Сколько рывков подряд по уровням");
+        dashRechargeSec = arr(cfg, "levelRechargeSec", "рывок", dashRechargeSec, "Секунд на восстановление одного заряда по уровням");
+        dashDamage = arr(cfg, "levelDamage", "рывок", dashDamage, "Урон врагам на пути по уровням (0 = рывок не бьёт)");
+        dashSpeed = arr(cfg, "levelSpeed", "рывок", dashSpeed, "Скорость рывка, блоков за тик, по уровням");
+        dashTicks = arr(cfg, "levelTicks", "рывок", dashTicks, "Длительность рывка в тиках по уровням (дальность = скорость x тики)");
+        dashReflectTicks = arr(cfg, "levelReflectTicks", "рывок", dashReflectTicks, "Окно отражения снарядов в тиках по уровням (0 = нет)");
+        dashGraceTicks = arr(cfg, "levelGraceTicks", "рывок", dashGraceTicks, "Неуязвимость после рывка в тиках по уровням");
+        dashRefund = arr(cfg, "levelRefund", "рывок", dashRefund, "1 = сбитый рывком враг возвращает заряд (по уровням)");
         totemDeleteCost = cfg.getInt("totemDeleteCost", "тотемы", 10, 0, 1000000, "Mana to delete a totem");
         totemTeleportBase = cfg.getInt("totemTeleportBase", "тотемы", 20, 0, 1000000, "Base mana for a totem teleport");
         totemTeleportPerBlock = cfg.getFloat("totemTeleportPerBlock", "тотемы", 0.02f, 0f, 1000f, "Mana per block of distance (same dimension)");
@@ -244,6 +318,9 @@ public class PocketConfig {
 
         shieldManaPerDamage = cfg.getFloat("shieldManaPerDamage", "щит", 15f, 0f, 10000f, "Mana per 1 damage");
         shieldL2Factor = cfg.getFloat("shieldL2Factor", "щит", 0.7f, 0.01f, 1f, "Cost factor at shield level 2");
+        shieldUpkeepBase = cfg.getFloat("shieldUpkeepBase", "щит", 3.0f, 0f, 10000f, "Mana/sec the active shield costs right after switching on, even without damage");
+        shieldUpkeepRamp = cfg.getFloat("shieldUpkeepRamp", "щит", 0.4f, 0f, 10000f, "Extra mana/sec for every second the shield stays on");
+        shieldHeatDecay = cfg.getFloat("shieldHeatDecay", "щит", 0.5f, 0f, 1000f, "Seconds of shield heat that cool off per second while it is off");
 
         flightDrain = cfg.getFloat("flightDrain", "полёт", 1.5f, 0f, 1000f, "Mana/sec while flying");
         flightGraceSec = cfg.getInt("flightGraceSec", "полёт", 5, 0, 60, "Soft hover seconds at zero mana");
@@ -262,13 +339,40 @@ public class PocketConfig {
         waveNauseaSec = arr(cfg, "nauseaSeconds", "волна", waveNauseaSec, "Длительность тошноты (сек), 0 = нет");
         waveWeakSec = arr(cfg, "weaknessSeconds", "волна", waveWeakSec, "Длительность слабости (сек), 0 = нет");
         waveCost = arr(cfg, "manaCost", "волна", waveCost, "Мана за волну по уровням");
+        waveCooldown = arr(cfg, "cooldownSeconds", "волна", waveCooldown, "Wave cooldown in seconds by level 1..5");
 
-        int[] bp = cfg.get("тело", "permCosts", new int[] { 300, 500, 600, 150, 150 }, "Permanent price: hearts, speed, strength, fire resistance, water breathing").getIntList();
-        if (bp.length >= 5) bodyPermCost = bp;
-        double[] br = cfg.get("тело", "rentPerSec", new double[] { 0.8, 1.0, 1.2, 0.3, 0.3 }, "Rent mana/sec in the same order").getDoubleList();
-        if (br.length >= 5) bodyRentPerSec = br;
+        int[] bp = cfg.get("тело", "permCosts", new int[] { 300, 500, 600, 150, 150, 1200 }, "Permanent price: hearts, speed, strength, fire resistance, water breathing, regeneration").getIntList();
+        if (bp.length >= 6) bodyPermCost = bp;
+        else if (bp.length >= 5) { bodyPermCost = java.util.Arrays.copyOf(bp, 6); bodyPermCost[5] = 1200; cfg.get("тело", "permCosts", bodyPermCost).set(bodyPermCost); }
+        double[] br = cfg.get("тело", "rentPerSec", new double[] { 0.8, 1.0, 1.2, 0.3, 0.3, 2.5 }, "Rent mana/sec in the same order").getDoubleList();
+        if (br.length >= 6) bodyRentPerSec = br;
+        else if (br.length >= 5) { bodyRentPerSec = java.util.Arrays.copyOf(br, 6); bodyRentPerSec[5] = 2.5; cfg.get("тело", "rentPerSec", bodyRentPerSec).set(bodyRentPerSec); }
         heartsMaxBuys = cfg.getInt("heartsMaxBuys", "тело", 5, 1, 50, "Max permanent heart purchases (+1 heart each)");
         heartsRent = cfg.getInt("heartsRent", "тело", 2, 1, 50, "Extra hearts while renting");
+        regenMaxBuys = cfg.getInt("regenMaxBuys", "тело", 3, 1, 3, "Maximum permanent regeneration levels");
+        int oldRegenCost = Math.max(0, Math.min(1000000, bodyPermCost[BodyEffects.REGENERATION]));
+        int[] regenDefaults = { oldRegenCost / 2, oldRegenCost, oldRegenCost + (oldRegenCost + 1) / 2 };
+        int[] configuredRegenCosts = cfg.get("тело", "regenCosts", regenDefaults,
+                "Permanent regeneration prices for levels I, II and III").getIntList();
+        regenCosts = regenDefaults;
+        for (int i = 0; i < Math.min(regenCosts.length, configuredRegenCosts.length); i++) {
+            regenCosts[i] = Math.max(0, configuredRegenCosts[i]);
+        }
+        regenSaturationPercent = cfg.getInt("regenSaturationPercent", "тело", 25, 0, 1000,
+                "Extra saturation from food at all regeneration levels, percent");
+        warehouseDeathCost = cfg.getInt("warehouseDeathCost", "склад", 50, 0, 1000000, "Mana per occupied warehouse slot on death.");
+        oreScannerDrain = cfg.getFloat("oreScannerDrain", "сканер", 3.0f, 0f, 10000f, "Mana per second while scanning.");
+        oreScannerVertical = cfg.getInt("oreScannerVertical", "сканер", 12, 4, 64, "Vertical scan distance.");
+        oreScannerPeriodTicks = cfg.getInt("oreScannerPeriodTicks", "сканер", 100, 20, 600, "Ticks between scanner pulses (found ores stay on screen until the next pulse, like a sonar).");
+        int[] osr = cfg.get("сканер", "radii", new int[] { 16, 24, 32 }, "Ore scan radius by level.").getIntList();
+        if (osr.length >= 3) oreScannerRadius = osr;
+        oreScannerBase = cfg.getStringList("targets", "сканер",
+                new String[] { "oreDiamond", "oreEmerald", "oreGold", "oreIron", "oreRedstone", "oreLapis", "oreCoal", "oreQuartz" },
+                "OreDictionary names (oreDiamond) or registry IDs (minecraft:diamond_ore) to highlight.");
+        oreScannerAuto = cfg.getBoolean("autoTargets", "сканер", true,
+                "Also scan every other ore registered in OreDictionary (oreCopper, oreTin, ... from other mods).");
+        oreScannerTargets = oreScannerBase;
+        if (oreTargetsReady) finishOreTargets();
 
         int[] ls = cfg.get("удача", "stakes", new int[] { 50, 150, 400 }, "Spin prices (3 tiers)").getIntList();
         if (ls.length >= 3) lootStakes = ls;
@@ -333,6 +437,42 @@ public class PocketConfig {
                 p.setComment(row[1] + (i >= 0 ? old.substring(i) : ""));
             }
         }
+    }
+
+    /**
+     * Сканер руд: к списку из конфига добавляются все остальные руды из OreDictionary (имена oreXxx), чтобы сканер
+     * видел не только ванильные руды, но и руды других модов. Порядок добавленных фиксирован (по алфавиту), поэтому
+     * на клиенте и на сервере список одинаковый. Вызывается после загрузки всех модов и при перечитывании конфига.
+     */
+    public static void finishOreTargets() {
+        oreTargetsReady = true;
+        if (!oreScannerAuto) {
+            oreScannerTargets = oreScannerBase;
+            return;
+        }
+        java.util.List<String> list = new java.util.ArrayList<String>();
+        java.util.Set<String> have = new java.util.HashSet<String>();
+        for (String s : oreScannerBase) {
+            if (s == null || s.trim().isEmpty()) continue;
+            list.add(s.trim());
+            have.add(s.trim().toLowerCase());
+        }
+        java.util.List<String> extra = new java.util.ArrayList<String>();
+        try {
+            for (String name : net.minecraftforge.oredict.OreDictionary.getOreNames()) {
+                if (name == null || name.length() <= 3 || !name.startsWith("ore")) continue;
+                if (!Character.isUpperCase(name.charAt(3))) continue;
+                if (have.contains(name.toLowerCase())) continue;
+                extra.add(name);
+            }
+        } catch (Throwable ignored) {
+        }
+        java.util.Collections.sort(extra);
+        for (String name : extra) {
+            if (list.size() >= 31) break;
+            list.add(name);
+        }
+        oreScannerTargets = list.toArray(new String[0]);
     }
 
     private static double[] arr(Configuration cfg, String name, String cat, double[] def, String comment) {

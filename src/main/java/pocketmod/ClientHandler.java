@@ -12,22 +12,21 @@ import net.minecraft.util.ResourceLocation;
 import java.awt.image.BufferedImage;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -41,6 +40,7 @@ public class ClientHandler {
     private static KeyBinding keyPocket;
     private static KeyBinding keyTeleport;
     private static KeyBinding keyInvis;
+    private static KeyBinding keyShop;
     private static KeyBinding keySlow;
     private static KeyBinding keySpector;
     private static KeyBinding keyPhase;
@@ -61,10 +61,12 @@ public class ClientHandler {
         return Keyboard.isKeyDown(c);
     }
     private static long lastJump;
+    private static boolean cWas;
     private static ResourceLocation vignetteTex;
 
     /** Название клавиши для окон (с учётом переназначения). */
     public static String keyName(String id) {
+        if ("scanner".equals(id)) return "Shift+" + keyName("thermal");
         KeyBinding k = null;
         if ("pocket".equals(id)) k = keyPocket;
         else if ("teleport".equals(id)) k = keyTeleport;
@@ -89,6 +91,7 @@ public class ClientHandler {
     private static final Hold hG = new Hold();
     private static final Hold hV = new Hold();
     private static final Hold hZ = new Hold();
+    private static final Hold hEnter = new Hold();
 
     private static final int EV_NONE = 0, EV_HOLD = 1, EV_TAP = 2;
 
@@ -96,6 +99,7 @@ public class ClientHandler {
         keyPocket   = new KeyBinding("key.pocketmod.pocket",   Keyboard.KEY_K, "key.categories.pocketmod");
         keyTeleport = new KeyBinding("key.pocketmod.teleport", Keyboard.KEY_G, "key.categories.pocketmod");
         keyInvis    = new KeyBinding("key.pocketmod.invis",    Keyboard.KEY_V, "key.categories.pocketmod");
+        keyShop     = new KeyBinding("key.pocketmod.shop",     Keyboard.KEY_RETURN, "key.categories.pocketmod");
         keySlow     = new KeyBinding("key.pocketmod.slow",     Keyboard.KEY_Z, "key.categories.pocketmod");
         keySpector  = new KeyBinding("key.pocketmod.spector",  Keyboard.KEY_X, "key.categories.pocketmod");
         keyPhase    = new KeyBinding("key.pocketmod.phase",    Keyboard.KEY_R, "key.categories.pocketmod");
@@ -108,27 +112,17 @@ public class ClientHandler {
         ClientRegistry.registerKeyBinding(keyPocket);
         ClientRegistry.registerKeyBinding(keyTeleport);
         ClientRegistry.registerKeyBinding(keyInvis);
+        ClientRegistry.registerKeyBinding(keyShop);
         ClientRegistry.registerKeyBinding(keySlow);
         MinecraftForge.EVENT_BUS.register(new ClientHandler());
         MinecraftForge.EVENT_BUS.register(new ConfigButton());
+        MinecraftForge.EVENT_BUS.register(new ClientTimeSlow());
+        MinecraftForge.EVENT_BUS.register(new ClientDash());
+        MinecraftForge.EVENT_BUS.register(new WarehouseOverlay());
     }
 
     public static void registerRenderers() {
         RenderingRegistry.registerEntityRenderingHandler(EntityDecoy.class, manager -> new RenderDecoy(manager));
-    }
-
-    /** Серверный (настоящий) объект игрока во встроенном сервере. */
-    public static EntityPlayerMP sp() {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || !mc.isIntegratedServerRunning()) return null;
-        IntegratedServer s = mc.getIntegratedServer();
-        return s == null ? null : s.getPlayerList().getPlayerByUUID(mc.player.getUniqueID());
-    }
-
-    private static void server(Runnable r) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.isIntegratedServerRunning() && mc.getIntegratedServer() != null)
-            mc.getIntegratedServer().addScheduledTask(r);
     }
 
     private static void resetHold(Hold h) {
@@ -166,10 +160,47 @@ public class ClientHandler {
         return ev;
     }
 
+    private static boolean mmKeysFixed;
+    private static boolean mmMenuBound;
+
+    /**
+     * Клавиши Metamorph по умолчанию совпадают с клавишами мода (меню образов на B перехватывало щит).
+     * Один раз после загрузки настроек переносим меню образов на Shift+V, а любую другую клавишу Metamorph,
+     * совпавшую с клавишей Pocket Mod, на Alt+та же клавиша. Уже изменённые игроком клавиши не трогаем.
+     */
+    private static void fixMetamorphKeys(Minecraft mc) {
+        if (mmKeysFixed) return;
+        mmKeysFixed = true;
+        try {
+            KeyBinding[] own = new KeyBinding[] { keyPocket, keyTeleport, keyInvis, keyShop, keySlow,
+                    keySpector, keyPhase, keyThermal, keyShield };
+            for (KeyBinding kb : mc.gameSettings.keyBindings) {
+                String d = kb.getKeyDescription();
+                if (d == null || !d.startsWith("key.metamorph.")) continue;
+                if (d.equals("key.metamorph.survival_menu")) mmMenuBound = true;
+                if (kb.getKeyCode() <= 0 || kb.getKeyModifier() != KeyModifier.NONE) continue;
+                boolean conflict = false;
+                for (KeyBinding pk : own) {
+                    if (pk != null && pk.getKeyCode() == kb.getKeyCode()) conflict = true;
+                }
+                if (!conflict) continue;
+                if (d.equals("key.metamorph.survival_menu")) {
+                    kb.setKeyModifierAndCode(KeyModifier.SHIFT, Keyboard.KEY_V);
+                } else {
+                    kb.setKeyModifierAndCode(KeyModifier.ALT, kb.getKeyCode());
+                }
+            }
+            KeyBinding.resetKeyBindingArrayAndHash();
+        } catch (Throwable ignored) {
+            // привязки Metamorph не критичны для работы мода
+        }
+    }
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null) fixMetamorphKeys(mc);
         if (mc.player == null) {
             if (slowShaderOn) updateSlowShader(mc, false);
             return;
@@ -177,8 +208,9 @@ public class ClientHandler {
 
         if (mc.player.ticksExisted % 100 == 1) Tr.ensureLoaded();
         TotemMarkers.tick(mc);
+        OreScannerClient.clientTick(mc);
         if (mc.player.ticksExisted % 4 == 0) updateThermalGlow(mc);
-        EntityPlayerMP spt = sp();
+        EntityPlayer spt = mc.player;
         updateSlowShader(mc, spt != null && Abilities.isSlow(spt));
         if (spt != null && SoftFall.isActive(spt) && !mc.player.onGround) {
             double lim = -PocketConfig.softFallSpeed;
@@ -190,6 +222,7 @@ public class ClientHandler {
             resetHold(hG);
             resetHold(hV);
             resetHold(hZ);
+            resetHold(hEnter);
             xWait = raw(keySpector);
             specClient = false;
             return;
@@ -201,7 +234,7 @@ public class ClientHandler {
         boolean gDown = raw(keyTeleport);
         // Shift+G — окно тотемов (сразу при нажатии)
         if (gDown && !hG.was && !hG.wait && GuiScreen.isShiftKeyDown()) {
-            EntityPlayerMP sp0 = sp();
+            EntityPlayer sp0 = mc.player;
             if (sp0 != null && !AbilityStorage.isUnlocked(sp0, AbilityType.TOTEM)) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
                 hG.wait = true;
@@ -214,22 +247,33 @@ public class ClientHandler {
         int g = poll(gDown, hG, now, holdMs);
         if (g == EV_HOLD) {
             // удержание G — тотем смерти (если есть), иначе последний обычный тотем
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> {
-                if (Totems.hasDeathTotem(p)) Totems.teleportDeath(p);
-                else Totems.teleportLast(p);
-            });
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TELEPORT_LAST_TOTEM, 0, 0, 0, "");
         } else if (g == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.teleportLook(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TELEPORT_LOOK, 0, 0, 0, "");
         }
 
-        int v = poll(keyInvis.isKeyDown(), hV, now, holdMs);
-        if (v == EV_HOLD) {
+        boolean vDown = raw(keyInvis);
+        // Alt+V: быстрое превращение в последний полученный образ и обратно.
+        // Shift+V: меню образов (родное меню Metamorph; если его клавиши не найдены, наш каталог).
+        // Обычный короткий V переключает невидимость.
+        if (vDown && !hV.was && !hV.wait && (Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU))) {
+            PocketDoorNetwork.quickMorph();
+            hV.wait = true;
+        } else if (vDown && !hV.was && !hV.wait && GuiScreen.isShiftKeyDown()) {
+            if (!mmMenuBound) PocketDoorNetwork.requestMorphCatalog();
+            hV.wait = true;
+        }
+        int v = poll(vDown, hV, now, holdMs);
+        if (v == EV_TAP) {
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_INVISIBILITY, 0, 0, 0, "");
+        }
+
+        int enter = poll(raw(keyShop), hEnter, now, holdMs);
+        if (enter == EV_HOLD) {
             mc.displayGuiScreen(new ShopGui(mc.player));
-        } else if (v == EV_TAP) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.toggleInvisibility(p));
         }
 
         int z = poll(keySlow.isKeyDown(), hZ, now, holdMs);
@@ -237,8 +281,8 @@ public class ClientHandler {
             if (zWheelUsed) {
                 zWheelUsed = false; // крутили колесо при зажатой Z — это не тап
             } else {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Abilities.toggleSlow(p));
+                EntityPlayer p = mc.player;
+                if (p != null) NetworkHandler.action(NetAction.TOGGLE_SLOW, 0, 0, 0, "");
             }
         } else if (!keySlow.isKeyDown()) {
             zWheelUsed = false;
@@ -253,7 +297,7 @@ public class ClientHandler {
             xPhys = false;
         }
         boolean shiftDown = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-        EntityPlayerMP px = sp();
+        EntityPlayer px = mc.player;
         boolean specActive = px != null && Spector.isActive(px);
         if (specActive) specClient = true;
         // отдельная клавиша фазового шага (по умолчанию R) — тот же вызов, что и Shift+X
@@ -261,57 +305,60 @@ public class ClientHandler {
         boolean phaseRequest = phKey && !phWas;
         phWas = phKey;
         if (px != null && ((xPhys && !xWas) || phaseRequest)) {
-            final EntityPlayerMP target = px;
             final boolean doPhase = phaseRequest || (shiftDown && (specActive || specClient));
             if (doPhase) {
                 mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.phase_try"), true);
+                NetworkHandler.action(NetAction.PHASE_STEP, 0, 0, 0, "");
+            } else {
+                NetworkHandler.action(NetAction.TOGGLE_SPECTOR, 0, 0, 0, "");
             }
-            final double cx = mc.player.posX;
-            final double cy = mc.player.posY;
-            final double cz = mc.player.posZ;
-            final float cyaw = mc.player.rotationYaw;
-            final float cpitch = mc.player.rotationPitch;
-            server(() -> {
-                if (doPhase) {
-                    Spector.phaseStep(target, cx, cy, cz, cyaw, cpitch);
-                } else if (!shiftDown && !phaseRequest) {
-                    if (Spector.isActive(target)) Spector.stop(target);
-                    else Spector.start(target);
-                }
-            });
         }
         xWas = xPhys;
         shiftWas = shiftDown;
-        if (px != null && Spector.isActive(px)) {
-            specClient = true;
-            px.setPositionAndRotation(mc.player.posX, mc.player.posY, mc.player.posZ,
-                    mc.player.rotationYaw, mc.player.rotationPitch);
-        } else if (px != null) {
-            specClient = false;
-        }
+        specClient = px != null && Spector.isActive(px);
 
         // Волна: Shift + пробел
         boolean jDown = mc.gameSettings.keyBindJump.isKeyDown();
         if (jDown && !jWas && shiftDown && !specActive) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Abilities.shockwave(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.SHOCKWAVE, 0, 0, 0, "");
         }
 
-        if (keyThermal.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Thermal.toggle(p));
+        // C: тепловизор; Shift+C: сканер руд (режим тепловизора); Ctrl+C: выбор руд для сканера
+        boolean cDown = raw(keyThermal);
+        while (keyThermal.isPressed()) {
+            // сбросить счётчик нажатий, чтобы клавиша не срабатывала дважды
         }
+        if (cDown && !cWas && mc.player != null) {
+            if (GuiScreen.isCtrlKeyDown()) {
+                if (OreScanner.available(mc.player)) mc.displayGuiScreen(new ScannerGui(mc.player));
+                else mc.player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.scanner_need"), true);
+            } else if (GuiScreen.isShiftKeyDown()) {
+                NetworkHandler.action(NetAction.TOGGLE_ORE_SCANNER, 0, 0, 0, "");
+            } else {
+                NetworkHandler.action(NetAction.TOGGLE_THERMAL, 0, 0, 0, "");
+            }
+        }
+        cWas = cDown;
         if (keyShield.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> Shield.toggle(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_SHIELD, 0, 0, 0, "");
+        }
+
+        // Мягкое падение: пробел в воздухе выключает его, повторный пробел включает обратно
+        // (быстрый двойной пробел при этом по-прежнему запускает полёт)
+        if (jDown && !jWas && !shiftDown && !specActive && mc.player != null && !mc.player.onGround
+                && !mc.player.capabilities.isFlying && !mc.player.isRiding()
+                && AbilityStorage.isUnlocked(mc.player, AbilityType.SOFTFALL)) {
+            NetworkHandler.action(NetAction.SOFTFALL_TOGGLE, 0, 0, 0, "");
         }
 
         // Полёт: двойной пробел в воздухе (без Shift)
         if (jDown && !jWas && !shiftDown) {
             if (now - lastJump < 350L && !mc.player.onGround && !mc.player.capabilities.allowFlying
                     && !mc.player.isRiding() && !mc.player.isInWater()) {
-                EntityPlayerMP p = sp();
-                if (p != null) server(() -> Flight.start(p));
+                EntityPlayer p = mc.player;
+                if (p != null) NetworkHandler.action(NetAction.START_FLIGHT, 0, 0, 0, "");
                 lastJump = 0L;
             } else {
                 lastJump = now;
@@ -320,10 +367,27 @@ public class ClientHandler {
         jWas = jDown;
 
         if (keyPocket.isPressed()) {
-            EntityPlayerMP p = sp();
-            if (p != null) server(() -> PocketTeleporter.toggle(p));
+            EntityPlayer p = mc.player;
+            if (p != null) NetworkHandler.action(NetAction.TOGGLE_POCKET, 0, 0, 0, "");
         }
     }
+
+    /**
+     * Полная невидимость для онлайна: ванильное зелье прячет только тело, а броня, предметы в руках, элитры и
+     * ник остаются висеть в воздухе. Поэтому игрока с флагом невидимости не рисуем вообще (ни тело, ни броню, ни ник).
+     * Спектаторы по-прежнему видят невидимых, как в ваниле.
+     */
+    @SubscribeEvent
+    public void onRenderPlayerPre(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
+        EntityPlayer ep = event.getEntityPlayer();
+        if (ep == null || !ep.isInvisible()) return;
+        EntityPlayer viewer = Minecraft.getMinecraft().player;
+        if (viewer != null && viewer.isSpectator()) return;
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public void onRenderWorldLast(RenderWorldLastEvent event) { OreScannerClient.render(Minecraft.getMinecraft()); }
 
     private static final String TEAM_HOT = "pm_hot";
     private static final java.util.Set<String> hotNames = new java.util.HashSet<String>();
@@ -339,8 +403,10 @@ public class ClientHandler {
         net.minecraft.scoreboard.ScorePlayerTeam t = sb.getTeam(TEAM_HOT);
         if (t == null) {
             t = sb.createTeam(TEAM_HOT);
-            t.setColor(net.minecraft.util.text.TextFormatting.RED);
         }
+        // в 1.12.2 цвет контура свечения берётся из префикса команды (§c), а не из setColor
+        t.setColor(net.minecraft.util.text.TextFormatting.RED);
+        if (!"\u00a7c".equals(t.getPrefix())) t.setPrefix("\u00a7c");
         return t;
     }
 
@@ -367,7 +433,7 @@ public class ClientHandler {
         boolean on = false;
         int radius = 0;
         try {
-            EntityPlayerMP sp = sp();
+            EntityPlayer sp = mc.player;
             if (sp != null && Thermal.isOn(sp)) {
                 on = true;
                 radius = Thermal.radius(sp);
@@ -480,28 +546,21 @@ public class ClientHandler {
 
     @SubscribeEvent
     public void onMouse(MouseEvent event) {
-        if (!keySlow.isKeyDown() || Minecraft.getMinecraft().currentScreen != null) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (!keySlow.isKeyDown() || mc.currentScreen != null || mc.player == null) return;
         int wheel = event.getDwheel();
         if (wheel == 0) return;
         event.setCanceled(true);
         zWheelUsed = true;
-        EntityPlayerMP p = sp();
-        if (p == null) return;
-        float cur = Abilities.getSlowFactor(p);
+        EntityPlayer player = mc.player;
+        float cur = Abilities.getSlowFactor(player);
         float raw = Math.round((cur + (wheel > 0 ? 0.05f : -0.05f)) * 100f) / 100f;
-        final float next = Math.max(Abilities.minSlowFactor(p), Math.min(0.75f, raw));
-        server(() -> {
-            Abilities.setSlowFactor(p, next);
-            if (next <= 0.001f) {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_stop"), true);
-            } else {
-                p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_factor", String.format("%.2f", next)), true);
-            }
-        });
+        float next = Math.max(Abilities.minSlowFactor(player), Math.min(0.75f, raw));
+        NetworkHandler.action(NetAction.SET_SLOW_FACTOR, 0, 0, next, "");
     }
 
     /** Длина шкалы: цена самого дорогого уже открытого действия (пока ничего нет — hudBarScale, по умолчанию 100). */
-    private static double barScale(EntityPlayerMP sp) {
+    private static double barScale(EntityPlayer sp) {
         double max = Math.max(1, PocketConfig.hudBarScale);
         for (AbilityType t : AbilityType.values()) {
             int lvl = AbilityStorage.getLevel(sp, t);
@@ -516,10 +575,10 @@ public class ClientHandler {
     public void onOverlay(RenderGameOverlayEvent.Post event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || mc.gameSettings.hideGUI || !mc.isIntegratedServerRunning()) return;
+        if (mc.player == null || mc.gameSettings.hideGUI) return;
 
         try {
-            EntityPlayerMP sp = sp();
+            EntityPlayer sp = mc.player;
             if (sp == null) return;
 
             double mana = Mana.get(sp);
@@ -541,14 +600,20 @@ public class ClientHandler {
                 drawSlowVignette(mc, event.getResolution(), Abilities.getSlowFactor(sp));
             }
 
+            ExileClient.drawScreenEffects(mc, event.getResolution());
+            // Draw the paired meters after every screen effect.
+            Gui.drawRect(x - 1, y - 1, x + w + 1, y + h + 1, 0xAA000000);
+            Gui.drawRect(x, y, x + (int) (w * fill), y + h, 0xFF55AAFF);
+            mc.fontRenderer.drawStringWithShadow(String.valueOf((long) mana), x + w + 6, y, 0xFFFFFF);
+            ExileClient.drawThirstBar(mc);
+            OreScannerClient.drawHud(mc);
+
             ItemStack held = mc.player.getHeldItemMainhand();
-            if (mc.player.dimension == PocketMod.DIM_ID
+            if (PocketDimensionManager.isPocketDimension(mc.player.dimension)
                     && mc.objectMouseOver != null
                     && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK
                     && ManaItems.isManaItem(held)) {
-                IntegratedServer server = mc.getIntegratedServer();
-                WorldServer pw = server.getWorld(PocketMod.DIM_ID);
-                PocketData d = PocketData.get(pw);
+                PocketData d = PocketData.get(mc.world);
                 BlockPos pos = mc.objectMouseOver.getBlockPos();
                 if (Pocket.isPayable(d, pos)) {
                     double cost = Pocket.costMana(pos, sp);
@@ -568,7 +633,7 @@ public class ClientHandler {
                 }
             }
         } catch (Exception ignored) {
-            // данные сервера читаются из потока рендера — редкая гонка не должна ронять игру
+            // клиентский снимок данных может обновиться между кадрами
         }
         GlStateManager.color(1f, 1f, 1f, 1f);
     }
@@ -609,6 +674,8 @@ public class ClientHandler {
         int tint = (int) (10 + 26 * t);
         Gui.drawRect(0, 0, sw, sh, (tint << 24) | 0x4A5A78);
 
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
         GlStateManager.color(1f, 1f, 1f, a);
         mc.getTextureManager().bindTexture(vignette(mc));
         org.lwjgl.opengl.GL11.glTexParameteri(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER, org.lwjgl.opengl.GL11.GL_LINEAR);

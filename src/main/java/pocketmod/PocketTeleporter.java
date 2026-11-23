@@ -33,19 +33,106 @@ public class PocketTeleporter implements ITeleporter {
         entity.fallDistance = 0;
     }
 
+    /**
+     * Единственная проверка права входа в карманное измерение.
+     * Покупка дверей/ключей сама по себе не открывает измерение:
+     * сначала игрок должен приобрести AbilityType.POCKET.
+     * Эту проверку должны использовать и будущие двери.
+     */
+    public static boolean canEnterPocket(EntityPlayerMP player) {
+        if (AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
+            return true;
+        }
+        player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        return false;
+    }
+
+    /** Вход гостя в измерение владельца сети через проверенную дверь. */
+    public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner) {
+        return enterNetwork(player, owner, null);
+    }
+
+    /** Вход через внешнюю дверь пары: гость появляется у внутренней двери этой же пары. */
+    public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner, String pairId) {
+        MinecraftServer server = player.getServer();
+        if (server == null || !ExileMode.canEnterShelter(player)) return false;
+        // The door owner already had to unlock the pocket ability before placing this door.
+        // Create their persistent dimension on first door entry if they have not used K yet.
+        int targetId = PocketDimensionManager.getOrCreateDimension(server, owner);
+        WorldServer target = server.getWorld(targetId);
+        if (target == null) {
+            net.minecraftforge.common.DimensionManager.initDimension(targetId);
+            target = server.getWorld(targetId);
+        }
+        if (target == null) return false;
+        Pocket.buildIfNeeded(target);
+        PocketData.get(target);
+        double destX = 2.5D, destY = 64.0D, destZ = 2.5D;
+        if (pairId != null) {
+            PocketDoorData doors = PocketDoorData.get(server.getWorld(0));
+            String inner = doors.roleDoor(pairId, true);
+            if (inner == null || PocketDoorData.keyDim(inner) != targetId) {
+                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.door_pair_incomplete"), true);
+                return false;
+            }
+            BlockPos ip = BlockPos.fromLong(PocketDoorData.keyPos(inner));
+            double[] spot = findStandable(target, ip.getX() + 0.5D, ip.getY(), ip.getZ() + 0.5D);
+            if (spot != null) {
+                destX = spot[0];
+                destY = spot[1];
+                destZ = spot[2];
+            }
+        }
+        // Door guests always enter for free. The owner's free-entry-on-death
+        // flag belongs only to the owner's own pocket and is never consumed here.
+        MorphIntegration.demorph(player);
+        NBTTagCompound data = PlayerData.root(player);
+        data.setInteger("pocket_return_dim", player.dimension);
+        data.setDouble("pocket_return_x", player.posX);
+        data.setDouble("pocket_return_y", player.posY);
+        data.setDouble("pocket_return_z", player.posZ);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        Dash.onTeleport(player);
+        player.changeDimension(targetId, new PocketTeleporter(destX, destY, destZ));
+        return true;
+    }
+
+    /** Выход через внутреннюю дверь: игрок оказывается у внешней двери той же пары. */
+    public static boolean exitThroughDoor(EntityPlayerMP player, String pairId) {
+        MinecraftServer server = player.getServer();
+        if (server == null || pairId == null) return false;
+        String outer = PocketDoorData.get(server.getWorld(0)).roleDoor(pairId, false);
+        if (outer == null) return false;
+        int dim = PocketDoorData.keyDim(outer);
+        WorldServer target = server.getWorld(dim);
+        if (target == null) {
+            net.minecraftforge.common.DimensionManager.initDimension(dim);
+            target = server.getWorld(dim);
+        }
+        if (target == null) return false;
+        BlockPos op = BlockPos.fromLong(PocketDoorData.keyPos(outer));
+        double[] spot = findStandable(target, op.getX() + 0.5D, op.getY(), op.getZ() + 0.5D);
+        if (spot == null) spot = new double[] { op.getX() + 0.5D, op.getY(), op.getZ() + 0.5D };
+
+        NBTTagCompound data = PlayerData.root(player);
+        PocketAccess.clear(player);
+        data.setDouble("pocket_inner_x", player.posX);
+        data.setDouble("pocket_inner_y", player.posY);
+        data.setDouble("pocket_inner_z", player.posZ);
+        Dash.onTeleport(player);
+        player.changeDimension(dim, new PocketTeleporter(spot[0], spot[1], spot[2]));
+        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
+        return true;
+    }
+
     public static void toggle(EntityPlayerMP player) {
-        if (!AbilityStorage.isUnlocked(player, AbilityType.POCKET)) {
-            player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
+        if (!PocketDimensionManager.isPocketDimension(player.dimension) && !canEnterPocket(player)) {
             return;
         }
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (player.dimension != PocketMod.DIM_ID) {
-            // вход в карман выключает полёт и Спектор
-            Spector.forceReturnIfActive(player);
-            Flight.stop(player);
-        }
-        if (player.dimension == PocketMod.DIM_ID) {
+        if (PocketDimensionManager.isPocketDimension(player.dimension)) {
             leave(player, server);
         } else {
             enter(player, server);
@@ -53,39 +140,20 @@ public class PocketTeleporter implements ITeleporter {
     }
 
     /** Цена входа = база × (1 + шаг × кольца) × (скидка уровня) × множитель цен. */
-    private static double entryPrice(EntityPlayerMP player, PocketData d) {
-        double base = PocketConfig.entryCost * (1.0 + PocketConfig.entryRingStep * d.maxRing);
-        if (AbilityStorage.getLevel(player, AbilityType.POCKET) >= 2) {
-            base *= (1.0 - PocketConfig.pocketDiscountL2);
-        }
-        return base * Mana.getPriceMultiplier(player);
+    static double baseEntryPrice(int rings, int level) {
+        double base = PocketConfig.entryCost * (1.0 + PocketConfig.entryRingStep * rings);
+        return level >= 2 ? base * (1.0 - PocketConfig.pocketDiscountL2) : base;
     }
 
     private static void enter(EntityPlayerMP player, MinecraftServer server) {
+        if (!ExileMode.canEnterShelter(player)) return;
         NBTTagCompound data = PlayerData.root(player);
 
-        WorldServer pocket = server.getWorld(PocketMod.DIM_ID);
+        int pocketDimension = PocketDimensionManager.getOrCreateDimension(server, player.getUniqueID());
+        WorldServer pocket = server.getWorld(pocketDimension);
+        if (pocket == null) return;
         Pocket.buildIfNeeded(pocket);
         PocketData pd = PocketData.get(pocket);
-
-        boolean free = Mana.hasFreeEntry(player);
-        if (!free) {
-            double price = entryPrice(player, pd);
-            if (!Mana.spend(player, price)) {
-                player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana",
-                        (int) Math.ceil(price)), true);
-                return;
-            }
-        }
-        Mana.setFreeEntry(player, false);
-
-        // Мобы вокруг точки ухода теряют цель
-        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
-
-        data.setInteger("pocket_return_dim", player.dimension);
-        data.setDouble("pocket_return_x", player.posX);
-        data.setDouble("pocket_return_y", player.posY);
-        data.setDouble("pocket_return_z", player.posZ);
 
         // Входим туда, откуда вышли в прошлый раз (если там ещё безопасно), иначе в центр
         double ix = 2.5, iy = 64, iz = 2.5;
@@ -101,11 +169,44 @@ public class PocketTeleporter implements ITeleporter {
             }
         }
 
-        player.changeDimension(PocketMod.DIM_ID, new PocketTeleporter(ix, iy, iz));
+        boolean freeEntry = Mana.hasFreeEntry(player);
+        int pocketLevel = AbilityStorage.getLevel(player, AbilityType.POCKET);
+        double price = freeEntry ? 0.0 : baseEntryPrice(pd.maxRing, pocketLevel) * Mana.getPriceMultiplier(player);
+        if (!Mana.spend(player, price)) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "pocketmod.msg.no_mana", (int) Math.ceil(price)), true);
+            return;
+        }
+
+        MorphIntegration.demorph(player);
+        Spector.forceReturnIfActive(player);
+        Flight.stop(player);
+        int returnDimension = player.dimension;
+        double returnX = player.posX;
+        double returnY = player.posY;
+        double returnZ = player.posZ;
+        Abilities.clearMobTargets(player, PocketConfig.mobResetRadius);
+        Dash.onTeleport(player);
+
+        try {
+            player.changeDimension(pocketDimension, new PocketTeleporter(ix, iy, iz));
+        } finally {
+            if (player.dimension == pocketDimension) {
+                NBTTagCompound destinationData = PlayerData.root(player);
+                destinationData.setInteger("pocket_return_dim", returnDimension);
+                destinationData.setDouble("pocket_return_x", returnX);
+                destinationData.setDouble("pocket_return_y", returnY);
+                destinationData.setDouble("pocket_return_z", returnZ);
+                if (freeEntry) Mana.setFreeEntry(player, false);
+            } else if (price > 0.0) {
+                Mana.add(player, price);
+            }
+        }
     }
 
     private static void leave(EntityPlayerMP player, MinecraftServer server) {
         NBTTagCompound data = PlayerData.root(player);
+        PocketAccess.clear(player);
 
         // Запоминаем, где стоял внутри
         data.setDouble("pocket_inner_x", player.posX);
@@ -131,6 +232,7 @@ public class PocketTeleporter implements ITeleporter {
         WorldServer target = server.getWorld(dim);
         double[] safe = findSafeExit(target, rx, ry, rz);
 
+        Dash.onTeleport(player);
         player.changeDimension(dim, new PocketTeleporter(safe[0], safe[1], safe[2]));
 
         // Мобы вокруг точки выхода теряют цель

@@ -30,8 +30,18 @@ public class AbilityStorage {
         return getLevel(player, type) > 0;
     }
 
+    /** Учитывает уровни, предоставленные другой способностью, при выводе цены и покупке. */
+    static int getUpgradeLevel(EntityPlayer player, AbilityType type) {
+        int purchasedLevel = getLevel(player, type);
+        if (type == AbilityType.ORE_SCANNER && getLevel(player, AbilityType.THERMAL) >= 3) {
+            return Math.max(2, purchasedLevel);
+        }
+        return purchasedLevel;
+    }
+
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
-        int cur = getLevel(player, type);
+        if (!ExileProgression.require(player, type.id)) return false;
+        int cur = getUpgradeLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {
             if (player instanceof EntityPlayerMP) {
@@ -50,6 +60,7 @@ public class AbilityStorage {
         }
         Mana.consumeDiscount(player);
         setLevel(player, type, cur + 1);
+        ExileMode.progress(player, "upgrade_" + type.id + "_" + (cur + 1), 1);
         if (player instanceof EntityPlayerMP) {
             ((EntityPlayerMP) player).sendStatusMessage(
                     new TextComponentTranslation("pocketmod.msg.upgraded",

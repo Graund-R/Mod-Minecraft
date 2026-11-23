@@ -1,6 +1,7 @@
 package pocketmod;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
@@ -9,6 +10,7 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -19,9 +21,16 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class CommonEvents {
 
     @SubscribeEvent
+    public static void onFinishEating(LivingEntityUseItemEvent.Finish event) {
+        if (event.getEntityLiving() instanceof EntityPlayerMP) {
+            BodyEffects.addFoodSaturation((EntityPlayerMP) event.getEntityLiving(), event.getItem());
+        }
+    }
+
+    @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
         if (PocketData.get(world).walls.contains(event.getPos())) {
@@ -33,7 +42,7 @@ public class CommonEvents {
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != PocketMod.DIM_ID) {
+        if (world.isRemote || !PocketDimensionManager.isPocketDimension(world.provider.getDimension()) || event.isCanceled()) {
             return;
         }
         PocketData data = PocketData.get(world);
@@ -79,6 +88,7 @@ public class CommonEvents {
         } else {
             data.paid.put(pos, paid);
             data.markDirty();
+            NetworkHandler.syncPocketWorld((WorldServer) world);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.expand_progress",
                     (int) paid, (int) Math.ceil(cost)), true);
         }
@@ -89,6 +99,12 @@ public class CommonEvents {
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         World world = event.getWorld();
         if (world.isRemote) {
+            return;
+        }
+        // В кармане слитки не превращаются в ману по ПКМ в воздух: при удержании ПКМ у стены
+        // луч иногда не попадает в блок, и вся стопка уходила в ману вместо покупки стены.
+        // Сдача от покупки стены (Mana.add(excess) в onRightClickBlock) не затрагивается.
+        if (PocketDimensionManager.isPocketDimension(world.provider.getDimension())) {
             return;
         }
         ItemStack stack = event.getItemStack();
@@ -118,11 +134,38 @@ public class CommonEvents {
 
         if (event.isWasDeath()) {
             Mana.set(now, Mana.get(now) * (1.0 - PocketConfig.deathManaLoss));
-            if (old.dimension == PocketMod.DIM_ID) {
+            WarehouseInventory.handleDeath(old, now);
+
+            boolean diedInOwnPocket = false;
+            if (old.world instanceof WorldServer
+                    && PocketDimensionManager.isPocketDimension(old.dimension)) {
+                java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(
+                        ((WorldServer) old.world).getMinecraftServer(), old.dimension);
+                diedInOwnPocket = owner != null && owner.equals(old.getUniqueID());
+            }
+            if (diedInOwnPocket) {
+                // Один бесплатный возврат в свой карман после смерти.
                 Mana.setFreeEntry(now, true);
             }
-            // Временный тотем на месте смерти (x10, до использования или следующей смерти)
-            Totems.setDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+
+            Totems.clearDeathTotem(now);
+            if (AbilityStorage.isUnlocked(now, AbilityType.TOTEM)) {
+                Totems.setPendingDeathTotem(now, old.dimension, old.posX, old.posY, old.posZ);
+            }
         }
     }
-}
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.player instanceof net.minecraft.entity.player.EntityPlayerMP)) return;
+        net.minecraft.entity.player.EntityPlayerMP player =
+                (net.minecraft.entity.player.EntityPlayerMP) event.player;
+        MorphIntegration.demorph(player);
+        if (!PocketDimensionManager.isPocketDimension(player.dimension)) return;
+
+        java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(player.getServer(), player.dimension);
+        if (owner != null && !owner.equals(player.getUniqueID())) {
+            // Гость не остаётся в чужом измерении после возрождения.
+            PocketTeleporter.toggle(player);
+        }
+    }}

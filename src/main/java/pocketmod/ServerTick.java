@@ -27,15 +27,35 @@ public class ServerTick {
         Long prev = lastTick.put(player.getUniqueID(), now);
         long delta = prev == null ? 50L : Math.max(0L, Math.min(100L, now - prev.longValue()));
 
-        // Каждый тик — только дешёвые проверки внутри; тяжёлые сканы throttled в классах
-        Abilities.tickInvisibility(player);
-        Abilities.tickSlow(player);
-        if (Spector.isActive(player)) Spector.tick(player);
-        if (Thermal.isOn(player)) Thermal.tick(player);
-        if (Shield.isOn(player)) Shield.tick(player);
-        Flight.tick(player);
-        SoftFall.tick(player);
-        BodyEffects.tick(player);
+        // В личном кармане активная форма Metamorph запрещена, даже при внешнем переносе.
+        if (PocketDimensionManager.isPocketDimension(player.dimension)
+                && MorphIntegration.isMorphed(player)) {
+            MorphIntegration.demorph(player);
+        }
+
+        // При морфизме остаются доступны магазин и тотемы, все прочие эффекты отключены.
+        if (MorphIntegration.isMorphed(player)) {
+            MorphIntegration.suppressAbilities(player);
+            BodyEffects.suppressForMorph(player);
+            Mana.tickCredit(player, delta);
+            return;
+        }
+
+        ActiveAbilities.tick(player);
+
+        // Содержание измерения оплачивает только его владелец. Гостевой вход бесплатный.
+        if (PocketDimensionManager.isPocketDimension(player.dimension)
+                && PocketConfig.pocketTickCost > 0 && player.ticksExisted % 20 == 0) {
+            java.util.UUID owner = PocketDimensionManager.getOwnerForDimension(player.getServer(), player.dimension);
+            if (owner != null && owner.equals(player.getUniqueID())) {
+                double fee = PocketConfig.pocketTickCost * Mana.getPriceMultiplier(player);
+                if (!Mana.spend(player, fee)) {
+                    player.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(
+                            "pocketmod.msg.pocket_fee_empty"), true);
+                    PocketTeleporter.toggle(player);
+                }
+            }
+        }
         if (AbilityStorage.isUnlocked(player, AbilityType.MAGNET)) Magnet.tick(player);
         Mana.tickCredit(player, delta);
     }

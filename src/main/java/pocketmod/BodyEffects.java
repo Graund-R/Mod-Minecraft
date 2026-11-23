@@ -8,15 +8,19 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.MobEffects;
+import net.minecraft.item.ItemFood;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.FoodStats;
 import net.minecraft.util.text.TextComponentTranslation;
 
 /** Эффекты тела: сердца, скорость, сила, огнестойкость, дыхание. Навсегда или в аренду (мана/сек). */
 public class BodyEffects {
 
-    public static final String[] IDS = { "hearts", "speed", "strength", "fire", "breath" };
+    public static final int HEARTS = 0, SPEED = 1, STRENGTH = 2, FIRE = 3, BREATH = 4, REGENERATION = 5;
+    public static final String[] IDS = { "hearts", "speed", "strength", "fire", "breath", "regen" };
     private static final UUID HEART_ID = UUID.fromString("5b7c1a52-3d2e-4e0a-9d51-7a6f0c1b9e11");
 
     private static NBTTagCompound d(EntityPlayer p) {
@@ -32,7 +36,11 @@ public class BodyEffects {
     }
 
     public static int maxPerm(int i) {
-        return i == 0 ? PocketConfig.heartsMaxBuys : 1;
+        return i == HEARTS ? PocketConfig.heartsMaxBuys : i == REGENERATION ? PocketConfig.regenMaxBuys : 1;
+    }
+
+    public static int permCost(int i, int currentLevel) {
+        return i == REGENERATION ? PocketConfig.regenCosts[currentLevel] : PocketConfig.bodyPermCost[i];
     }
 
     public static double rentCost(EntityPlayer p, int i) {
@@ -46,19 +54,23 @@ public class BodyEffects {
     }
 
     public static void buyPerm(EntityPlayerMP p, int i) {
+        if (!ExileProgression.require(p, "body_" + IDS[i])) return;
         int cur = perm(p, i);
         if (cur >= maxPerm(i)) return;
-        double price = Mana.shopPrice(p, PocketConfig.bodyPermCost[i]);
+        double price = Mana.shopPrice(p, permCost(i, cur));
         if (!Mana.spend(p, price)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(price)), true);
             return;
         }
         Mana.consumeDiscount(p);
         d(p).setInteger("pocketmod_body_" + IDS[i], cur + 1);
+        if (i == REGENERATION) d(p).setBoolean("pocketmod_body_rent_regen", false);
     }
 
     public static void toggleRent(EntityPlayerMP p, int i) {
+        if (!ExileProgression.require(p, "body_" + IDS[i])) return;
         boolean now = !rent(p, i);
+        if (now && i == REGENERATION && perm(p, i) > 0) return;
         if (now && Mana.get(p) < rentCost(p, i)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(rentCost(p, i))), true);
             return;
@@ -66,7 +78,30 @@ public class BodyEffects {
         d(p).setBoolean("pocketmod_body_rent_" + IDS[i], now);
     }
 
+    /** Убирает применённые бонусы тела, пока активен облик Metamorph. */
+    public static void suppressForMorph(EntityPlayerMP p) {
+        IAttributeInstance attribute = p.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH);
+        AttributeModifier old = attribute.getModifier(HEART_ID);
+        if (old != null) attribute.removeModifier(old);
+        for (PotionEffect effect : new java.util.ArrayList<PotionEffect>(p.getActivePotionEffects())) {
+            Potion potion = effect.getPotion();
+            if ((potion == MobEffects.SPEED || potion == MobEffects.STRENGTH
+                    || potion == MobEffects.FIRE_RESISTANCE || potion == MobEffects.WATER_BREATHING
+                    || potion == MobEffects.REGENERATION)
+                    && effect.getIsAmbient() && !effect.doesShowParticles()) {
+                p.removePotionEffect(potion);
+            }
+        }
+    }
+
     public static void tick(EntityPlayerMP p) {
+        if (MorphIntegration.isMorphed(p)) {
+            suppressForMorph(p);
+            return;
+        }
+        if (perm(p, REGENERATION) > 0 && rent(p, REGENERATION)) {
+            d(p).setBoolean("pocketmod_body_rent_regen", false);
+        }
         for (int i = 0; i < IDS.length; i++) {
             if (rent(p, i) && !Mana.spend(p, rentCost(p, i) / 20.0)) {
                 d(p).setBoolean("pocketmod_body_rent_" + IDS[i], false);
@@ -74,11 +109,12 @@ public class BodyEffects {
             }
         }
         if (p.ticksExisted % 20 != 0) return;
-        apply(p, 1, MobEffects.SPEED);
-        apply(p, 2, MobEffects.STRENGTH);
-        apply(p, 3, MobEffects.FIRE_RESISTANCE);
-        apply(p, 4, MobEffects.WATER_BREATHING);
+        apply(p, SPEED, MobEffects.SPEED);
+        apply(p, STRENGTH, MobEffects.STRENGTH);
+        apply(p, FIRE, MobEffects.FIRE_RESISTANCE);
+        apply(p, BREATH, MobEffects.WATER_BREATHING);
         applyHearts(p);
+        applyRegeneration(p);
     }
 
     private static void apply(EntityPlayerMP p, int i, Potion pot) {
@@ -87,8 +123,27 @@ public class BodyEffects {
         }
     }
 
+    private static void applyRegeneration(EntityPlayerMP p) {
+        int level = perm(p, REGENERATION);
+        if (level >= 2) {
+            // Keep the original amplifier and refresh cadence for the two healing levels.
+            p.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 60, Math.min(2, level - 1), true, false));
+        }
+    }
+
+    static void addFoodSaturation(EntityPlayerMP p, ItemStack eaten) {
+        if (!(eaten.getItem() instanceof ItemFood) || MorphIntegration.isMorphed(p)
+                || (perm(p, REGENERATION) == 0 && !rent(p, REGENERATION))) return;
+        ItemFood food = (ItemFood) eaten.getItem();
+        float bonus = food.getHealAmount(eaten) * food.getSaturationModifier(eaten)
+                * (2.0F * PocketConfig.regenSaturationPercent / 100.0F);
+        if (bonus <= 0) return;
+        FoodStats stats = p.getFoodStats();
+        stats.setFoodSaturationLevel(Math.min(stats.getFoodLevel(), stats.getSaturationLevel() + bonus));
+    }
+
     private static void applyHearts(EntityPlayerMP p) {
-        double amount = 2.0 * perm(p, 0) + (rent(p, 0) ? 2.0 * PocketConfig.heartsRent : 0.0);
+        double amount = 2.0 * perm(p, HEARTS) + (rent(p, HEARTS) ? 2.0 * PocketConfig.heartsRent : 0.0);
         IAttributeInstance a = p.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH);
         AttributeModifier old = a.getModifier(HEART_ID);
         if (old != null && old.getAmount() == amount) return;

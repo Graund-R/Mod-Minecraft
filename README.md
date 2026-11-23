@@ -28,3 +28,11 @@ GitHub Actions собирает мод при каждом пуше и пулл-
 Файл `config/pocketmod.cfg`, в игре: Mods → Pocket Mod → Config или кнопка «Pocket Mod: настройки» в меню паузы.
 
 Значение, уже записанное в файл, перебивает умолчание в коде. Если меняешь умолчание, цену, название категории или ключа, добавь шаг в `ConfigMigrations` и увеличь `ConfigMigrations.CURRENT` (подробнее в комментарии к классу). Перед миграцией создаётся копия `pocketmod.cfg.bak-vN`.
+
+## Проверка после изменений
+
+Что нажать в игре и что должно произойти: [docs/regression-checklist.md](docs/regression-checklist.md).
+
+## Как добавить непрерывную способность
+
+Реализуй `ActiveAbility` (id, isActive, drainPerSec, tick, onManaExhausted, syncedFlags) и добавь одну строку в `ActiveAbilities`: оплата маны, выключение при нуле маны, суммарный расход и синхронизация флага с клиентом заработают сами.
