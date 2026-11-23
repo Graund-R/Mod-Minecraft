@@ -576,7 +576,6 @@ public class ClientHandler {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player == null || mc.gameSettings.hideGUI) return;
-        OreScannerClient.drawHud(mc);
 
         try {
             EntityPlayer sp = mc.player;
@@ -600,6 +599,14 @@ public class ClientHandler {
             if (PocketConfig.slowVisual && Abilities.isSlow(sp)) {
                 drawSlowVignette(mc, event.getResolution(), Abilities.getSlowFactor(sp));
             }
+
+            ExileClient.drawScreenEffects(mc, event.getResolution());
+            // Draw the paired meters after every screen effect.
+            Gui.drawRect(x - 1, y - 1, x + w + 1, y + h + 1, 0xAA000000);
+            Gui.drawRect(x, y, x + (int) (w * fill), y + h, 0xFF55AAFF);
+            mc.fontRenderer.drawStringWithShadow(String.valueOf((long) mana), x + w + 6, y, 0xFFFFFF);
+            ExileClient.drawThirstBar(mc);
+            OreScannerClient.drawHud(mc);
 
             ItemStack held = mc.player.getHeldItemMainhand();
             if (PocketDimensionManager.isPocketDimension(mc.player.dimension)
@@ -667,6 +674,8 @@ public class ClientHandler {
         int tint = (int) (10 + 26 * t);
         Gui.drawRect(0, 0, sw, sh, (tint << 24) | 0x4A5A78);
 
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
         GlStateManager.color(1f, 1f, 1f, a);
         mc.getTextureManager().bindTexture(vignette(mc));
         org.lwjgl.opengl.GL11.glTexParameteri(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER, org.lwjgl.opengl.GL11.GL_LINEAR);

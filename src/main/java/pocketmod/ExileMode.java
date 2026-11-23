@@ -1,21 +1,13 @@
 package pocketmod;
 
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.monster.AbstractSkeleton;
-import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.MobEffects;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldType;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -82,6 +74,7 @@ public final class ExileMode {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof EntityPlayerMP)) return;
         EntityPlayerMP p = (EntityPlayerMP) event.player;
+        ExileBloodthirst.refreshModifiers(p);
         if (!enabled(p.world)) return;
         ExileProgression.enforce(p);
         if (p.ticksExisted % 20 != 0) return;
@@ -132,26 +125,8 @@ public final class ExileMode {
         s.setInteger("stage", stage);
         s.setInteger(
                 "contamination", (int) Math.min(100, exposure * 100 / ExileConfig.fullSeconds));
-        double power = 0;
-        for (AbilityType type : AbilityType.values()) power += AbilityStorage.getLevel(p, type);
-        for (int i = 0; i < BodyEffects.IDS.length; i++) power += BodyEffects.perm(p, i);
-        power = Math.max(s.getDouble("power"), power + s.getDouble("progress") / 5);
-        s.setDouble("power", power);
-        int increment = 1 + (int) (Math.min(40, power) / 10);
-        int previousThirst = s.getInteger("thirst");
-        int thirst = Math.min(ExileConfig.thirstSeconds * 2, previousThirst + increment);
-        s.setInteger("thirst", thirst);
-        if (previousThirst < ExileConfig.thirstSeconds / 2
-                && thirst >= ExileConfig.thirstSeconds / 2) message(p, "thirst_warning");
-        if (previousThirst < ExileConfig.thirstSeconds && thirst >= ExileConfig.thirstSeconds)
-            message(p, "thirst_severe");
-        // Только короткие эффекты: после боя они исчезнут сами и не снимут зелья других модов.
-        if (thirst >= ExileConfig.thirstSeconds / 2)
-            p.addPotionEffect(new PotionEffect(MobEffects.HUNGER, 45, 0, true, false));
-        if (thirst >= ExileConfig.thirstSeconds) {
-            p.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 45, 0, true, false));
-            p.addPotionEffect(new PotionEffect(MobEffects.MINING_FATIGUE, 45, 0, true, false));
-        }
+        ExileBloodthirst.advance(p);
+        int thirst = s.getInteger("thirst");
         if ((stage > 0 || thirst >= ExileConfig.thirstSeconds)
                 && data.seconds % ExileConfig.spawnInterval == 0)
             ExileEncounters.spawn(p, Math.max(1, stage));
@@ -176,79 +151,6 @@ public final class ExileMode {
         if (e.player instanceof EntityPlayerMP
                 && !PocketDimensionManager.isPocketDimension(e.toDim))
             progress(e.player, "dimension_" + e.toDim, 5);
-    }
-
-    private static boolean threat(EntityLiving mob, EntityPlayerMP p) {
-        if (!(mob instanceof IMob) || mob.getAttackTarget() != p || mob.getDistanceSq(p) > 1024)
-            return false;
-        if (mob.getMaxHealth()
-                < Math.max(
-                        10, p.getMaxHealth() * 0.25 + ExileMode.state(p).getDouble("power") * 0.4))
-            return false;
-        if (mob instanceof AbstractSkeleton && mob.canEntityBeSeen(p)) return true;
-        net.minecraft.pathfinding.Path path = mob.getNavigator().getPathToEntityLiving(p);
-        return path != null
-                && path.getFinalPathPoint() != null
-                && path.getFinalPathPoint()
-                                .distanceTo(
-                                        new net.minecraft.pathfinding.PathPoint(
-                                                MathHelper.floor(p.posX),
-                                                MathHelper.floor(p.posY),
-                                                MathHelper.floor(p.posZ)))
-                        <= 2;
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void damage(LivingDamageEvent e) {
-        if (e.isCanceled()
-                || e.getAmount() <= 0
-                || !(e.getEntityLiving() instanceof EntityLiving)
-                || !(e.getSource().getTrueSource() instanceof EntityPlayerMP)) return;
-        EntityPlayerMP p = (EntityPlayerMP) e.getSource().getTrueSource();
-        EntityLiving mob = (EntityLiving) e.getEntityLiving();
-        if (!active(p) || !threat(mob, p)) return;
-        NBTTagCompound n = mob.getEntityData();
-        // Участие хранится на самом противнике, список сущностей в памяти сервера не растёт.
-        String key = "pm_fight_" + p.getUniqueID();
-        n.setFloat(key, n.getFloat(key) + Math.min(e.getAmount(), mob.getHealth()));
-        n.setLong(key + "_time", mob.world.getTotalWorldTime());
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void death(LivingDeathEvent e) {
-        if (e.isCanceled()
-                || e.getEntityLiving().world.isRemote
-                || !(e.getEntityLiving() instanceof EntityLiving)) return;
-        EntityLiving mob = (EntityLiving) e.getEntityLiving();
-        if (!enabled(mob.world)) return;
-        for (EntityPlayer player : mob.world.playerEntities) {
-            if (!(player instanceof EntityPlayerMP)
-                    || !active(player)
-                    || player.getDistanceSq(mob) > 4096) continue;
-            String key = "pm_fight_" + player.getUniqueID();
-            float damage = mob.getEntityData().getFloat(key);
-            long last = mob.getEntityData().getLong(key + "_time");
-            if (damage < Math.min(10, mob.getMaxHealth() * 0.3)
-                    || mob.world.getTotalWorldTime() - last > 600) continue;
-            NBTTagCompound s = state(player);
-            int relief =
-                    (int)
-                            Math.min(
-                                    ExileConfig.combatRelief,
-                                    ExileConfig.combatRelief
-                                            * mob.getMaxHealth()
-                                            / Math.max(20, player.getMaxHealth()));
-            s.setInteger("thirst", Math.max(0, s.getInteger("thirst") - relief));
-            // Боссы и достижения дают одноразовый рост, обычные бои ограничены текущей ступенью.
-            if (!mob.isNonBoss())
-                progress(player, "boss_" + net.minecraft.entity.EntityList.getKey(mob), 10);
-            else if (s.getDouble("progress") < 10) progress(player, null, 0.1);
-            ExileTrials.defeated((EntityPlayerMP) player, mob);
-            if (!mob.getEntityData().hasKey("pm_exile_trial")
-                    && player.getRNG().nextFloat() < ExileConfig.discoveryChance)
-                ExileProgression.discover((EntityPlayerMP) player, mob);
-            message((EntityPlayerMP) player, "combat_relief");
-        }
     }
 
     public static void message(EntityPlayerMP player, String key) {

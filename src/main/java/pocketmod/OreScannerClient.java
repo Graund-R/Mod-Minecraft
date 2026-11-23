@@ -307,7 +307,7 @@ public final class OreScannerClient {
         String[] t = PocketConfig.oreScannerTargets;
         int mask = OreScanner.disabledMask(mc.player);
         int x = 10;
-        int y = 26;
+        int y = ExileProgression.inMode(mc.player) ? 68 : 26;
         mc.fontRenderer.drawStringWithShadow(Tr.format("pocketmod.hud.scanner"), x, y, 0xFFFFFF);
         y += 11;
         if (!scanning && mc.world != null && lastScanTime > -100000L) {

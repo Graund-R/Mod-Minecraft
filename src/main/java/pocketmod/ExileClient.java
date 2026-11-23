@@ -164,38 +164,19 @@ public final class ExileClient {
                 || mc.gameSettings.hideGUI) return;
         NBTTagCompound s = ExileMode.state(mc.player);
         if (!s.getBoolean("cured")) {
-            int thirst =
-                    (int)
-                            Math.min(
-                                    100,
-                                    s.getInteger("thirst")
-                                            * 100.0
-                                            / ExileProgression.config(
-                                                    mc.player,
-                                                    "thirst",
-                                                    ExileConfig.thirstSeconds));
-            int y = 28;
             mc.fontRenderer.drawStringWithShadow(
-                    I18n.format("pocketmod.exile.hud", s.getInteger("contamination"), thirst),
+                    I18n.format("pocketmod.exile.contamination_hud", s.getInteger("contamination")),
                     10,
-                    y,
+                    39,
                     0xDEAAAA);
-            if (ExileConfig.visuals && s.getInteger("stage") > 0) {
-                int alpha = Math.min(55, s.getInteger("stage") * 9);
-                Gui.drawRect(
-                        0,
-                        0,
-                        e.getResolution().getScaledWidth(),
-                        e.getResolution().getScaledHeight(),
-                        (alpha << 24) | 0x333340);
-            }
         }
+
         if (s.getBoolean("compass_target_set")
                 && (ExileTrials.isCompass(mc.player.getHeldItemMainhand())
                         || ExileTrials.isCompass(mc.player.getHeldItemOffhand()))) {
             if (mc.player.dimension != 0) {
                 mc.fontRenderer.drawStringWithShadow(
-                        I18n.format("pocketmod.exile.compass_overworld"), 10, 42, 0xFFD080);
+                        I18n.format("pocketmod.exile.compass_overworld"), 10, 52, 0xFFD080);
                 return;
             }
             BlockPos target = BlockPos.fromLong(s.getLong("compass_target"));
@@ -217,9 +198,156 @@ public final class ExileClient {
                             direction,
                             (int) Math.sqrt(dx * dx + dz * dz)),
                     10,
-                    42,
+                    52,
                     0xFFD080);
         }
+    }
+
+    private static net.minecraft.util.ResourceLocation thirstVignette;
+    private int heartbeatTicks;
+    private static int lastHeartbeatTick = -1000;
+    private net.minecraft.client.entity.EntityPlayerSP heartbeatPlayer;
+
+    private static double thirstFraction(Minecraft mc) {
+        NBTTagCompound s = ExileMode.state(mc.player);
+        return ExileBloodthirst.fraction(
+                s.getInteger("thirst"),
+                ExileProgression.config(mc.player, "thirst", ExileConfig.thirstSeconds));
+    }
+
+    private static boolean showThirst(Minecraft mc) {
+        return mc.player != null
+                && mc.player.isEntityAlive()
+                && ExileProgression.inMode(mc.player)
+                && !ExileMode.state(mc.player).getBoolean("cured");
+    }
+
+    /** Called after ability overlays, before the mana/thirst bars, so both remain readable. */
+    public static void drawThirstBar(Minecraft mc) {
+        if (!showThirst(mc)) return;
+        int x = 10, y = 23, w = 100, h = 8;
+        double fill = thirstFraction(mc);
+        Gui.drawRect(x - 1, y - 1, x + w + 1, y + h + 1, 0xCC000000);
+        Gui.drawRect(x, y, x + w, y + h, 0xFF351218);
+        if (fill > 0)
+            Gui.drawRect(
+                    x,
+                    y,
+                    x + (int) Math.ceil(w * fill),
+                    y + h,
+                    fill >= 1 ? 0xFFFF3945 : 0xFFCC2337);
+        mc.fontRenderer.drawStringWithShadow(
+                I18n.format("pocketmod.exile.thirst_bar", (int) Math.round(fill * 100)),
+                x + w + 6,
+                y,
+                0xFFFFB5B5);
+    }
+
+    public static void drawScreenEffects(
+            Minecraft mc, net.minecraft.client.gui.ScaledResolution res) {
+        if (!showThirst(mc) || !ExileConfig.visuals) return;
+        NBTTagCompound s = ExileMode.state(mc.player);
+        double severity = ExileBloodthirst.symptoms(thirstFraction(mc));
+        // A shared opacity budget keeps ability vision readable when the chunk is also infected.
+        boolean spirit = s.getBoolean("spector_active");
+        double budget =
+                spirit
+                        ? 0.40
+                        : Thermal.isOn(mc.player)
+                                ? 0.35
+                                : PocketConfig.slowVisual && Abilities.isSlow(mc.player)
+                                        ? 0.45
+                                        : 1.0;
+        int stage =
+                PocketDimensionManager.isPocketDimension(mc.player.dimension)
+                        ? 0
+                        : s.getInteger("stage");
+        int width = res.getScaledWidth(), height = res.getScaledHeight();
+        double age = mc.player.ticksExisted + mc.getRenderPartialTicks() - lastHeartbeatTick;
+        double beat =
+                Math.max(
+                        Math.exp(-Math.max(0, age) * 1.5),
+                        age >= 3 ? 0.6 * Math.exp(-(age - 3) * 1.5) : 0);
+        int redAlpha = (int) (budget * severity * (25 + 9 * beat));
+        int chunkAlpha = (int) (budget * Math.min(28, stage * 7) * (1 - severity * 0.5));
+        net.minecraft.client.renderer.GlStateManager.disableDepth();
+        net.minecraft.client.renderer.GlStateManager.depthMask(false);
+        net.minecraft.client.renderer.GlStateManager.enableBlend();
+        net.minecraft.client.renderer.GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        net.minecraft.client.renderer.GlStateManager.disableAlpha();
+        if (chunkAlpha > 0) Gui.drawRect(0, 0, width, height, (chunkAlpha << 24) | 0x333340);
+        if (redAlpha > 0) Gui.drawRect(0, 0, width, height, (redAlpha << 24) | 0xA0000C);
+        if (severity > 0) {
+            if (thirstVignette == null) {
+                java.awt.image.BufferedImage image =
+                        new java.awt.image.BufferedImage(
+                                128, 128, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+                for (int y = 0; y < 128; y++)
+                    for (int x = 0; x < 128; x++) {
+                        double dx = (x + 0.5) / 64.0 - 1, dy = (y + 0.5) / 64.0 - 1;
+                        double radius = Math.min(1, Math.sqrt(dx * dx + dy * dy));
+                        int alpha =
+                                (int) (255 * Math.pow(Math.max(0, (radius - 0.35) / 0.65), 1.7));
+                        image.setRGB(x, y, (alpha << 24) | 0x120003);
+                    }
+                thirstVignette =
+                        mc.getTextureManager()
+                                .getDynamicTextureLocation(
+                                        "bloodthirst_vignette",
+                                        new net.minecraft.client.renderer.texture.DynamicTexture(
+                                                image));
+            }
+            // Gui.drawRect disables blending; restore it before the translucent texture.
+            net.minecraft.client.renderer.GlStateManager.enableBlend();
+            net.minecraft.client.renderer.GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+            mc.getTextureManager().bindTexture(thirstVignette);
+            net.minecraft.client.renderer.GlStateManager.color(
+                    1, 1, 1, (float) (budget * severity * (0.42 + 0.06 * beat)));
+            Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, width, height, width, height);
+        }
+        net.minecraft.client.renderer.GlStateManager.color(1, 1, 1, 1);
+        net.minecraft.client.renderer.GlStateManager.enableAlpha();
+        net.minecraft.client.renderer.GlStateManager.disableBlend();
+        net.minecraft.client.renderer.GlStateManager.depthMask(true);
+        net.minecraft.client.renderer.GlStateManager.enableDepth();
+    }
+
+    @SubscribeEvent
+    public void heartbeat(net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent e) {
+        if (e.phase != net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (heartbeatPlayer != mc.player) {
+            heartbeatPlayer = mc.player;
+            heartbeatTicks = 0;
+            lastHeartbeatTick = -1000;
+        }
+        if (!showThirst(mc) || mc.isGamePaused()) {
+            heartbeatTicks = 0;
+            return;
+        }
+        double severity = ExileBloodthirst.symptoms(thirstFraction(mc));
+        if (severity <= 0) {
+            heartbeatTicks = 0;
+            return;
+        }
+        int interval = (int) (24 - severity * 12);
+        if (++heartbeatTicks < interval) return;
+        heartbeatTicks = 0;
+        lastHeartbeatTick = mc.player.ticksExisted;
+        if (!ExileConfig.heartbeat) return;
+        mc.getSoundHandler()
+                .playSound(
+                        new net.minecraft.client.audio.PositionedSoundRecord(
+                                ExileSounds.HEARTBEAT.getSoundName(),
+                                net.minecraft.util.SoundCategory.PLAYERS,
+                                (float) (0.10 + severity * 0.30),
+                                (float) (0.9 + severity * 0.15),
+                                false,
+                                0,
+                                net.minecraft.client.audio.ISound.AttenuationType.NONE,
+                                0,
+                                0,
+                                0));
     }
 
     @SubscribeEvent
@@ -228,6 +356,8 @@ public final class ExileClient {
         if (mc.player == null
                 || !ExileConfig.visuals
                 || !ExileProgression.inMode(mc.player)
+                || ExileMode.state(mc.player).getBoolean("spector_active")
+                || Thermal.isOn(mc.player)
                 || mc.player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER)
                 || mc.player.isInsideOfMaterial(net.minecraft.block.material.Material.LAVA)) return;
         int stage = ExileMode.state(mc.player).getInteger("stage");

@@ -730,7 +730,7 @@ pocketmod.exile.stage_2=Ordinary creatures are fleeing the area.
 pocketmod.exile.stage_3=Wither skeletons are appearing.
 pocketmod.exile.stage_4=Contamination is complete. Clearing enemies grants only a respite.
 pocketmod.exile.thirst_warning=Bloodthirst is growing. Find a worthy opponent.
-pocketmod.exile.thirst_severe=Bloodthirst is exhausting you.
+pocketmod.exile.thirst_severe=Blood frenzy! Speed and damage increased, but bloodthirst drains health.
 pocketmod.exile.combat_relief=Combat relieved your bloodthirst.
 pocketmod.exile.shelter_warning=Three minutes of shelter remaining.
 pocketmod.exile.shelter_expired=Shelter time exhausted.
@@ -775,3 +775,7 @@ item.pocketmod.discovery_body_fire.name=Discovery — Fire resistance
 item.pocketmod.discovery_body_breath.name=Discovery — Water breathing
 item.pocketmod.discovery_body_regen.name=Discovery — Regeneration
 pocketmod.exile.discovery_use=Pick up and right-click the air to unlock in the shop
+
+pocketmod.exile.thirst_bar=Bloodthirst %s%%
+death.attack.pocketmod_bloodthirst=%1$s succumbed to bloodthirst
+pocketmod.exile.contamination_hud=Contamination %s%%

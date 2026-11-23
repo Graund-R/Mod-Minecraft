@@ -707,7 +707,7 @@ pocketmod.exile.stage_2=Живые существа пытаются покин�
 pocketmod.exile.stage_3=Заражение усилилось. Появились скелеты-иссушители.
 pocketmod.exile.stage_4=Территория полностью заражена. Зачистка даст лишь передышку.
 pocketmod.exile.thirst_warning=Жажда крови нарастает. Найди достойного противника.
-pocketmod.exile.thirst_severe=Жажда истощает тебя. Нужен содержательный бой.
+pocketmod.exile.thirst_severe=Кровавое неистовство! Скорость и урон повышены, но жажда отнимает здоровье.
 pocketmod.exile.combat_relief=Бой ослабил жажду крови.
 pocketmod.exile.shelter_warning=В убежище осталось 3 минуты.
 pocketmod.exile.shelter_expired=Время убежища исчерпано.
@@ -775,3 +775,7 @@ item.pocketmod.discovery_body_fire.name=Открытие — Огнестойк�
 item.pocketmod.discovery_body_breath.name=Открытие — Дыхание под водой
 item.pocketmod.discovery_body_regen.name=Открытие — Регенерация
 pocketmod.exile.discovery_use=Подбери и нажми ПКМ по воздуху, чтобы открыть в магазине
+
+pocketmod.exile.thirst_bar=Жажда %s%%
+death.attack.pocketmod_bloodthirst=%1$s погибает от жажды крови
+pocketmod.exile.contamination_hud=Заражение %s%%

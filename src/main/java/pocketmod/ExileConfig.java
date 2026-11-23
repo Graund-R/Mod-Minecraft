@@ -11,6 +11,10 @@ public final class ExileConfig {
     public static int witherSeconds = 1020;
     public static int thirstSeconds = 480;
     public static int combatRelief = 240;
+    public static float frenzySpeed = 0.20f;
+    public static float frenzyStrength = 0.25f;
+    public static float thirstExhaustion = 0.10f;
+    public static boolean heartbeat = true;
     public static int spawnInterval = 25;
     public static int recoveryDelay = 1800;
     public static float recoveryRate = 0.05f;
@@ -112,6 +116,10 @@ public final class ExileConfig {
         pocketCooldown =
                 cfg.getInt(
                         "pocketCooldown", c, 1200, 1, 86400, "Recovery time outside all pockets");
-        visuals = cfg.getBoolean("visuals", c, true, "Enable contamination fog and tint");
+        frenzySpeed = cfg.getFloat("frenzySpeed", c, 0.20f, 0, 2, "Movement speed bonus at maximum bloodthirst");
+        frenzyStrength = cfg.getFloat("frenzyStrength", c, 0.25f, 0, 3, "Attack damage bonus at maximum bloodthirst");
+        thirstExhaustion = cfg.getFloat("thirstExhaustion", c, 0.10f, 0, 4, "Additional exhaustion per second at maximum bloodthirst");
+        heartbeat = cfg.getBoolean("heartbeat", c, true, "Enable local bloodthirst heartbeat");
+        visuals = cfg.getBoolean("visuals", c, true, "Enable contamination and bloodthirst screen effects");
     }
 }

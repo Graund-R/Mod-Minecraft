@@ -41,6 +41,7 @@ public final class NetworkHandler {
             exile.setInteger("config_base_price",ExileConfig.basePrice);
             exile.setInteger("config_compass_price",ExileConfig.compassPrice);
             exile.setInteger("config_thirst",ExileConfig.thirstSeconds);
+            exile.setBoolean("spector_active", Spector.isActive(player));
         }
         NBTTagCompound snapshot = PlayerData.root(player).copy();
         SyncedState.write(player, snapshot);
