@@ -47,23 +47,29 @@ public final class ExileProgression {
         return choices;
     }
 
-    public static void discover(EntityPlayerMP p) {
+    /** Неподнятый или утраченный свиток может снова выпасть с другого подходящего противника. */
+    public static void discover(EntityPlayerMP p, net.minecraft.entity.Entity source) {
         List<String> choices = unopened(p);
-        if (choices.isEmpty()) {
-            Mana.add(p, 100);
-            return;
-        }
-        String id = choices.get(p.getRNG().nextInt(choices.size()));
-        ExileMode.state(p).setBoolean("open_" + id, true);
-        ExileMode.progress(p, "discovery_" + id, 2);
-        String title =
-                id.startsWith("body_")
-                        ? "pocketmod.body." + id.substring(5)
-                        : "pocketmod.ability." + id;
-        p.sendMessage(
-                new TextComponentTranslation(
-                        "pocketmod.exile.discovered", new TextComponentTranslation(title)));
-        NetworkHandler.sync(p);
+        for (ItemStack stack : p.inventory.mainInventory)
+            choices.remove(AbilityDiscoveryItem.id(stack));
+        for (ItemStack stack : p.inventory.offHandInventory)
+            choices.remove(AbilityDiscoveryItem.id(stack));
+        choices.remove(AbilityDiscoveryItem.id(p.inventory.getItemStack()));
+        if (choices.isEmpty()) return;
+        String pending = ExileMode.state(p).getString("pending_discovery");
+        String id =
+                choices.contains(pending)
+                        ? pending
+                        : choices.get(p.getRNG().nextInt(choices.size()));
+        net.minecraft.entity.item.EntityItem drop =
+                new net.minecraft.entity.item.EntityItem(
+                        p.world,
+                        source.posX,
+                        source.posY + 0.4,
+                        source.posZ,
+                        AbilityDiscoveryItem.create(id));
+        drop.setDefaultPickupDelay();
+        if (p.world.spawnEntity(drop)) ExileMode.state(p).setString("pending_discovery", id);
     }
 
     public static int config(EntityPlayer p, String key, int fallback) {

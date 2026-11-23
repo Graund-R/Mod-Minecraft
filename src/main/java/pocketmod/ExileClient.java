@@ -26,6 +26,24 @@ import org.lwjgl.input.Mouse;
 public final class ExileClient {
     private static final int BUTTON = 9451;
     private GuiButton createButton;
+    private final net.minecraft.client.settings.KeyBinding cheatMode =
+            new net.minecraft.client.settings.KeyBinding(
+                    "key.pocketmod.cheat_gamemode",
+                    org.lwjgl.input.Keyboard.KEY_RCONTROL,
+                    "key.categories.pocketmod");
+
+    public ExileClient() {
+        net.minecraftforge.fml.client.registry.ClientRegistry.registerKeyBinding(cheatMode);
+    }
+
+    @SubscribeEvent
+    public void key(net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent e) {
+        if (cheatMode.isPressed()
+                && Minecraft.getMinecraft().player != null
+                && Minecraft.getMinecraft().currentScreen == null)
+            NetworkHandler.action(NetAction.TOGGLE_CHEAT_GAMEMODE, 0, 0, 0, "");
+    }
+
     private static final Field TYPE =
             ReflectionHelper.findField(GuiCreateWorld.class, "selectedIndex", "field_146331_K");
     private static final Field MODE =

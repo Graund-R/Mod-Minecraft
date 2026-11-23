@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.12", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.13", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 

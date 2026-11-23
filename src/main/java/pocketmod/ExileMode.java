@@ -246,7 +246,7 @@ public final class ExileMode {
             ExileTrials.defeated((EntityPlayerMP) player, mob);
             if (!mob.getEntityData().hasKey("pm_exile_trial")
                     && player.getRNG().nextFloat() < ExileConfig.discoveryChance)
-                ExileProgression.discover((EntityPlayerMP) player);
+                ExileProgression.discover((EntityPlayerMP) player, mob);
             message((EntityPlayerMP) player, "combat_relief");
         }
     }

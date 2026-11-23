@@ -214,7 +214,7 @@ public final class ExileTrials implements IWorldGenerator {
         if (left > 0) return;
         s.setBoolean("trial_active", false);
         s.setBoolean("trial_done_" + key(BlockPos.fromLong(s.getLong("trial_pos"))), true);
-        ExileProgression.discover(p);
+        ExileProgression.discover(p, mob);
         Mana.add(p, 100);
         ExileMode.message(p, "trial_complete");
     }

@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": {
+      "item": "pocketmod:resurrection_totem"
+    },
+    "title": {
+      "translate": "pocketmod.exile.adv_root"
+    },
+    "description": {
+      "translate": "pocketmod.exile.adv_root_desc"
+    },
+    "background": "minecraft:textures/blocks/obsidian.png",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "entered": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

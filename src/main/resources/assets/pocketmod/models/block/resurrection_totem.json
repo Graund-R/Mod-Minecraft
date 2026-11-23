@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_column",
+  "textures": {
+    "end": "pocketmod:blocks/resurrection_totem_top",
+    "side": "pocketmod:blocks/resurrection_totem_side"
+  }
+}

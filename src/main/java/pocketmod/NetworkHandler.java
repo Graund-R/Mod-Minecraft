@@ -135,7 +135,7 @@ public final class NetworkHandler {
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
         if (ExileProgression.inMode(p) && (m.action == NetAction.TAKE_CREDIT || m.action == NetAction.SPIN_LOOT)) return;
-        boolean shopAction = m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
+        boolean shopAction = m.action == NetAction.TOGGLE_CHEAT_GAMEMODE || m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
                 || m.action == NetAction.TOGGLE_DECOY
                 || m.action == NetAction.TOGGLE_SILENCE
                 || m.action == NetAction.UPGRADE_BLOODSUCKER
@@ -151,6 +151,21 @@ public final class NetworkHandler {
                 || m.action == NetAction.DEATH_TOTEM_CHOICE;
         if (MorphIntegration.isMorphed(p) && !shopAction && !totemAction) return;
         switch (m.action) {
+            case TOGGLE_CHEAT_GAMEMODE:
+                if (!p.canUseCommand(2, "gamemode")) {
+                    p.sendStatusMessage(new TextComponentTranslation("pocketmod.exile.cheats_required"), true);
+                    break;
+                }
+                Spector.forceReturnIfActive(p);
+                MorphIntegration.demorph(p);
+                Flight.stop(p);
+                net.minecraft.world.GameType mode = p.interactionManager.getGameType() == net.minecraft.world.GameType.CREATIVE
+                        ? net.minecraft.world.GameType.SURVIVAL : net.minecraft.world.GameType.CREATIVE;
+                ExileMode.state(p).setBoolean("permadead", false);
+                p.setGameType(mode);
+                p.sendStatusMessage(new TextComponentTranslation("pocketmod.exile.gamemode_changed",
+                        new TextComponentTranslation("gameMode." + mode.getName())), true);
+                break;
             case EXILE_BASE: ExileProgression.buyBase(p,m.a); break;
             case EXILE_COMPASS:
                 long now = p.world.getTotalWorldTime();

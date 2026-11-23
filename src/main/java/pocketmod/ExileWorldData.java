@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldSavedData;
@@ -14,6 +15,8 @@ public final class ExileWorldData extends WorldSavedData {
     public boolean enabled;
     public long seconds;
     public NBTTagCompound trials = new NBTTagCompound();
+    private NBTTagList resurrectionTotems = new NBTTagList();
+    public NBTTagCompound pendingResurrections = new NBTTagCompound();
     private final Map<String, Area> areas = new HashMap<>();
 
     public static final class Area {
@@ -93,11 +96,45 @@ public final class ExileWorldData extends WorldSavedData {
         markDirty();
     }
 
+    public void addResurrectionTotem(java.util.UUID owner, BlockPos pos) {
+        removeResurrectionTotem(pos);
+        NBTTagCompound entry = new NBTTagCompound();
+        entry.setUniqueId("owner", owner);
+        entry.setLong("pos", pos.toLong());
+        resurrectionTotems.appendTag(entry);
+        markDirty();
+    }
+
+    public void removeResurrectionTotem(BlockPos pos) {
+        for (int i = resurrectionTotems.tagCount() - 1; i >= 0; i--)
+            if (resurrectionTotems.getCompoundTagAt(i).getLong("pos") == pos.toLong())
+                resurrectionTotems.removeTag(i);
+        markDirty();
+    }
+
+    public BlockPos takeResurrectionTotem(
+            net.minecraft.world.WorldServer world, java.util.UUID owner) {
+        for (int i = resurrectionTotems.tagCount() - 1; i >= 0; i--) {
+            NBTTagCompound entry = resurrectionTotems.getCompoundTagAt(i);
+            if (!owner.equals(entry.getUniqueId("owner"))) continue;
+            BlockPos pos = BlockPos.fromLong(entry.getLong("pos"));
+            // Загружается выбранный чанк, поэтому тотемы работают и вдали от игрока.
+            world.getChunkFromBlockCoords(pos);
+            boolean valid = world.getBlockState(pos).getBlock() == ExileItems.RESURRECTION_TOTEM;
+            resurrectionTotems.removeTag(i);
+            markDirty();
+            if (valid) return pos;
+        }
+        return null;
+    }
+
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         enabled = nbt.getBoolean("enabled");
         seconds = Math.max(0, nbt.getLong("seconds"));
         trials = nbt.getCompoundTag("trials");
+        resurrectionTotems = nbt.getTagList("resurrectionTotems", 10);
+        pendingResurrections = nbt.getCompoundTag("pendingResurrections");
         areas.clear();
         NBTTagList list = nbt.getTagList("areas", 10);
         for (int i = 0; i < list.tagCount(); i++) {
@@ -114,6 +151,8 @@ public final class ExileWorldData extends WorldSavedData {
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         nbt.setTag("trials", trials.copy());
+        nbt.setTag("resurrectionTotems", resurrectionTotems.copy());
+        nbt.setTag("pendingResurrections", pendingResurrections.copy());
         nbt.setBoolean("enabled", enabled);
         nbt.setLong("seconds", seconds);
         NBTTagList list = new NBTTagList();
