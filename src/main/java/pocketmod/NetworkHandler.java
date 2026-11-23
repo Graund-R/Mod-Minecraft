@@ -35,6 +35,13 @@ public final class NetworkHandler {
     }
 
     public static void sync(EntityPlayerMP player) {
+        if (ExileMode.enabled(player.world)) {
+            NBTTagCompound exile = ExileMode.state(player);
+            exile.setInteger("config_slots",ExileConfig.initialSlots);
+            exile.setInteger("config_base_price",ExileConfig.basePrice);
+            exile.setInteger("config_compass_price",ExileConfig.compassPrice);
+            exile.setInteger("config_thirst",ExileConfig.thirstSeconds);
+        }
         NBTTagCompound snapshot = PlayerData.root(player).copy();
         SyncedState.write(player, snapshot);
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
@@ -127,7 +134,8 @@ public final class NetworkHandler {
         // Не допускаем NaN/Infinity в экономику и коэффициенты, а также лишние данные пакета.
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
-        boolean shopAction = m.action == NetAction.TAKE_CREDIT
+        if (ExileProgression.inMode(p) && (m.action == NetAction.TAKE_CREDIT || m.action == NetAction.SPIN_LOOT)) return;
+        boolean shopAction = m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
                 || m.action == NetAction.TOGGLE_DECOY
                 || m.action == NetAction.TOGGLE_SILENCE
                 || m.action == NetAction.UPGRADE_BLOODSUCKER
@@ -143,6 +151,14 @@ public final class NetworkHandler {
                 || m.action == NetAction.DEATH_TOTEM_CHOICE;
         if (MorphIntegration.isMorphed(p) && !shopAction && !totemAction) return;
         switch (m.action) {
+            case EXILE_BASE: ExileProgression.buyBase(p,m.a); break;
+            case EXILE_COMPASS:
+                long now = p.world.getTotalWorldTime();
+                if (now - p.getEntityData().getLong("pm_compass_last") >= 100 || !p.getEntityData().hasKey("pm_compass_last")) {
+                    p.getEntityData().setLong("pm_compass_last",now);
+                    ExileTrials.compass(p);
+                }
+                break;
             case TAKE_CREDIT:
                 double repay = Mana.takeCredit(p, m.value);
                 if (repay > 0) p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.credit_taken",
@@ -204,6 +220,7 @@ public final class NetworkHandler {
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.player instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.player;
+            if (ExileMode.enabled(player.world)) ExileMode.state(player).setBoolean("enabled",true);
             sync(player);
             if (PocketDimensionManager.isPocketDimension(player.dimension)) syncPocket(player);
         }

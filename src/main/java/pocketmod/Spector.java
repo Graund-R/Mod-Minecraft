@@ -189,7 +189,7 @@ public class Spector {
             dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         }
         double cost = (PocketConfig.phaseBase + PocketConfig.phasePerBlock * dist) * Mana.getPriceMultiplier(p);
-        if (!Mana.spend(p, cost)) {
+        if (!Mana.spendAbility(p, cost)) {
             p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(cost)), true);
             return;
         }

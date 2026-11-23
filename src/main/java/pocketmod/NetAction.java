@@ -32,7 +32,9 @@ public enum NetAction {
     WAREHOUSE_CLICK(28),
     DEATH_TOTEM_CHOICE(29),
     DASH(30),
-    SOFTFALL_TOGGLE(31);
+    SOFTFALL_TOGGLE(31),
+    EXILE_BASE(32),
+    EXILE_COMPASS(33);
 
     public final int id;
     NetAction(int id) { this.id = id; }

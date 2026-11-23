@@ -91,7 +91,7 @@ public class Shield {
         if (dmg <= 0f) return;
         double cost = dmg * manaPerDamage(AbilityStorage.getLevel(p, AbilityType.SHIELD)) * Mana.getPriceMultiplier(p);
         WorldServer ws = (WorldServer) p.world;
-        if (Mana.spend(p, cost)) {
+        if (Mana.spendAbility(p, cost)) {
             e.setCanceled(true);
             ws.spawnParticle(EnumParticleTypes.CRIT_MAGIC, p.posX, p.posY + 1.0, p.posZ, 25, 0.5, 0.7, 0.5, 0.3);
             ws.playSound(null, p.posX, p.posY, p.posZ, SoundEvents.BLOCK_NOTE_CHIME, SoundCategory.PLAYERS, 0.8F, 0.6F);

@@ -46,6 +46,19 @@ public class Mana {
         return true;
     }
 
+    /** Расход на действующую способность, отдельно от покупок и переводов ресурсов. */
+    public static boolean spendAbility(EntityPlayer player, double amount) {
+        if (!spend(player, amount)) return false;
+        if (amount > 0 && ExileMode.active(player)) {
+            NBTTagCompound s = ExileMode.state(player);
+            double previous = s.getDouble("spell_progress");
+            double next = Math.min(10, previous + amount * 0.002);
+            s.setDouble("spell_progress", next);
+            ExileMode.progress(player, null, next - previous);
+        }
+        return true;
+    }
+
     /** Учитывает множитель цен */
     public static boolean spendScaled(EntityPlayer player, double baseAmount) {
         return spend(player, baseAmount * getPriceMultiplier(player));

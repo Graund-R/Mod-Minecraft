@@ -55,7 +55,7 @@ public class PocketTeleporter implements ITeleporter {
     /** Вход через внешнюю дверь пары: гость появляется у внутренней двери этой же пары. */
     public static boolean enterNetwork(EntityPlayerMP player, java.util.UUID owner, String pairId) {
         MinecraftServer server = player.getServer();
-        if (server == null) return false;
+        if (server == null || !ExileMode.canEnterShelter(player)) return false;
         // The door owner already had to unlock the pocket ability before placing this door.
         // Create their persistent dimension on first door entry if they have not used K yet.
         int targetId = PocketDimensionManager.getOrCreateDimension(server, owner);
@@ -146,6 +146,7 @@ public class PocketTeleporter implements ITeleporter {
     }
 
     private static void enter(EntityPlayerMP player, MinecraftServer server) {
+        if (!ExileMode.canEnterShelter(player)) return;
         NBTTagCompound data = PlayerData.root(player);
 
         int pocketDimension = PocketDimensionManager.getOrCreateDimension(server, player.getUniqueID());

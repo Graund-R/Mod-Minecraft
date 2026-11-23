@@ -27,6 +27,9 @@ public final class ClientPacketHandlers {
         @Override public IMessage onMessage(NetworkHandler.PromptMessage message, MessageContext ctx) {
             Minecraft mc = Minecraft.getMinecraft();
             mc.addScheduledTask(() -> {
+                if (mc.player != null && message.kind == 2) {
+                    mc.displayGuiScreen(new ExileVerdictGui(null));
+                }
                 if (mc.player != null && message.kind == 1) {
                     mc.displayGuiScreen(new DeathTotemGui(message.a, message.b));
                 }

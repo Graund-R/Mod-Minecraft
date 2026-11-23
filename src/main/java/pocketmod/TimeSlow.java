@@ -275,7 +275,7 @@ public class TimeSlow {
 
     public static void tickMana(EntityPlayerMP player) {
         if (!Abilities.isSlow(player)) return;
-        if (!Mana.spend(player, drainPerSec(player) / 20.0)) {
+        if (!Mana.spendAbility(player, drainPerSec(player) / 20.0)) {
             player.getEntityData().setBoolean("pocketmod_slow", false);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.slow_off"), true);
         }

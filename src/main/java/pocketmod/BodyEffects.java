@@ -54,6 +54,7 @@ public class BodyEffects {
     }
 
     public static void buyPerm(EntityPlayerMP p, int i) {
+        if (!ExileProgression.require(p, "body_" + IDS[i])) return;
         int cur = perm(p, i);
         if (cur >= maxPerm(i)) return;
         double price = Mana.shopPrice(p, permCost(i, cur));
@@ -67,6 +68,7 @@ public class BodyEffects {
     }
 
     public static void toggleRent(EntityPlayerMP p, int i) {
+        if (!ExileProgression.require(p, "body_" + IDS[i])) return;
         boolean now = !rent(p, i);
         if (now && i == REGENERATION && perm(p, i) > 0) return;
         if (now && Mana.get(p) < rentCost(p, i)) {

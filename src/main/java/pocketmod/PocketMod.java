@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.11", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.12", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 
@@ -29,6 +29,7 @@ public class PocketMod {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         PocketConfig.load(event.getSuggestedConfigurationFile());
+        ExileMode.register();
         NetworkHandler.register();
         net.minecraftforge.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(this, new PocketGuiHandler());
         net.minecraftforge.common.ForgeChunkManager.setForcedChunkLoadingCallback(this, new net.minecraftforge.common.ForgeChunkManager.LoadingCallback() {
@@ -62,6 +63,7 @@ public class PocketMod {
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         PocketDimensionManager.load(event.getServer().getWorld(0));
+        event.registerServerCommand(new CommandExile());
         event.registerServerCommand(new CommandManaAdd());
         event.registerServerCommand(new CommandPocketDebug());
     }

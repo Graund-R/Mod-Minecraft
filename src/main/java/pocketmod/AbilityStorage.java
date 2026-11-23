@@ -40,6 +40,7 @@ public class AbilityStorage {
     }
 
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
+        if (!ExileProgression.require(player, type.id)) return false;
         int cur = getUpgradeLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {
@@ -59,6 +60,7 @@ public class AbilityStorage {
         }
         Mana.consumeDiscount(player);
         setLevel(player, type, cur + 1);
+        ExileMode.progress(player, "upgrade_" + type.id + "_" + (cur + 1), 1);
         if (player instanceof EntityPlayerMP) {
             ((EntityPlayerMP) player).sendStatusMessage(
                     new TextComponentTranslation("pocketmod.msg.upgraded",
