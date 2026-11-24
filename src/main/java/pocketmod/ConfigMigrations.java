@@ -22,7 +22,7 @@ import net.minecraftforge.common.config.Property;
 public class ConfigMigrations {
 
     /** Текущая версия формата конфига. */
-    public static final int CURRENT = 4;
+    public static final int CURRENT = 5;
 
     /** Служебная категория (скрыта в экране настроек). */
     public static final String META = "служебное";
@@ -128,9 +128,20 @@ public class ConfigMigrations {
         if (from < 2) step2ZeroPrices(cfg);
         if (from < 3) step3Rebalance(cfg);
         if (from < 4) step4DashLevels(cfg);
+        if (from < 5) step5Exile(cfg);
         pv.set(CURRENT);
         cfg.save();
         System.out.println("[PocketMod] config migrated: v" + from + " -> v" + CURRENT);
+    }
+
+    private static void step5Exile(Configuration cfg) {
+        int[] old = {1200, 300, 600, 900, 1020, 25};
+        int[] next = {600, 120, 300, 450, 480, 8};
+        String[] keys = {"fullSeconds", "firstSeconds", "fleeSeconds", "deathSeconds", "witherSeconds", "spawnInterval"};
+        for (int i = 0; i < keys.length; i++) {
+            if (cfg.hasKey("изгнанник", keys[i]) && cfg.get("изгнанник", keys[i], old[i]).getInt() == old[i])
+                cfg.get("изгнанник", keys[i], old[i]).set(next[i]);
+        }
     }
 
     private static void backup(Configuration cfg, int from) {

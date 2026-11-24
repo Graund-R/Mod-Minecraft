@@ -86,7 +86,7 @@ public class Shield {
         EntityPlayerMP p = (EntityPlayerMP) e.getEntityLiving();
         if (!isOn(p)) return;
         DamageSource s = e.getSource();
-        if (s.canHarmInCreative()) return;
+        if (s.canHarmInCreative() || "pocketmod_bloodthirst".equals(s.getDamageType())) return;
         float dmg = e.getAmount();
         if (dmg <= 0f) return;
         double cost = dmg * manaPerDamage(AbilityStorage.getLevel(p, AbilityType.SHIELD)) * Mana.getPriceMultiplier(p);

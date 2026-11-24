@@ -3,5 +3,23 @@
     "sounds": [
       "pocketmod:bloodthirst_heartbeat"
     ]
+  },
+  "infection_wind": {
+    "subtitle": "pocketmod.subtitle.infection_wind",
+    "sounds": [
+      "pocketmod:infection_wind"
+    ]
+  },
+  "infection_whisper": {
+    "subtitle": "pocketmod.subtitle.infection_whisper",
+    "sounds": [
+      "pocketmod:infection_whisper"
+    ]
+  },
+  "infection_surge": {
+    "subtitle": "pocketmod.subtitle.infection_surge",
+    "sounds": [
+      "pocketmod:infection_surge"
+    ]
   }
 }

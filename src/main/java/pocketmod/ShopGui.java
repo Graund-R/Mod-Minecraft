@@ -116,17 +116,18 @@ public class ShopGui extends GuiScreen {
         int startX = cx - count * tw / 2;
         for (int i = 0; i < count; i++) {
             ShopCatalog.Tab item = ShopCatalog.TABS[tabOffset + i];
-            GuiButton button = new GuiButton(-1, startX + i * tw, 2, tw - 2, 16,
+            GuiButton button = new ShopStyle.Button(-1, startX + i * tw, 2, tw - 2, 16,
                     Tr.format("pocketmod.tab." + item.id));
+            ((ShopStyle.Button) button).active = item == tab;
             button.enabled = item != tab;
             tabButtons.put(button, item);
             buttonList.add(button);
         }
         if (maxTabOffset > 0) {
-            GuiButton previous = new GuiButton(BTN_PREV_TAB, startX - 17, 2, 16, 16, "<");
+            GuiButton previous = new ShopStyle.Button(BTN_PREV_TAB, startX - 17, 2, 16, 16, "<");
             previous.enabled = tabOffset > 0;
             buttonList.add(previous);
-            GuiButton next = new GuiButton(BTN_NEXT_TAB, startX + count * tw, 2, 16, 16, ">");
+            GuiButton next = new ShopStyle.Button(BTN_NEXT_TAB, startX + count * tw, 2, 16, 16, ">");
             next.enabled = tabOffset < maxTabOffset;
             buttonList.add(next);
         }
@@ -138,8 +139,11 @@ public class ShopGui extends GuiScreen {
         for (int i = cardOffset; i < Math.min(tab.cards.length, cardOffset + visibleCards); i++) {
             ShopCatalog.Card card = tab.cards[i];
             if (card.group) continue;
-            GuiButton button = new GuiButton(-1, 8, top + (i - cardOffset) * CARD_STEP,
+            GuiButton button = new ShopStyle.Button(-1, 8, top + (i - cardOffset) * CARD_STEP,
                     listWidth(), 20, cardLabel(card, i == selected));
+            ((ShopStyle.Button) button).active = i == selected;
+            ((ShopStyle.Button) button).icon = card.ability != null ? card.ability.id
+                    : card.effect >= 0 ? "body_" + BodyEffects.IDS[card.effect] : "pocket";
             cardButtons.put(button, i);
             buttonList.add(button);
         }
@@ -150,41 +154,48 @@ public class ShopGui extends GuiScreen {
         int actionX = px + pw / 2;
         if (card != null && card.effect >= 0) {
             int effect = card.effect;
-            buttonList.add(new GuiButton(BTN_PERM + effect, px, y, buyWidth, 20, permLabel(effect)));
-            buttonList.add(new GuiButton(BTN_RENT + effect, actionX, y, buyWidth, 20, rentLabel(effect)));
+            buttonList.add(new ShopStyle.Button(BTN_PERM + effect, px, y, buyWidth, 20, permLabel(effect)));
+            buttonList.add(new ShopStyle.Button(BTN_RENT + effect, actionX, y, buyWidth, 20, rentLabel(effect)));
         } else if (card != null && card.ability == AbilityType.MORPHISM) {
-            buttonList.add(new GuiButton(BTN_MORPHISM, px, y, pw, 20, morphismLabel()));
+            buttonList.add(new ShopStyle.Button(BTN_MORPHISM, px, y, pw, 20, morphismLabel()));
         } else if (card != null && card.opensPocketAccess()) {
-            buttonList.add(new GuiButton(BTN_DOOR_MANAGE, px, y, pw, 20,
+            buttonList.add(new ShopStyle.Button(BTN_DOOR_MANAGE, px, y, pw, 20,
                     Tr.format("pocketmod.shop.pocket.manage")));
         } else if (card != null) {
             AbilityType ability = card.ability;
-            buttonList.add(new GuiButton(BTN_BUYSEL, px, y, buyWidth, 20, buyLabel(ability)));
+            buttonList.add(new ShopStyle.Button(BTN_BUYSEL, px, y, buyWidth, 20, buyLabel(ability)));
             if (ability == AbilityType.WAREHOUSE) {
-                buttonList.add(new GuiButton(BTN_OPEN_WAREHOUSE, actionX, y, buyWidth, 20, Tr.format("pocketmod.gui.warehouse_open")));
+                buttonList.add(new ShopStyle.Button(BTN_OPEN_WAREHOUSE, actionX, y, buyWidth, 20, Tr.format("pocketmod.gui.warehouse_open")));
             } else if (ability == AbilityType.INVISIBILITY) {
-                buttonList.add(new GuiButton(BTN_DECOY, actionX, y, buyWidth, 20, decoyLabel()));
+                buttonList.add(new ShopStyle.Button(BTN_DECOY, actionX, y, buyWidth, 20, decoyLabel()));
             } else if (ability == AbilityType.TELEPORT) {
-                buttonList.add(new GuiButton(BTN_SILENCE, actionX, y, buyWidth, 20, silenceLabel()));
+                buttonList.add(new ShopStyle.Button(BTN_SILENCE, actionX, y, buyWidth, 20, silenceLabel()));
             }
         } else if (tab.loot) {
             for (int i = 0; i < 3; i++) {
                 int w = Math.min(90, (width - 20) / 3);
-                buttonList.add(new GuiButton(BTN_STAKE + i, cx - (3 * w + 8) / 2 + i * (w + 4), top, w, 18, stakeLabel(i)));
+                buttonList.add(new ShopStyle.Button(BTN_STAKE + i, cx - (3 * w + 8) / 2 + i * (w + 4), top, w, 18, stakeLabel(i)));
             }
         }
 
-        int creditRight = cx + Math.min(280, width - 40) / 2;
-        buttonList.add(new GuiButton(BTN_CREDIT, creditRight - 70, 21, 66, 13, Tr.format("pocketmod.shop.credit")));
+        int creditRight = width - 8;
+        buttonList.add(new ShopStyle.Button(BTN_CREDIT, creditRight - 70, 21, 66, 13, Tr.format("pocketmod.shop.credit")));
         int footerY = height - (creditOpen ? 40 : 23);
-        buttonList.add(new GuiButton(BTN_CLOSE, width - 78, footerY, 70, 18, Tr.format("pocketmod.gui.close")));
+        buttonList.add(new ShopStyle.Button(BTN_CLOSE, width - 78, footerY, 70, 18, Tr.format("pocketmod.gui.close")));
         if (creditOpen) {
             sliderW = Math.max(1, Math.min(150, width - 178));
             sliderH = 10;
             sliderX = 12;
             sliderY = height - 28;
-            buttonList.add(new GuiButton(BTN_TAKE, width - 164, footerY, 80, 18, Tr.format("pocketmod.gui.take")));
+            buttonList.add(new ShopStyle.Button(BTN_TAKE, width - 164, footerY, 80, 18, Tr.format("pocketmod.gui.take")));
         }
+        for (GuiButton b : buttonList) {
+            if (b instanceof ShopStyle.Button) {
+                ((ShopStyle.Button) b).primary = b.id == BTN_BUYSEL || b.id == BTN_MORPHISM
+                        || b.id >= BTN_PERM && b.id < BTN_PERM + BodyEffects.IDS.length;
+            }
+        }
+        refreshButtonLabels();
         if (creditAmount == 0) {
             creditAmount = PocketConfig.creditMin;
         }
@@ -220,7 +231,7 @@ public class ShopGui extends GuiScreen {
 
     private String cardLabel(ShopCatalog.Card card, boolean selected) {
         String name = (selected ? TextFormatting.GOLD : TextFormatting.WHITE) + Tr.format(card.titleKey);
-        if (card.opensPocketAccess()) return fitLabel(name, listWidth() - 8);
+        if (card.opensPocketAccess()) return fitLabel(name, listWidth() - 34);
         EntityPlayer dp = dataPlayer();
         int level = card.effect >= 0 ? BodyEffects.perm(dp, card.effect)
                 : AbilityStorage.getUpgradeLevel(dp, card.ability);
@@ -231,7 +242,7 @@ public class ShopGui extends GuiScreen {
         } else if (card.effect >= 0 && BodyEffects.rent(dp, card.effect)) {
             status = TextFormatting.AQUA + " · " + Tr.format("pocketmod.shop.rented");
         }
-        return fitLabel(name, listWidth() - 8 - fontRenderer.getStringWidth(status)) + status;
+        return fitLabel(name, listWidth() - 34 - fontRenderer.getStringWidth(status)) + status;
     }
 
     private String fitLabel(String label, int maxWidth) {
@@ -244,12 +255,12 @@ public class ShopGui extends GuiScreen {
     }
 
 
-    private static final int COL_PANEL = 0xCC101418;
-    private static final int COL_PANEL_EDGE = 0xFF2A3340;
-    private static final int COL_ACCENT = 0xFFE0A040;
-    private static final int COL_ACCENT_DIM = 0xFF8A6030;
-    private static final int COL_OK = 0xFF6BCB77;
-    private static final int COL_MUTED = 0xFF8A93A0;
+    private static final int COL_PANEL = ShopStyle.PANEL;
+    private static final int COL_PANEL_EDGE = ShopStyle.EDGE;
+    private static final int COL_ACCENT = ShopStyle.GOLD;
+    private static final int COL_ACCENT_DIM = 0xFF88704A;
+    private static final int COL_OK = ShopStyle.GREEN;
+    private static final int COL_MUTED = ShopStyle.MUTED;
 
     private void drawFrame(int x1, int y1, int x2, int y2, int fill, int edge) {
         Gui.drawRect(x1, y1, x2, y2, fill);
@@ -263,15 +274,18 @@ public class ShopGui extends GuiScreen {
         double mana = Mana.get(dp);
         double mult = Mana.getPriceMultiplier(dp);
         double drain = Abilities.totalDrainPerSec(dp);
-        int w = Math.min(280, width - 40);
+        int w = width - 16;
         int x = cx - w / 2;
         drawFrame(x, y, x + w, y + 28, COL_PANEL, COL_PANEL_EDGE);
         fontRenderer.drawStringWithShadow(Tr.format("pocketmod.gui.title"), x + 8, y + 4, COL_ACCENT);
         String manaS = Tr.format("pocketmod.gui.mana", (long) mana, String.format("%.2f", mult));
-        fontRenderer.drawStringWithShadow(manaS, x + 8, y + 15, 0xAACCFF);
+
         String drainLine = drain > 0.001
                 ? Tr.format("pocketmod.gui.drain", String.format("%.1f", drain), (long) (mana / drain / 60.0))
                 : Tr.format("pocketmod.gui.drain_none");
+        int drainWidth = fontRenderer.getStringWidth(drainLine);
+        if (fontRenderer.getStringWidth(manaS) + drainWidth + 24 > w) drainLine = "";
+        fontRenderer.drawStringWithShadow(manaS, x + 8, y + 15, ShopStyle.MANA);
         fontRenderer.drawStringWithShadow(drainLine, x + w - 8 - fontRenderer.getStringWidth(drainLine), y + 15, COL_MUTED);
     }
 
@@ -290,8 +304,9 @@ public class ShopGui extends GuiScreen {
         String badge = lvl == 0
                 ? TextFormatting.GRAY + Tr.format("pocketmod.gui.locked")
                 : TextFormatting.GREEN + Tr.format("pocketmod.gui.level", lvl, t.maxLevel);
-        fontRenderer.drawStringWithShadow(badge, x + w - fontRenderer.getStringWidth(badge), y, 0xFFFFFF);
-        y += 14;
+        fontRenderer.drawStringWithShadow(badge, x, y + 12, 0xFFFFFF);
+        ShopStyle.progress(x + w / 2, y + 15, w / 2, lvl, t.maxLevel);
+        y += 26;
         Gui.drawRect(x, y, x + w, y + 1, COL_PANEL_EDGE);
         int textTop = y + 6;
         int textBottom = y1 - 4;
@@ -500,6 +515,7 @@ public class ShopGui extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
+        drawGradientRect(0, 0, width, height, 0xDD0C1220, 0xF0141B2B);
         EntityPlayer dp = dataPlayer();
         int cx = width / 2;
         boolean hasCredit = Mana.hasCredit(dp);
@@ -548,6 +564,12 @@ public class ShopGui extends GuiScreen {
 
         if (creditOpen) drawCredit(hasCredit, dp);
         super.drawScreen(mouseX, mouseY, partialTicks);
+        for (Map.Entry<GuiButton, Integer> entry : cardButtons.entrySet()) {
+            if (entry.getKey().isMouseOver()) {
+                drawHoveringText(Tr.format(tab.cards[entry.getValue()].titleKey), mouseX, mouseY);
+                break;
+            }
+        }
     }
 
     private void drawCredit(boolean hasCredit, EntityPlayer dp) {
@@ -718,6 +740,12 @@ public class ShopGui extends GuiScreen {
                 shownResult = Loot.last(dp);
             }
         }
+        refreshButtonLabels();
+    }
+
+    private void refreshButtonLabels() {
+        EntityPlayer dp = dataPlayer();
+        boolean hasCredit = Mana.hasCredit(dp);
         for (GuiButton b : buttonList) {
             Integer idx = cardButtons.get(b);
             if (idx != null) {
@@ -729,7 +757,8 @@ public class ShopGui extends GuiScreen {
                 AbilityType ability = selectedAbility();
                 int level = AbilityStorage.getUpgradeLevel(dp, ability);
                 b.displayString = buyLabel(ability);
-                b.enabled = level < ability.maxLevel && ability.costForNextLevel(level) > 0;
+                b.enabled = level < ability.maxLevel && ability.costForNextLevel(level) > 0
+                        && Mana.get(dp) >= Mana.shopPrice(dp, ability.costForNextLevel(level));
             } else if (b.id == BTN_OPEN_WAREHOUSE) {
                 b.enabled = AbilityStorage.isUnlocked(dp, AbilityType.WAREHOUSE);
             } else if (b.id == BTN_SILENCE) {
@@ -740,7 +769,8 @@ public class ShopGui extends GuiScreen {
             } else if (b.id >= BTN_PERM && b.id < BTN_PERM + BodyEffects.IDS.length) {
                 int i = b.id - BTN_PERM;
                 b.displayString = permLabel(i);
-                b.enabled = BodyEffects.perm(dp, i) < BodyEffects.maxPerm(i);
+                b.enabled = BodyEffects.perm(dp, i) < BodyEffects.maxPerm(i)
+                        && Mana.get(dp) >= Mana.shopPrice(dp, BodyEffects.permCost(i, BodyEffects.perm(dp, i)));
             } else if (b.id >= BTN_RENT && b.id < BTN_RENT + BodyEffects.IDS.length) {
                 b.displayString = rentLabel(b.id - BTN_RENT);
             } else if (b.id >= BTN_STAKE && b.id < BTN_STAKE + 3) {

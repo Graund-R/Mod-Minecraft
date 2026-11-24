@@ -115,7 +115,6 @@ public class ClientHandler {
         ClientRegistry.registerKeyBinding(keyShop);
         ClientRegistry.registerKeyBinding(keySlow);
         MinecraftForge.EVENT_BUS.register(new ClientHandler());
-        MinecraftForge.EVENT_BUS.register(new ConfigButton());
         MinecraftForge.EVENT_BUS.register(new ClientTimeSlow());
         MinecraftForge.EVENT_BUS.register(new ClientDash());
         MinecraftForge.EVENT_BUS.register(new WarehouseOverlay());
@@ -123,6 +122,7 @@ public class ClientHandler {
 
     public static void registerRenderers() {
         RenderingRegistry.registerEntityRenderingHandler(EntityDecoy.class, manager -> new RenderDecoy(manager));
+        RenderingRegistry.registerEntityRenderingHandler(EntityRiftWalker.class, RenderRiftWalker::new);
     }
 
     private static void resetHold(Hold h) {

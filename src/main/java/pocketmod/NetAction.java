@@ -35,7 +35,9 @@ public enum NetAction {
     SOFTFALL_TOGGLE(31),
     EXILE_BASE(32),
     EXILE_COMPASS(33),
-    TOGGLE_CHEAT_GAMEMODE(34);
+    TOGGLE_CHEAT_GAMEMODE(34),
+    EXILE_DEBUG(35),
+    RESURRECTION_READY(36);
 
     public final int id;
     NetAction(int id) { this.id = id; }

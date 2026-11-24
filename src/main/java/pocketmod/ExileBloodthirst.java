@@ -48,6 +48,7 @@ public final class ExileBloodthirst {
     }
 
     public static void refreshModifiers(EntityPlayerMP p) {
+        ExileSimpleThirst.ensureModel(p);
         boolean frenzy =
                 eligible(p) && ExileMode.state(p).getInteger("thirst") >= ExileConfig.thirstSeconds;
         modifier(
@@ -74,16 +75,17 @@ public final class ExileBloodthirst {
 
     public static void advance(EntityPlayerMP p) {
         NBTTagCompound s = ExileMode.state(p);
-        double power = 0;
-        for (AbilityType type : AbilityType.values()) power += AbilityStorage.getLevel(p, type);
-        for (int i = 0; i < BodyEffects.IDS.length; i++) power += BodyEffects.perm(p, i);
-        power = Math.max(s.getDouble("power"), power + s.getDouble("progress") / 5);
-        s.setDouble("power", power);
+        ExileSimpleThirst.ensureModel(p);
+        if (ExileSimpleThirst.paused(p)) return;
         int previous = s.getInteger("thirst");
-        int thirst =
-                Math.min(
-                        ExileConfig.thirstSeconds, previous + 1 + (int) (Math.min(40, power) / 10));
-        s.setInteger("thirst", thirst);
+        int thirst;
+        if (ExileSimpleThirst.isSimple(p)) {
+            ExileSimpleThirst.advance(p);
+            thirst=s.getInteger("thirst");
+        } else {
+            thirst=advanceLegacy(p,s,previous);
+            s.setInteger("thirst",thirst);
+        }
         if (previous < ExileConfig.thirstSeconds / 2 && thirst >= ExileConfig.thirstSeconds / 2)
             ExileMode.message(p, "thirst_warning");
         if (previous < ExileConfig.thirstSeconds && thirst >= ExileConfig.thirstSeconds)
@@ -105,6 +107,18 @@ public final class ExileBloodthirst {
             Spector.forceReturnIfActive(p);
             p.attackEntityFrom(BLOODTHIRST, 1.0f);
         }
+    }
+
+    private static int advanceLegacy(EntityPlayerMP p, NBTTagCompound s, int previous) {
+        double power = 0;
+        for (AbilityType type : AbilityType.values()) power += AbilityStorage.getLevel(p, type);
+        for (int i = 0; i < BodyEffects.IDS.length; i++) power += BodyEffects.perm(p, i);
+        power = Math.max(s.getDouble("power"), power + s.getDouble("progress") / 5);
+        s.setDouble("power", power);
+        int thirst =
+                Math.min(
+                        ExileConfig.thirstSeconds, previous + 1 + (int) (Math.min(40, power) / 10));
+        return thirst;
     }
 
     static double threatScore(double health, double attack, double armor) {
@@ -193,6 +207,11 @@ public final class ExileBloodthirst {
                 || mob.world.isRemote
                 || mob instanceof EntityPlayer
                 || !ExileMode.enabled(mob.world)) return;
+        // The simple model credits the player's own mob kill, with no threat/gear scoring.
+        if (!(mob instanceof EntityDecoy) && e.getSource().getTrueSource() instanceof EntityPlayerMP) {
+            EntityPlayerMP killer=(EntityPlayerMP)e.getSource().getTrueSource();
+            if (eligible(killer) && ExileSimpleThirst.isSimple(killer)) ExileSimpleThirst.kill(killer);
+        }
         for (EntityPlayer player : mob.world.playerEntities) {
             if (!(player instanceof EntityPlayerMP)
                     || !eligible((EntityPlayerMP) player)
@@ -203,6 +222,7 @@ public final class ExileBloodthirst {
             if (n.getFloat(key) < Math.min(10, mob.getMaxHealth() * 0.3)
                     || mob.world.getTotalWorldTime() - n.getLong(key + "_time") > 600) continue;
             NBTTagCompound s = ExileMode.state(p);
+            if (!ExileSimpleThirst.isSimple(p)) {
             s.setInteger(
                     "thirst",
                     Math.max(
@@ -212,17 +232,17 @@ public final class ExileBloodthirst {
                                             score(mob),
                                             s.getDouble("power"),
                                             ExileConfig.combatRelief)));
+            }
             refreshModifiers(p);
             if (!mob.isNonBoss())
                 ExileMode.progress(p, "boss_" + net.minecraft.entity.EntityList.getKey(mob), 10);
             else if (s.getDouble("progress") < 10) ExileMode.progress(p, null, 0.1);
             if (mob instanceof EntityLiving) {
-                ExileTrials.defeated(p, (EntityLiving) mob);
-                if (!n.hasKey("pm_exile_trial")
+                if (!(mob instanceof EntityRiftWalker) && !n.hasKey("pm_exile_trial")
                         && p.getRNG().nextFloat() < ExileConfig.discoveryChance)
                     ExileProgression.discover(p, (EntityLiving) mob);
             }
-            ExileMode.message(p, "combat_relief");
+            if (!ExileSimpleThirst.isSimple(p)) ExileMode.message(p, "combat_relief");
             NetworkHandler.sync(p);
         }
     }

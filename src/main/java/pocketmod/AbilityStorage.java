@@ -27,7 +27,7 @@ public class AbilityStorage {
     }
 
     public static boolean isUnlocked(EntityPlayer player, AbilityType type) {
-        return getLevel(player, type) > 0;
+        return (!ExileProgression.inMode(player) || ExileProgression.allowedInExile(type.id)) && getLevel(player, type) > 0;
     }
 
     /** Учитывает уровни, предоставленные другой способностью, при выводе цены и покупке. */

@@ -44,6 +44,7 @@ public class MorphIntegration {
         final Class<?> morphType;
         final Method getCapability;
         final Method getAcquiredMorphs;
+        final Method hasAcquiredMorph;
         final Method getCurrentMorph;
         final Method morph;
         final Method demorph;
@@ -57,6 +58,7 @@ public class MorphIntegration {
 
             this.getCapability = capabilityType.getMethod("get", EntityPlayer.class);
             this.getAcquiredMorphs = capabilityInterface.getMethod("getAcquiredMorphs");
+            this.hasAcquiredMorph = capabilityInterface.getMethod("acquiredMorph",morphType);
             this.getCurrentMorph = capabilityInterface.getMethod("getCurrentMorph");
             this.morph = apiType.getMethod("morph", EntityPlayer.class, morphType, boolean.class);
             this.demorph = apiType.getMethod("demorph", EntityPlayer.class);
@@ -319,7 +321,7 @@ public class MorphIntegration {
         String eventName = event.getClass().getName();
 
         // Block the normal kill -> ghost path while the Morphism ability is locked.
-        // Once unlocked, Metamorph keeps its native ghost/acquisition behavior.
+        // Once unlocked, suppress only morphs currently present in the native collection.
         if ("mchorse.metamorph.api.events.SpawnGhostEvent$Pre".equals(eventName)) {
             cancelAcquisitionWhenLocked(event);
             return;
@@ -380,7 +382,12 @@ public class MorphIntegration {
 
             if (!isEnabled() || !AbilityStorage.isUnlocked(player, AbilityType.MORPHISM)) {
                 event.setCanceled(true);
+                return;
             }
+            Object morph=event.getClass().getField("morph").get(event);
+            Object collection=capability(player);
+            if(morph!=null&&collection!=null&&Boolean.TRUE.equals(api().hasAcquiredMorph.invoke(collection,morph)))
+                event.setCanceled(true);
         } catch (Throwable error) {
             System.err.println("[PocketMod] Could not validate Metamorph acquisition event: " + error);
         }

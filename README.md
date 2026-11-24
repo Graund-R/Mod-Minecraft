@@ -1,3 +1,7 @@
+# Download the latest build
+
+[Download pocketmod.jar](https://github.com/Graund-R/Mod-Minecraft/releases/latest/download/pocketmod.jar) — Minecraft 1.12.2 / Forge. This permanent link updates after successful builds of main.
+
 # Pocket Mod (Карманный)
 
 Мод для Minecraft 1.12.2 (Forge), одиночная игра. Способности на единой мане: телепорт, невидимость, замедление времени, карман, Спектор, тепловизор, щит, полёт, тело, лутка, мягкое падение, магнит, кровосися, волна. История версий — в [CHANGELOG.md](CHANGELOG.md).

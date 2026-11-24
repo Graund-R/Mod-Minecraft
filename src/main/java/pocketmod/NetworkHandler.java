@@ -37,12 +37,24 @@ public final class NetworkHandler {
     public static void sync(EntityPlayerMP player) {
         if (ExileMode.enabled(player.world)) {
             NBTTagCompound exile = ExileMode.state(player);
+            NBTTagCompound terrain=exile.getCompoundTag("terrain_snapshot");
+            long tick=player.world.getTotalWorldTime();
+            int cx=player.getPosition().getX()>>4,cz=player.getPosition().getZ()>>4;
+            if(!exile.hasKey("terrain_snapshot",10)||terrain.getInteger("dimension")!=player.dimension
+                    ||terrain.getInteger("center_x")!=cx||terrain.getInteger("center_z")!=cz
+                    ||Math.abs(tick-terrain.getLong("tick"))>=20) {
+                terrain=PocketDimensionManager.isPocketDimension(player.dimension)?new NBTTagCompound():ExileWorldData.get(player.world).terrain(player.dimension,cx,cz,34);
+                terrain.setInteger("dimension",player.dimension);terrain.setInteger("center_x",cx);terrain.setInteger("center_z",cz);terrain.setLong("tick",tick);
+                exile.setTag("terrain_snapshot",terrain);
+            }
             exile.setInteger("config_slots",ExileConfig.initialSlots);
             exile.setInteger("config_base_price",ExileConfig.basePrice);
             exile.setInteger("config_compass_price",ExileConfig.compassPrice);
             exile.setInteger("config_thirst",ExileConfig.thirstSeconds);
             exile.setBoolean("spector_active", Spector.isActive(player));
         }
+        ExileSimpleThirst.snapshot(player);
+        ExileDebug.snapshot(player);
         NBTTagCompound snapshot = PlayerData.root(player).copy();
         SyncedState.write(player, snapshot);
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
@@ -136,7 +148,7 @@ public final class NetworkHandler {
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
         if (ExileProgression.inMode(p) && (m.action == NetAction.TAKE_CREDIT || m.action == NetAction.SPIN_LOOT)) return;
-        boolean shopAction = m.action == NetAction.TOGGLE_CHEAT_GAMEMODE || m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
+        boolean shopAction = m.action == NetAction.EXILE_DEBUG || m.action == NetAction.TOGGLE_CHEAT_GAMEMODE || m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
                 || m.action == NetAction.TOGGLE_DECOY
                 || m.action == NetAction.TOGGLE_SILENCE
                 || m.action == NetAction.UPGRADE_BLOODSUCKER
@@ -144,7 +156,7 @@ public final class NetworkHandler {
                 || m.action == NetAction.BUY_BODY_PERMANENT
                 || m.action == NetAction.TOGGLE_BODY_RENT
                 || m.action == NetAction.SPIN_LOOT;
-        boolean totemAction = m.action == NetAction.CREATE_TOTEM
+        boolean totemAction = m.action == NetAction.RESURRECTION_READY || m.action == NetAction.CREATE_TOTEM
                 || m.action == NetAction.MOVE_TOTEM
                 || m.action == NetAction.DELETE_TOTEM
                 || m.action == NetAction.TELEPORT_TOTEM
@@ -152,6 +164,11 @@ public final class NetworkHandler {
                 || m.action == NetAction.DEATH_TOTEM_CHOICE;
         if (MorphIntegration.isMorphed(p) && !shopAction && !totemAction) return;
         switch (m.action) {
+            case RESURRECTION_READY: ResurrectionTotems.ready(p); break;
+            case EXILE_DEBUG:
+                if (m.value >= 0 && m.value <= 4 && m.value == Math.floor(m.value))
+                    ExileDebug.action(p, m.a, m.b, (int)m.value);
+                break;
             case TOGGLE_CHEAT_GAMEMODE:
                 if (!p.canUseCommand(2, "gamemode")) {
                     p.sendStatusMessage(new TextComponentTranslation("pocketmod.exile.cheats_required"), true);

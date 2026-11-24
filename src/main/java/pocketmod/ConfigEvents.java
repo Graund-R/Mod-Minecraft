@@ -13,6 +13,7 @@ public class ConfigEvents {
     public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent e) {
         if (PocketMod.MODID.equals(e.getModID())) {
             PocketConfig.reload();
+            ExileDebugClient.borders = null;
         }
     }
 }

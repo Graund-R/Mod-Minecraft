@@ -42,31 +42,26 @@ public class Tr {
         }
     }
 
-    private static boolean injected;
-
-    /**
-     * Если игра не подхватила наш .lang, кладём словарь прямо в общую карту переводов
-     * (её читают сообщения над хотбаром, которые приходят с сервера).
-     */
+    /** Fill missing entries in BOTH client GUI locale and legacy component translations. */
     public static void ensureLoaded() {
         try {
-            String probe = "pocketmod.msg.no_mana";
-            String t = I18n.format(probe);
-            if (!t.equals(probe)) {
-                injected = false;
-                return;
+            Object locale=net.minecraftforge.fml.relauncher.ReflectionHelper.getPrivateValue(
+                    I18n.class,null,"i18nLocale","field_135054_a");
+            Map<String,String> values=net.minecraftforge.fml.relauncher.ReflectionHelper.getPrivateValue(
+                    net.minecraft.client.resources.Locale.class,(net.minecraft.client.resources.Locale)locale,
+                    "properties","field_135032_a");
+            if(values==null) return;
+            for(Map.Entry<String,String> entry:dict().entrySet()) {
+                // Existing resource-pack translations take precedence.
+                if(!I18n.hasKey(entry.getKey())) values.put(entry.getKey(),entry.getValue());
             }
-            Map<String, String> d = dict();
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> en : d.entrySet()) {
-                sb.append(en.getKey()).append('=').append(en.getValue()).append('\n');
-            }
-            InputStream in = new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
-            Class<?> lm = Class.forName("net.minecraft.util.text.translation.LanguageMap");
-            lm.getMethod("inject", InputStream.class).invoke(null, in);
-            if (!injected) System.out.println("[PocketMod] lang files were not loaded by the game, injected built-in dictionary");
-            injected = true;
-        } catch (Throwable ignored) {
+            for(Map.Entry<String,String> entry:Lang.EN.entrySet()) values.putIfAbsent(entry.getKey(),entry.getValue());
+            StringBuilder text=new StringBuilder();
+            for(Map.Entry<String,String> entry:dict().entrySet())
+                text.append(entry.getKey()).append('=').append(values.get(entry.getKey())).append('\n');
+            net.minecraft.util.text.translation.LanguageMap.inject(new ByteArrayInputStream(text.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch(Exception ex) {
+            // GUI calls still have the built-in dictionary if a mod changes the locale implementation.
         }
     }
 }

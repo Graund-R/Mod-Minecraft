@@ -33,6 +33,7 @@ public final class PocketKeys {
         item.setRegistryName(PocketMod.MODID, name);
         item.setUnlocalizedName(PocketMod.MODID + "." + name);
         item.setMaxStackSize(1);
+        item.setCreativeTab(PocketCreativeTab.ITEMS);
         event.getRegistry().register(item);
         return item;
     }

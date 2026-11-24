@@ -15,7 +15,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class PocketConfigGui extends GuiConfig {
 
     public PocketConfigGui(GuiScreen parent) {
-        super(parent, elements(), PocketMod.MODID, false, false, "Pocket Mod: настройки");
+        super(parent, elements(), PocketMod.MODID, false, false, Tr.format("pocketmod.config.title"));
     }
 
     private static List<IConfigElement> elements() {
@@ -23,7 +23,10 @@ public class PocketConfigGui extends GuiConfig {
         if (PocketConfig.config != null) {
             for (String name : PocketConfig.config.getCategoryNames()) {
                 if (ConfigMigrations.META.equals(name)) continue;
-                list.add(new ConfigElement(PocketConfig.config.getCategory(name)));
+                if ("изгнанник".equals(name)) {
+                    list.add(new net.minecraftforge.fml.client.config.DummyConfigElement.DummyCategoryElement(
+                            "exile", "pocketmod.config.exile", ExileSettingsGui.elements()));
+                } else list.add(new ConfigElement(PocketConfig.config.getCategory(name)));
             }
         }
         return list;

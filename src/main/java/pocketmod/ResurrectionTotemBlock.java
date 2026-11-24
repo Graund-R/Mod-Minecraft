@@ -27,7 +27,7 @@ public final class ResurrectionTotemBlock extends Block {
         setHarvestLevel("pickaxe", 0);
         setLightLevel(0.6f);
         setSoundType(SoundType.STONE);
-        setCreativeTab(CreativeTabs.DECORATIONS);
+        setCreativeTab(PocketCreativeTab.ITEMS);
     }
 
     @Override

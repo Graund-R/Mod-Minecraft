@@ -30,8 +30,10 @@ public final class ExileProgression {
     }
 
     public static boolean available(EntityPlayer p, String id) {
-        return !inMode(p) || ExileMode.state(p).getBoolean("open_" + id);
+        return !inMode(p) || (allowedInExile(id) && ExileMode.state(p).getBoolean("open_" + id));
     }
+
+    static boolean allowedInExile(String id) { return !"warehouse".equals(id); }
 
     public static boolean require(EntityPlayer p, String id) {
         if (available(p, id)) return true;
@@ -41,7 +43,7 @@ public final class ExileProgression {
 
     public static List<String> unopened(EntityPlayer p) {
         List<String> choices = new ArrayList<>();
-        for (AbilityType t : AbilityType.values()) if (!available(p, t.id)) choices.add(t.id);
+        for (AbilityType t : AbilityType.values()) if (allowedInExile(t.id) && !available(p, t.id)) choices.add(t.id);
         for (String id : BodyEffects.IDS)
             if (!available(p, "body_" + id)) choices.add("body_" + id);
         return choices;
@@ -50,6 +52,7 @@ public final class ExileProgression {
     /** Неподнятый или утраченный свиток может снова выпасть с другого подходящего противника. */
     public static void discover(EntityPlayerMP p, net.minecraft.entity.Entity source) {
         List<String> choices = unopened(p);
+        choices.remove("teleport"); // Reserved for the Rift Walker boss.
         for (ItemStack stack : p.inventory.mainInventory)
             choices.remove(AbilityDiscoveryItem.id(stack));
         for (ItemStack stack : p.inventory.offHandInventory)
@@ -84,15 +87,27 @@ public final class ExileProgression {
                 || ExileMode.state(p).getBoolean("cured")
                 || p.isCreative()
                 || (p.isSpectator() && !Spector.isActive(p))) return 36;
-        return Math.min(
-                36,
-                config(p, "slots", ExileConfig.initialSlots)
-                        + ExileMode.state(p).getInteger("inventory_level") * 9);
+        return unlockedInventorySlots(p);
+    }
+
+    static int purchasedInventorySlots(NBTTagCompound state) {
+        // Old saves bought nine slots per level. Keep those purchases intact.
+        long bought = state.hasKey("inventory_slots_bought")
+                ? state.getInteger("inventory_slots_bought")
+                : (long) state.getInteger("inventory_level") * 9;
+        return (int) Math.max(0, Math.min(36, bought));
+    }
+
+    public static int unlockedInventorySlots(EntityPlayer p) {
+        if (ExileMode.state(p).getBoolean("cured")) return 36;
+        return Math.min(36, config(p, "slots", ExileConfig.initialSlots)
+                + purchasedInventorySlots(ExileMode.state(p)));
     }
 
     public static int basePrice(EntityPlayer p, int kind) {
         int level = ExileMode.state(p).getInteger(kind == 0 ? "inventory_level" : "weakness_level");
-        if (kind == 0 && slots(p) >= 36 || kind == 1 && level >= 2) return -1;
+        if (kind == 0) return unlockedInventorySlots(p) >= 36 ? -1 : 100;
+        if (kind == 1 && level >= 2) return -1;
         return config(p, "base_price", ExileConfig.basePrice) * (level + 1);
     }
 
@@ -100,17 +115,19 @@ public final class ExileProgression {
         if (!inMode(p) || kind < 0 || kind > 1) return;
         int price = basePrice(p, kind);
         if (price < 0) return;
-        double amount = Mana.shopPrice(p, price);
+        double amount = kind == 0 ? price : Mana.shopPrice(p, price);
         if (!Mana.spend(p, amount)) {
             p.sendStatusMessage(
                     new TextComponentTranslation("pocketmod.msg.no_mana", (int) Math.ceil(amount)),
                     true);
             return;
         }
-        Mana.consumeDiscount(p);
-        String key = kind == 0 ? "inventory_level" : "weakness_level";
-        ExileMode.state(p).setInteger(key, ExileMode.state(p).getInteger(key) + 1);
-        ExileMode.progress(p, "base_" + kind + "_" + ExileMode.state(p).getInteger(key), 1);
+        if (kind != 0) Mana.consumeDiscount(p);
+        NBTTagCompound state = ExileMode.state(p);
+        String key = kind == 0 ? "inventory_slots_bought" : "weakness_level";
+        int level = kind == 0 ? purchasedInventorySlots(state) : state.getInteger(key);
+        state.setInteger(key, level + 1);
+        ExileMode.progress(p, "base_" + kind + "_" + state.getInteger(key), 1);
         enforce(p);
     }
 

@@ -49,7 +49,7 @@ public final class AbilityDiscoveryItem extends Item {
         setUnlocalizedName("pocketmod.ability_discovery");
         setHasSubtypes(true);
         setMaxStackSize(1);
-        setCreativeTab(CreativeTabs.MISC);
+        setCreativeTab(PocketCreativeTab.ITEMS);
     }
 
     public static String id(ItemStack stack) {
@@ -85,13 +85,13 @@ public final class AbilityDiscoveryItem extends Item {
         if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK)
             return new ActionResult<>(EnumActionResult.PASS, stack);
         String id = id(stack);
-        if (id.isEmpty() || !ExileProgression.inMode(player))
+        if (id.isEmpty() || !ExileProgression.inMode(player) || !ExileProgression.allowedInExile(id))
             return new ActionResult<>(EnumActionResult.FAIL, stack);
         if (world.isRemote) return new ActionResult<>(EnumActionResult.SUCCESS, stack);
         if (ExileProgression.available(player, id)) {
             player.sendStatusMessage(
                     new TextComponentTranslation("pocketmod.exile.discovery_known"), true);
-            return new ActionResult<>(EnumActionResult.FAIL, stack);
+            return new ActionResult<>(EnumActionResult.SUCCESS, consume(stack));
         }
         ExileMode.state(player).setBoolean("open_" + id, true);
         if (id.equals(ExileMode.state(player).getString("pending_discovery")))
@@ -100,7 +100,7 @@ public final class AbilityDiscoveryItem extends Item {
         EntityPlayerMP serverPlayer = (EntityPlayerMP) player;
         grant(serverPlayer, "root", "entered");
         grant(serverPlayer, "discover_" + id, "activated");
-        stack.shrink(1);
+        ItemStack remaining = consume(stack);
         String title =
                 id.startsWith("body_")
                         ? "pocketmod.body." + id.substring(5)
@@ -109,7 +109,14 @@ public final class AbilityDiscoveryItem extends Item {
                 new TextComponentTranslation(
                         "pocketmod.exile.discovered", new TextComponentTranslation(title)));
         NetworkHandler.sync(serverPlayer);
-        return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+        // Returning the exhausted original stack lets vanilla creative mode restore its count.
+        // EMPTY stays empty through PlayerInteractionManager's creative restoration.
+        return new ActionResult<>(EnumActionResult.SUCCESS, remaining);
+    }
+
+    static ItemStack consume(ItemStack stack) {
+        stack.shrink(1);
+        return stack.isEmpty() ? ItemStack.EMPTY : stack;
     }
 
     private static void grant(EntityPlayerMP player, String id, String criterion) {

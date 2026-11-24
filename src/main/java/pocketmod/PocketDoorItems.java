@@ -27,7 +27,7 @@ public final class PocketDoorItems {
         DOOR = new ItemDoor((BlockDoor) Blocks.IRON_DOOR);
         DOOR.setRegistryName(PocketMod.MODID, "pocket_door");
         DOOR.setUnlocalizedName(PocketMod.MODID + ".pocket_door");
-        DOOR.setCreativeTab(net.minecraft.creativetab.CreativeTabs.REDSTONE);
+        DOOR.setCreativeTab(PocketCreativeTab.ITEMS);
         event.getRegistry().register(DOOR);
     }
 

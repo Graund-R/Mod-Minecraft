@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.14", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.33", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 
@@ -44,6 +44,7 @@ public class PocketMod {
         POCKET_TYPE = DimensionType.register("pocket", "_pocket", DIM_ID, PocketWorldProvider.class, true);
         DimensionManager.registerDimension(DIM_ID, POCKET_TYPE);
         EntityRegistry.registerModEntity(new ResourceLocation(MODID, "decoy"), EntityDecoy.class, "decoy", 0, this, 64, 3, false);
+        EntityRegistry.registerModEntity(new ResourceLocation(MODID, "rift_walker"), EntityRiftWalker.class, "rift_walker", 1, this, 96, 1, true, 0x191529, 0xA64CFF);
         proxy.preInit();
     }
 

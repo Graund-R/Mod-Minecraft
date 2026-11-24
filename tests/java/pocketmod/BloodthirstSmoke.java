@@ -116,6 +116,7 @@ public final class BloodthirstSmoke {
     }
 
     public static void main(String[] args) throws Exception {
+        ExileConfig.simpleThirst=false; // Exercise the retained original model.
         Field u = Unsafe.class.getDeclaredField("theUnsafe");
         u.setAccessible(true);
         unsafe = (Unsafe) u.get(null);
@@ -163,6 +164,16 @@ public final class BloodthirstSmoke {
                 ExileBloodthirst.relief(30, 50, 240) < ExileBloodthirst.relief(30, 0, 240),
                 "weak enemies lose value with progression");
         check(ExileBloodthirst.relief(100000, 0, 240) == 480, "boss relief has a bounded reserve");
+        p.data.setBoolean("pm_shield", true);
+        Mana.set(p, 1000);
+        net.minecraftforge.event.entity.living.LivingDamageEvent thirstHit =
+                new net.minecraftforge.event.entity.living.LivingDamageEvent(
+                        p, new DamageSource("pocketmod_bloodthirst").setDamageBypassesArmor().setDamageIsAbsolute(), 1);
+        Shield.onDamage(thirstHit);
+        check(!thirstHit.isCanceled(), "mana shield cannot cancel thirst damage");
+        near(thirstHit.getAmount(), 1, "shield leaves full thirst damage");
+        near(Mana.get(p), 1000, "thirst does not spend shield mana");
+        Shield.off(p);
         UUID ability = UUID.fromString("2175a3bc-d02c-4d62-9b44-090c420e9761");
         IAttributeInstance attack = p.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE);
         attack.applyModifier(new AttributeModifier(ability, "test_strength_ability", 3, 0));

@@ -1,4 +1,4 @@
-name: Build mod
+name: Build and publish Pocket Mod
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # нужно только для публикации релиза по тегу
+  contents: read
 
 concurrency:
   group: build-${{ github.ref }}
@@ -17,27 +17,26 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
-
-      - name: Read version (version.txt is the single source of truth)
+      - name: Read version
+        id: version
+        shell: bash
         run: |
-          set -e
-          VER=$(tr -d '[:space:]' < version.txt)
-          if ! echo "$VER" | grep -Eq '^[0-9]+(\.[0-9]+)*$'; then
-            echo "version.txt must look like 2.1, got: '$VER'"; exit 1
+          set -euo pipefail
+          MODVER=$(tr -d '[:space:]' < version.txt)
+          [[ "$MODVER" =~ ^[0-9]+(\.[0-9]+)+$ ]]
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            test "${GITHUB_REF_NAME#v}" = "$MODVER"
           fi
-          if [[ "$GITHUB_REF" == refs/tags/v* ]] && [ "${GITHUB_REF_NAME#v}" != "$VER" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match version.txt ($VER)"; exit 1
-          fi
-          echo "MODVER=$VER" >> "$GITHUB_ENV"
-          echo "Mod version: $VER"
-
+          echo "MODVER=$MODVER" >> "$GITHUB_ENV"
+          echo "version=$MODVER" >> "$GITHUB_OUTPUT"
       - name: Cache Gradle and Forge downloads
         uses: actions/cache@v4
         with:
@@ -47,15 +46,14 @@ jobs:
             mdk.zip
           key: forge-1.12.2-14.23.5.2860-${{ runner.os }}
           restore-keys: forge-1.12.2-
-
-      - name: Prepare project (Forge MDK + ./src)
+      - name: Prepare Forge MDK
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
           test -d src/main/java/pocketmod
           if [ ! -f mdk.zip ]; then
-            curl -fL -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-mdk.zip
+            curl --fail --location --retry 3 -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-mdk.zip
           fi
-          rm -rf mdk
           mkdir mdk
           unzip -q mdk.zip -d mdk
           rm -rf mdk/src
@@ -65,40 +63,60 @@ jobs:
           sed -i 's#http://files.minecraftforge.net/maven#https://maven.minecraftforge.net#g' build.gradle
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
           sed -i "s#^version = .*#version = \"$MODVER\"#" build.gradle
-          # версия в меню Mods (@Mod) берётся из version.txt
           sed -i -E "s/version\s*=\s*\"[0-9]+(\.[0-9]+)*\"/version = \"$MODVER\"/" src/main/java/pocketmod/PocketMod.java
-
-      - name: Optional JourneyMap API (totem waypoints)
+      - name: Optional JourneyMap API
         if: hashFiles('optional/journeymap/JmPlugin.java') != ''
+        shell: bash
         run: |
-          set -e
           cp optional/journeymap/JmPlugin.java mdk/src/main/java/pocketmod/JmPlugin.java
           cat >> mdk/build.gradle <<'GRADLE'
-
-          repositories {
-              mavenCentral()
-          }
-
-          // JourneyMap documents this as a compile-time-only dependency.
-          // The API classes are not copied into the mod jar.
-          dependencies {
-              compile 'info.journeymap:journeymap-api:1.12-1.4'
-          }
+          repositories { mavenCentral() }
+          dependencies { compile 'info.journeymap:journeymap-api:1.12-1.4' }
           GRADLE
-
       - name: Build
         working-directory: mdk
         run: ./gradlew build --no-daemon
-
+      - name: Prepare direct downloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir dist
+          cp "mdk/build/libs/pocketmod-$MODVER.jar" dist/pocketmod.jar
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('dist/pocketmod.jar') as jar:
+              assert jar.testzip() is None
+              assert 'pocketmod/PocketMod.class' in jar.namelist()
+              assert 'assets/pocketmod/lang/ru_ru.lang' in jar.namelist()
+          PY
+          git archive --format=zip --output=dist/pocketmod-source.zip HEAD
+          (cd dist && sha256sum pocketmod.jar pocketmod-source.zip > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
-          name: pocketmod-${{ env.MODVER }}
-          path: mdk/build/libs/*.jar
+          name: pocketmod-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Test release automation
+        run: python3 -m unittest discover -s tests/delivery -v
 
-      - name: Publish GitHub Release (only for tags vX.Y)
-        if: startsWith(github.ref, 'refs/tags/v')
+  publish:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pocketmod-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: pocketmod-${{ github.sha }}
+          path: dist
+      - name: Publish latest download
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" mdk/build/libs/pocketmod-*.jar \
-            --title "Pocket Mod $MODVER" --generate-notes
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: python3 scripts/publish_release.py

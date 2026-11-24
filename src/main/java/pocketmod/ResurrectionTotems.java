@@ -62,6 +62,8 @@ public final class ResurrectionTotems {
         BlockPos pos = data.takeResurrectionTotem(overworld, player.getUniqueID());
         NBTTagCompound state = ExileMode.state(player);
         state.setBoolean("resurrection_pending", false);
+        state.removeTag("resurrection_blast_pos");
+        state.setBoolean("resurrection_blast_waiting", false);
         if (pos == null) {
             if (data.enabled) {
                 state.setBoolean("permadead", true);
@@ -79,7 +81,7 @@ public final class ResurrectionTotems {
         data.pendingResurrections.setTag(player.getUniqueID().toString(), state.copy());
         data.markDirty();
         overworld.setBlockToAir(pos);
-        explode(overworld, pos);
+        state.setLong("resurrection_blast_pos", pos.toLong());
         double[] safe =
                 PocketTeleporter.findStandable(
                         overworld, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5);
@@ -95,6 +97,39 @@ public final class ResurrectionTotems {
         data.pendingResurrections.setTag(player.getUniqueID().toString(), state.copy());
         data.markDirty();
         player.sendMessage(new TextComponentTranslation("pocketmod.exile.totem_used"));
+    }
+
+    public static void ready(EntityPlayerMP player) {
+        ExileWorldData data = ExileWorldData.get(player.world);
+        NBTTagCompound effect = data.pendingResurrections.getCompoundTag(player.getUniqueID().toString());
+        if (!effect.getBoolean("blast_waiting") || player.dimension != 0 || !player.isEntityAlive()) return;
+        effect.removeTag("blast_waiting");
+        effect.setInteger("blast_delay", 40);
+        ExileMode.state(player).setBoolean("resurrection_blast_waiting", false);
+        data.markDirty();
+        NetworkHandler.sync(player);
+    }
+
+    @SubscribeEvent public static void tick(net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent event) {
+        if (event.phase != net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END
+                || !(event.player instanceof EntityPlayerMP) || !event.player.isEntityAlive()) return;
+        EntityPlayerMP player = (EntityPlayerMP) event.player;
+        ExileWorldData data = ExileWorldData.get(player.world);
+        String key = player.getUniqueID().toString();
+        NBTTagCompound effect = data.pendingResurrections.getCompoundTag(key);
+        if (!effect.hasKey("blast_delay") || player.dimension != 0) return;
+        int remaining = effect.getInteger("blast_delay") - 1;
+        BlockPos pos = BlockPos.fromLong(effect.getLong("resurrection_blast_pos"));
+        WorldServer world = player.getServerWorld();
+        if (remaining > 0) {
+            effect.setInteger("blast_delay", remaining);
+            if (remaining % 5 == 0) world.spawnParticle(net.minecraft.util.EnumParticleTypes.SPELL_WITCH,
+                    pos.getX()+.5, pos.getY()+.5, pos.getZ()+.5, 12, .4, .7, .4, .03);
+        } else {
+            data.pendingResurrections.removeTag(key);
+            explode(world, pos);
+        }
+        data.markDirty();
     }
 
     private static void explode(WorldServer world, BlockPos pos) {
@@ -130,11 +165,24 @@ public final class ResurrectionTotems {
             state.setDouble("resurrection_x", claim.getDouble("resurrection_x"));
             state.setDouble("resurrection_y", claim.getDouble("resurrection_y"));
             state.setDouble("resurrection_z", claim.getDouble("resurrection_z"));
+            if (claim.hasKey("resurrection_blast_pos"))
+                state.setLong("resurrection_blast_pos", claim.getLong("resurrection_blast_pos"));
         }
         if (state.getBoolean("resurrection_pending")) {
             double x = state.getDouble("resurrection_x"),
                     y = state.getDouble("resurrection_y"),
                     z = state.getDouble("resurrection_z");
+            WorldServer destination = player.getServer().getWorld(0);
+            destination.getChunkFromBlockCoords(new BlockPos(x, y, z));
+            double[] safe = PocketTeleporter.findStandable(destination, x, y, z);
+            if (safe == null) {
+                BlockPos spawn = destination.getSpawnPoint();
+                destination.getChunkFromBlockCoords(spawn);
+                BlockPos surface = destination.getTopSolidOrLiquidBlock(spawn);
+                safe = PocketTeleporter.findStandable(destination,
+                        surface.getX() + 0.5, surface.getY(), surface.getZ() + 0.5);
+            }
+            if (safe != null) { x = safe[0]; y = safe[1]; z = safe[2]; }
             if (player.dimension != 0) player.changeDimension(0, new PocketTeleporter(x, y, z));
             else
                 player.connection.setPlayerLocation(
@@ -145,7 +193,14 @@ public final class ResurrectionTotems {
             player.motionX = player.motionY = player.motionZ = 0;
             state.setBoolean("resurrection_pending", false);
             state.setBoolean("trial_active", false);
-            data.pendingResurrections.removeTag(player.getUniqueID().toString());
+            if (state.hasKey("resurrection_blast_pos")) {
+                NBTTagCompound effect = new NBTTagCompound();
+                effect.setLong("resurrection_blast_pos", state.getLong("resurrection_blast_pos"));
+                effect.setBoolean("blast_waiting", true);
+                state.setBoolean("resurrection_blast_waiting", true);
+                state.removeTag("resurrection_blast_pos");
+                data.pendingResurrections.setTag(player.getUniqueID().toString(), effect);
+            } else data.pendingResurrections.removeTag(player.getUniqueID().toString());
             data.markDirty();
         } else if (ExileMode.enabled(player.world) && state.getBoolean("permadead")) {
             Spector.forceReturnIfActive(player);

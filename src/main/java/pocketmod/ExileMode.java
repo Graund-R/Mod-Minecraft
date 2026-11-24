@@ -21,9 +21,11 @@ public final class ExileMode {
     private ExileMode() {}
 
     public static void register() {
-        worldType = new WorldType("exile");
+        worldType = new WorldType("exile") {
+            @Override public boolean canBeCreated() {return false;}
+        };
         net.minecraftforge.fml.common.registry.GameRegistry.registerWorldGenerator(
-                new ExileTrials(), 100);
+                new ExileTrials(), Integer.MAX_VALUE);
     }
 
     public static WorldType worldType() {
@@ -67,6 +69,10 @@ public final class ExileMode {
         ExileWorldData data = ExileWorldData.get(event.world);
         if (!data.enabled) return;
         data.seconds++;
+        for(net.minecraft.world.WorldServer world:net.minecraftforge.common.DimensionManager.getWorlds()) {
+            if(world==null||PocketDimensionManager.isPocketDimension(world.provider.getDimension()))continue;
+            data.spread(world.provider.getDimension(),(x,z)->world.getChunkProvider().getLoadedChunk(x,z)!=null);
+        }
         data.markDirty();
     }
 
@@ -89,8 +95,9 @@ public final class ExileMode {
                 || p.isDead
                 || p.getHealth() <= 0
                 || p.isCreative()
-                || (p.isSpectator() && !Spector.isActive(p))) return;
+                || (p.isSpectator() && !Spector.isActive(p))) {ExileSymptoms.reset(s);return;}
         if (PocketDimensionManager.isPocketDimension(p.dimension)) {
+            ExileSymptoms.reset(s);
             s.setInteger("stage", 0);
             s.setInteger("contamination", 0);
             int spent = s.getInteger("shelter") + 1;
@@ -111,11 +118,12 @@ public final class ExileMode {
         int cx = MathHelper.floor(p.posX) >> 4;
         int cz = MathHelper.floor(p.posZ) >> 4;
         // Общая местная область не позволяет сбросить застой шагом через границу чанка.
-        for (int dx = -1; dx <= 1; dx++)
-            for (int dz = -1; dz <= 1; dz++) data.visit(p.dimension, cx + dx, cz + dz);
+        if (!ExileDebug.paused(p))
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dz = -1; dz <= 1; dz++) data.visit(p.dimension, cx + dx, cz + dz);
         double exposure = data.exposure(p.dimension, cx, cz);
         int stage = stage(exposure);
-        if (stage >= 3) {
+        if (stage >= 3 && !ExileDebug.paused(p)) {
             for (int dx = -2; dx <= 2; dx++)
                 for (int dz = -2; dz <= 2; dz++)
                     if (Math.max(Math.abs(dx), Math.abs(dz)) == 2)
@@ -125,10 +133,10 @@ public final class ExileMode {
         s.setInteger("stage", stage);
         s.setInteger(
                 "contamination", (int) Math.min(100, exposure * 100 / ExileConfig.fullSeconds));
+        ExileSymptoms.advance(p,s.getInteger("contamination"));
         ExileBloodthirst.advance(p);
         int thirst = s.getInteger("thirst");
-        if ((stage > 0 || thirst >= ExileConfig.thirstSeconds)
-                && data.seconds % ExileConfig.spawnInterval == 0)
+        if (stage > 0 || thirst >= ExileConfig.thirstSeconds)
             ExileEncounters.spawn(p, Math.max(1, stage));
     }
 

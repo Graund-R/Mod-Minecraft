@@ -85,6 +85,7 @@ public class WarehouseInventory implements IInventory {
     /** Каждый занятый слот оплачивается отдельно при смерти. Неоплаченные предметы выпадают. */
     public static void handleDeath(EntityPlayer oldPlayer, EntityPlayer newPlayer) {
         if (oldPlayer.world.isRemote) return;
+        if (ExileProgression.inMode(newPlayer)) return;
         WarehouseInventory inventory = new WarehouseInventory(newPlayer);
         for (int i = 0; i < inventory.getSizeInventory(); i++) {
             ItemStack stack = inventory.getStackInSlot(i);

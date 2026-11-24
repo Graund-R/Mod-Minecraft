@@ -229,6 +229,7 @@ public class Totems {
     private static final String DEATH_KEY = "pocketmod_death_totem";
 
     public static void setDeathTotem(EntityPlayer p, int dim, double x, double y, double z) {
+        if (ExileProgression.inMode(p)) return;
         NBTTagCompound c = new NBTTagCompound();
         c.setInteger("dim", dim);
         c.setDouble("x", x);
@@ -241,6 +242,7 @@ public class Totems {
     private static final String PENDING_KEY = "pocketmod_death_pending";
 
     public static void setPendingDeathTotem(EntityPlayer p, int dim, double x, double y, double z) {
+        if (ExileProgression.inMode(p)) return;
         NBTTagCompound c = new NBTTagCompound();
         c.setInteger("dim", dim);
         c.setDouble("x", x);
@@ -250,7 +252,7 @@ public class Totems {
     }
 
     public static boolean hasPendingDeathTotem(EntityPlayer p) {
-        return PlayerData.root(p).hasKey(PENDING_KEY, 10);
+        return !ExileProgression.inMode(p) && PlayerData.root(p).hasKey(PENDING_KEY, 10);
     }
 
     /** Примерная цена телепорта к будущему тотему смерти (x10). */
@@ -303,7 +305,7 @@ public class Totems {
     }
 
     public static boolean hasDeathTotem(EntityPlayer p) {
-        return PlayerData.root(p).hasKey(DEATH_KEY, 10);
+        return !ExileProgression.inMode(p) && PlayerData.root(p).hasKey(DEATH_KEY, 10);
     }
 
     public static Totem getDeathTotem(EntityPlayer p) {

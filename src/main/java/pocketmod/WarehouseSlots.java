@@ -8,7 +8,7 @@ public final class WarehouseSlots {
     private WarehouseSlots() {}
 
     public static int slots(net.minecraft.entity.player.EntityPlayer p) {
-        return slotsForLevel(AbilityStorage.getLevel(p, AbilityType.WAREHOUSE));
+        return ExileProgression.inMode(p) ? 0 : slotsForLevel(AbilityStorage.getLevel(p, AbilityType.WAREHOUSE));
     }
 
     static int slotsForLevel(int level) {
