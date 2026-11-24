@@ -31,7 +31,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * Правила карманного измерения: нельзя призывать существ (яйца, /summon, спавн), расти растениям,
- * спать в кроватях и выходить за границу телепортом (жемчуг эндера, плод хоруса).
+ * спать вне режима «Изгнанник» и выходить за границу телепортом (жемчуг эндера, плод хоруса).
  */
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public class PocketRules {
@@ -48,7 +48,7 @@ public class PocketRules {
         EntityPlayer player = event.getPlayer();
         if (player == null) return;
 
-        if (event.getPlacedBlock().getBlock() instanceof net.minecraft.block.BlockBed) {
+        if (event.getPlacedBlock().getBlock() instanceof net.minecraft.block.BlockBed && !ExileBeds.pocketSleepEnabled(world)) {
             event.setCanceled(true);
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_no_bed"), true);
             return;
@@ -109,7 +109,7 @@ public class PocketRules {
 
     @SubscribeEvent
     public static void onSleep(PlayerSleepInBedEvent e) {
-        if (inPocket(e.getEntityPlayer().world)) {
+        if (inPocket(e.getEntityPlayer().world) && !ExileBeds.pocketSleepEnabled(e.getEntityPlayer().world)) {
             e.setResult(EntityPlayer.SleepResult.NOT_POSSIBLE_HERE);
             if (!e.getEntityPlayer().world.isRemote) {
                 e.getEntityPlayer().sendStatusMessage(new TextComponentTranslation("pocketmod.msg.pocket_no_sleep"), true);
@@ -117,12 +117,14 @@ public class PocketRules {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.LOWEST)
     public static void onBedClick(PlayerInteractEvent.RightClickBlock e) {
         World w = e.getWorld();
         if (w.isRemote || !inPocket(w)) return;
-        if (w.getBlockState(e.getPos()).getBlock() == Blocks.BED) {
-            e.setCanceled(true);
+        if (e.isCanceled()) return;
+        if (ExileBeds.bed(w,e.getPos(),e.getEntityPlayer())) {
+            if (ExileBeds.pocketSleepEnabled(w)) ExileBeds.usePocketBed(e);
+            else e.setCanceled(true);
         }
     }
 

@@ -50,7 +50,8 @@ public final class ExileBloodthirst {
     public static void refreshModifiers(EntityPlayerMP p) {
         ExileSimpleThirst.ensureModel(p);
         boolean frenzy =
-                eligible(p) && ExileMode.state(p).getInteger("thirst") >= ExileConfig.thirstSeconds;
+                eligible(p) && !ExileMode.state(p).getBoolean("cycle_arena_paused")
+                        && ExileMode.state(p).getInteger("thirst") >= ExileConfig.thirstSeconds;
         modifier(
                 p.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED),
                 SPEED,
@@ -76,10 +77,13 @@ public final class ExileBloodthirst {
     public static void advance(EntityPlayerMP p) {
         NBTTagCompound s = ExileMode.state(p);
         ExileSimpleThirst.ensureModel(p);
-        if (ExileSimpleThirst.paused(p)) return;
+        if (ExileSimpleThirst.paused(p)||p.isPlayerSleeping()) return;
+        if(ExileCyclicThirst.active(p)&&ExileCyclicThirst.paused(p))return;
         int previous = s.getInteger("thirst");
         int thirst;
-        if (ExileSimpleThirst.isSimple(p)) {
+        if(ExileCyclicThirst.active(p)) {
+            ExileCyclicThirst.advance(p);thirst=s.getInteger("thirst");
+        } else if (ExileSimpleThirst.isSimple(p)) {
             ExileSimpleThirst.advance(p);
             thirst=s.getInteger("thirst");
         } else {
@@ -175,7 +179,7 @@ public final class ExileBloodthirst {
                         <= 2;
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void aggression(LivingAttackEvent e) {
         // An attempted attack counts even when the player blocks or has brief invulnerability.
         if (!(e.getEntityLiving() instanceof EntityPlayerMP)
@@ -184,6 +188,9 @@ public final class ExileBloodthirst {
         if (!eligible(p)) return;
         EntityLivingBase mob = (EntityLivingBase) e.getSource().getTrueSource();
         mob.getEntityData().setLong("pm_threat_" + p.getUniqueID(), mob.world.getTotalWorldTime());
+        double raw=e.getAmount();
+        if(Double.isFinite(raw)&&raw>0)mob.getEntityData().setDouble("pm_attack_potential",
+                Math.max(mob.getEntityData().getDouble("pm_attack_potential"),raw));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -193,11 +200,42 @@ public final class ExileBloodthirst {
                 || !(e.getSource().getTrueSource() instanceof EntityPlayerMP)) return;
         EntityPlayerMP p = (EntityPlayerMP) e.getSource().getTrueSource();
         EntityLivingBase mob = e.getEntityLiving();
-        if (!eligible(p) || !threat(mob, p)) return;
+        if (!eligible(p) || (!threat(mob, p) && !(ExileCyclicThirst.active(p)&&!mob.isNonBoss()))) return;
         String key = "pm_fight_" + p.getUniqueID();
         NBTTagCompound n = mob.getEntityData();
         n.setFloat(key, n.getFloat(key) + Math.min(e.getAmount(), mob.getHealth()));
         n.setLong(key + "_time", mob.world.getTotalWorldTime());
+    }
+
+    static double danger(EntityLivingBase mob) {
+        IAttributeInstance attack=mob.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE);
+        double potential=attack==null?0:attack.getAttributeValue();
+        if(mob instanceof IRangedAttackMob)potential=Math.max(4,potential);
+        if(mob instanceof net.minecraft.entity.monster.EntityCreeper)
+            potential=Math.max(potential,((net.minecraft.entity.monster.EntityCreeper)mob).getPowered()?24:12);
+        if(mob instanceof net.minecraft.entity.monster.EntityGhast)potential=Math.max(6,potential);
+        potential=Math.max(potential,mob.getEntityData().getDouble("pm_attack_potential"));
+        return !mob.isNonBoss()?4:ExileCyclicThirst.weight(mob.getMaxHealth(),potential,mob.getTotalArmorValue());
+    }
+
+    static boolean rewardCyclic(EntityPlayerMP player,EntityLivingBase mob) {
+        ExileSimpleThirst.ensureModel(player);
+        NBTTagCompound state=ExileMode.state(player);
+        boolean first=!mob.isNonBoss()&&ExileCyclicThirst.victory(state,ExileBossArenas.id(mob));
+        if(!first)ExileCyclicThirst.kill(state,danger(mob));
+        if(!mob.isNonBoss()) {
+            ExileWorldData world=ExileWorldData.get(mob.world);world.bossDefeats.setBoolean(ExileBossArenas.id(mob),true);world.markDirty();
+            state.setBoolean("cycle_arena_paused",ExileBossArenas.protects(player));
+        }
+        return first;
+    }
+
+    static boolean cyclicCredit(EntityPlayerMP player,EntityLivingBase mob,boolean direct) {
+        NBTTagCompound tag=mob.getEntityData();
+        String key="pm_fight_"+player.getUniqueID();
+        boolean recent=mob.world.getTotalWorldTime()-tag.getLong(key+"_time")<=600;
+        boolean contribution=recent&&tag.getFloat(key)>=Math.min(10,mob.getMaxHealth()*.3);
+        return contribution||(direct&&(!mob.isNonBoss()||threat(mob,player)));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -205,7 +243,7 @@ public final class ExileBloodthirst {
         EntityLivingBase mob = e.getEntityLiving();
         if (e.isCanceled()
                 || mob.world.isRemote
-                || mob instanceof EntityPlayer
+                || mob instanceof EntityPlayer || mob instanceof EntityDecoy
                 || !ExileMode.enabled(mob.world)) return;
         // The simple model credits the player's own mob kill, with no threat/gear scoring.
         if (!(mob instanceof EntityDecoy) && e.getSource().getTrueSource() instanceof EntityPlayerMP) {
@@ -219,10 +257,18 @@ public final class ExileBloodthirst {
             EntityPlayerMP p = (EntityPlayerMP) player;
             String key = "pm_fight_" + player.getUniqueID();
             NBTTagCompound n = mob.getEntityData();
-            if (n.getFloat(key) < Math.min(10, mob.getMaxHealth() * 0.3)
-                    || mob.world.getTotalWorldTime() - n.getLong(key + "_time") > 600) continue;
+            boolean cyclic=ExileCyclicThirst.active(p);
+            boolean direct=e.getSource().getTrueSource()==p;
+            if(cyclic?!cyclicCredit(p,mob,direct):n.getFloat(key)<Math.min(10,mob.getMaxHealth()*.3)
+                    ||mob.world.getTotalWorldTime()-n.getLong(key+"_time")>600)continue;
+            String credited="pm_thirst_credited_"+p.getUniqueID();
+            if(n.getBoolean(credited))continue;
+            n.setBoolean(credited,true);
             NBTTagCompound s = ExileMode.state(p);
-            if (!ExileSimpleThirst.isSimple(p)) {
+            if(cyclic) {
+                boolean first=rewardCyclic(p,mob);
+                p.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(first?"pocketmod.cycle.boss_reset":"pocketmod.cycle.relief"),true);
+            } else if (!ExileSimpleThirst.isSimple(p)) {
             s.setInteger(
                     "thirst",
                     Math.max(
@@ -234,15 +280,20 @@ public final class ExileBloodthirst {
                                             ExileConfig.combatRelief)));
             }
             refreshModifiers(p);
-            if (!mob.isNonBoss())
-                ExileMode.progress(p, "boss_" + net.minecraft.entity.EntityList.getKey(mob), 10);
+            if (!mob.isNonBoss()) {
+                if(!cyclic) {
+                    ExileWorldData world=ExileWorldData.get(mob.world);world.bossDefeats.setBoolean(ExileBossArenas.id(mob),true);world.markDirty();
+                    ExileCyclicThirst.recordBoss(s,ExileBossArenas.id(mob));
+                }
+                ExileMode.progress(p, "boss_" + ExileBossArenas.id(mob), 10);
+            }
             else if (s.getDouble("progress") < 10) ExileMode.progress(p, null, 0.1);
             if (mob instanceof EntityLiving) {
                 if (!(mob instanceof EntityRiftWalker) && !n.hasKey("pm_exile_trial")
                         && p.getRNG().nextFloat() < ExileConfig.discoveryChance)
                     ExileProgression.discover(p, (EntityLiving) mob);
             }
-            if (!ExileSimpleThirst.isSimple(p)) ExileMode.message(p, "combat_relief");
+            if (!cyclic&&!ExileSimpleThirst.isSimple(p)) ExileMode.message(p, "combat_relief");
             NetworkHandler.sync(p);
         }
     }

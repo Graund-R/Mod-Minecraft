@@ -25,7 +25,7 @@ public final class TerrainInfectionSmoke {
         ExileWorldData data=new ExileWorldData("test");data.seconds=1000;
         data.setExposure(0,-1,0,ExileConfig.fullSeconds);
         check(data.blackPercent(0,-1,0)==0,"full infection initially gray, not black");
-        data.seconds+=59;check(data.blackPercent(0,-1,0)==0,"first minute grace");
+        data.seconds+=59;check(data.blackPercent(0,-1,0)==19,"blackness progresses inside the first minute");
         data.seconds++;check(data.blackPercent(0,-1,0)==20,"first minute is twenty percent darker");
         data.seconds+=240;check(data.blackPercent(0,-1,0)==100,"five minutes reaches exact black");
         check(data.spreadRate(0,-1,0)==1.5,"spread accelerates sixfold by black stage");

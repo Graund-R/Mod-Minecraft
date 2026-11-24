@@ -13,6 +13,7 @@ public final class SimpleThirstSmoke {
         for(int i=0;i<seconds;i++)ExileSimpleThirst.tick(s,night,1);
     }
     public static void main(String[] args)throws Exception {
+        ExileConfig.cyclicThirst=false;
         NBTTagCompound day=new NBTTagCompound();
         seconds(day,false,59);check(day.getInteger("simple_points")==0,"no point before a full minute");
         seconds(day,false,1);check(day.getInteger("simple_points")==1,"exactly one point in the first day minute");

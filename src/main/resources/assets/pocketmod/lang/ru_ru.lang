@@ -132,7 +132,7 @@ pocketmod.gui.silence_off=Тишина: ВЫКЛ
 pocketmod.gui.pick=Выбери способность слева
 pocketmod.msg.thermal_on=Тепловизор включён (враги красные, остальные белые)
 pocketmod.msg.thermal_switched_off=Тепловизор выключен
-pocketmod.info.pocket.desc=Личное измерение из мраморных блоков с дневным светом. Внутри нельзя призывать существ, расти растениям и спать. Расширяется оплатой слитками у границы.
+pocketmod.info.pocket.desc=Личное измерение из мраморных блоков с дневным светом. Внутри нельзя призывать существ и выращивать растения. Сон разрешён только в режиме «Изгнанник». Расширяется оплатой слитками у границы.
 pocketmod.info.pocket.key=%s - вход и выход
 pocketmod.info.pocket.l1=Вход и выход. Вход платный, выход бесплатный.
 pocketmod.info.pocket.l2=Вход дешевле на %s%%.
@@ -1061,3 +1061,78 @@ entity.pocketmod.rift_walker.name=Скиталец Разлома
 entity.rift_walker.name=Скиталец Разлома
 
 itemGroup.pocketmod=Pocket Mod
+
+pocketmod.exile.infection_damage=Заражение разъедает тело. Немедленно покинь эту область!
+death.attack.pocketmod.infection=%1$s поглотило заражение
+
+pocketmod.cfg.22.infectionDamageAfter=Опасное заражение, сек
+pocketmod.cfg.22.infectionDamageAfter.tooltip=Возраст заражённой области до начала урона: 1200 секунд по умолчанию. Глубина не влияет.
+pocketmod.cfg.22.infectionDamageInterval=Интервал урона заражения, сек
+pocketmod.cfg.22.infectionDamageInterval.tooltip=Пауза между ударами заражения: две секунды по умолчанию.
+pocketmod.cfg.22.infectionDamage=Урон заражения
+pocketmod.cfg.22.infectionDamage.tooltip=1 = половина сердца. 0 отключает урон. Обходит броню; магическая защита действует.
+
+pocketmod.sleep.boss=На арене непобеждённого босса нельзя спать.
+pocketmod.sleep.thirst=Жажда слишком сильна. Сначала утоли её.
+pocketmod.sleep.infection=Местность слишком заражена. Найди безопасное место для сна.
+pocketmod.sleep.pursuers=Преследователи слишком близко. Сейчас нельзя спать.
+pocketmod.sleep.rested=Ты отдохнул. Часть здоровья восстановлена за счёт еды.
+pocketmod.sleep.food=Ты отдохнул, но для восстановления здоровья недостаточно еды.
+pocketmod.cfg.22.bedMaxContamination=Сон: предел заражения, %
+pocketmod.cfg.22.bedMaxContamination.tooltip=Спать можно при местном заражении ниже этого значения. По умолчанию 50%.
+pocketmod.cfg.22.bedMaxThirst=Сон: предел жажды, %
+pocketmod.cfg.22.bedMaxThirst.tooltip=Спать можно при жажде ниже этого значения. По умолчанию 75%.
+pocketmod.cfg.22.bedHealing=Сон: восстановление здоровья
+pocketmod.cfg.22.bedHealing.tooltip=4 = два сердца. За пункт здоровья тратится один пункт еды; остаётся минимум три значка голода.
+
+pocketmod.simple.model_cyclic=Циклическая
+pocketmod.simple.status_sleep=Сон
+pocketmod.simple.status_arena=Защищённая арена
+pocketmod.cycle.hud=Жажда %s%%
+pocketmod.cycle.hud_calm=Жажда %s%% · утоление %s с
+pocketmod.cycle.boss_reset=Новый босс повержен. Жажда и привыкание сброшены.
+pocketmod.cycle.relief=Опасная жертва утолила жажду.
+pocketmod.cycle.debug_value=Жажда: %s / 100
+pocketmod.cycle.debug_habit=Привыкание: %s
+pocketmod.cycle.debug_rate=Наполнение: %s п/мин; тестовое время ×%s
+pocketmod.cycle.debug_relief=Обычная жертва: примерно −%s пунктов
+pocketmod.cycle.debug_calm=Передышка: %s с; разных боссов: %s
+pocketmod.cycle.debug_rule=Охота снижает шкалу. Новый босс также сбрасывает привыкание. Ночь отдельно не ускоряет эту модель.
+pocketmod.cfg.22.cyclicThirst=Циклическая жажда
+pocketmod.cfg.22.cyclicThirst.tooltip=Основная модель: волны утоления, привыкание и сбросы от новых боссов. Старые модели доступны в F8.
+pocketmod.cfg.22.cyclicBaseRate=Жажда: базовая скорость, пунктов/мин
+pocketmod.cfg.22.cyclicBaseRate.tooltip=Начальная скорость заполнения шкалы от 0 до 100.
+pocketmod.cfg.22.cyclicHabitSeconds=Привыкание: секунд на уровень
+pocketmod.cfg.22.cyclicHabitSeconds.tooltip=Активное время вне кармана, сна и защищённой арены. По умолчанию 1800 секунд.
+pocketmod.cfg.22.cyclicHabitMax=Привыкание: максимум
+pocketmod.cfg.22.cyclicHabitMax.tooltip=Верхний предел привыкания. По умолчанию 6.
+pocketmod.cfg.22.cyclicHabitRate=Привыкание: прибавка к скорости
+pocketmod.cfg.22.cyclicHabitRate.tooltip=0.15 = плюс 15% к скорости за каждый уровень привыкания.
+pocketmod.cfg.22.cyclicKillBase=Утоление: начальный знаменатель
+pocketmod.cfg.22.cyclicKillBase.tooltip=Обычная жертва снимает 100 / (значение + привыкание) пунктов, с учётом опасности и разброса.
+pocketmod.cfg.22.cyclicBossStep=Боссы: прибавка к базовой скорости
+pocketmod.cfg.22.cyclicBossStep.tooltip=0.05 = плюс 5% от начальной скорости после каждого нового босса.
+pocketmod.cfg.22.cyclicBossCap=Боссы: предел прибавки
+pocketmod.cfg.22.cyclicBossCap.tooltip=0.5 = суммарная прибавка к базовой скорости не выше 50%.
+pocketmod.cfg.22.cyclicBossCalm=Новый босс: передышка, сек
+pocketmod.cfg.22.cyclicBossCalm.tooltip=Первая победа обнуляет шкалу и привыкание и даёт эту передышку.
+pocketmod.cfg.22.cyclicCalmMin=Утоление: минимум передышки, сек
+pocketmod.cfg.22.cyclicCalmMin.tooltip=Нижняя граница случайной длительности обычного утоления.
+pocketmod.cfg.22.cyclicCalmMax=Утоление: максимум передышки, сек
+pocketmod.cfg.22.cyclicCalmMax.tooltip=Верхняя граница случайной длительности обычного утоления.
+pocketmod.cfg.22.cyclicCalmRate=Утоление: множитель скорости
+pocketmod.cfg.22.cyclicCalmRate.tooltip=0.25 = шкала заполняется в четыре раза медленнее во время передышки.
+pocketmod.cfg.22.cyclicCalmLow=Утоление: нижний порог шкалы
+pocketmod.cfg.22.cyclicCalmLow.tooltip=Охота должна опустить жажду ниже этого значения для передышки.
+pocketmod.cfg.22.cyclicCalmHigh=Утоление: порог новой волны
+pocketmod.cfg.22.cyclicCalmHigh.tooltip=До следующего обычного утоления шкала должна подняться хотя бы до этого значения.
+pocketmod.cfg.22.cyclicRateRandom=Разброс скорости
+pocketmod.cfg.22.cyclicRateRandom.tooltip=0.15 = плавные колебания скорости в пределах ±15%.
+pocketmod.cfg.22.cyclicReliefRandom=Разброс утоления
+pocketmod.cfg.22.cyclicReliefRandom.tooltip=0.1 = разброс утоления от жертвы в пределах ±10%.
+pocketmod.cfg.22.cyclicRandomMin=Скорость: минимум между изменениями, сек
+pocketmod.cfg.22.cyclicRandomMin.tooltip=Минимальная пауза между новыми случайными целями скорости.
+pocketmod.cfg.22.cyclicRandomMax=Скорость: максимум между изменениями, сек
+pocketmod.cfg.22.cyclicRandomMax.tooltip=Максимальная пауза между новыми случайными целями скорости.
+pocketmod.cfg.22.cyclicRandomBlend=Скорость: плавный переход, сек
+pocketmod.cfg.22.cyclicRandomBlend.tooltip=Скорость плавно переходит к следующему случайному значению за это время.

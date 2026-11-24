@@ -16,6 +16,7 @@ public final class ExileWorldData extends WorldSavedData {
     public long seconds;
     public NBTTagCompound route = new NBTTagCompound();
     public NBTTagCompound trials = new NBTTagCompound();
+    public NBTTagCompound bossDefeats = new NBTTagCompound();
     private NBTTagList resurrectionTotems = new NBTTagList();
     public NBTTagCompound pendingResurrections = new NBTTagCompound();
     private final Map<String, Area> areas = new HashMap<>();
@@ -119,7 +120,14 @@ public final class ExileWorldData extends WorldSavedData {
         return a==null||!a.full?0:(int)Math.min(1000000,Math.max(0,seconds-a.fullSince)/60);
     }
     public int blackPercent(int dim,int x,int z) {
-        return Math.min(100,fullMinutes(dim,x,z)*100/Math.max(1,ExileConfig.blackeningMinutes));
+        Area a=areas.get(key(dim,x,z));
+        return a==null||!a.full?0:(int)Math.min(100,Math.max(0,seconds-a.fullSince)*100L/(60*Math.max(1,ExileConfig.blackeningMinutes)));
+    }
+    /** Local mature-terrain hazard; walking away never resets the area's clock. */
+    public boolean dangerous(int dim,int x,int z) {
+        Area a=areas.get(key(dim,x,z));
+        return a!=null && a.full && exposure(dim,x,z)>=ExileConfig.fullSeconds*.75
+                && ExileConfig.fullSeconds+Math.max(0,seconds-a.fullSince)>ExileConfig.infectionDamageAfter;
     }
     public double spreadRate(int dim,int x,int z) {
         return 0.25*(1+Math.min(ExileConfig.blackeningMinutes,fullMinutes(dim,x,z)));
@@ -196,6 +204,7 @@ public final class ExileWorldData extends WorldSavedData {
         enabled = nbt.getBoolean("enabled");
         seconds = Math.max(0, nbt.getLong("seconds"));
         trials = nbt.getCompoundTag("trials");
+        bossDefeats = nbt.getCompoundTag("bossDefeats");
         route = nbt.getCompoundTag("trial_route");
         resurrectionTotems = nbt.getTagList("resurrectionTotems", 10);
         pendingResurrections = nbt.getCompoundTag("pendingResurrections");
@@ -221,6 +230,7 @@ public final class ExileWorldData extends WorldSavedData {
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         nbt.setTag("trials", trials.copy());
+        nbt.setTag("bossDefeats", bossDefeats.copy());
         nbt.setTag("trial_route", route.copy());
         nbt.setTag("resurrectionTotems", resurrectionTotems.copy());
         nbt.setTag("pendingResurrections", pendingResurrections.copy());

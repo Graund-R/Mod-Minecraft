@@ -20,7 +20,7 @@ public final class ExileSettingsGui extends GuiConfig {
     static String group(String key) {
         if (key.startsWith("debug")) return "tools";
         if (key.startsWith("respawn") || key.startsWith("spawn") || key.equals("pursuerCap")) return "enemies";
-        if (key.startsWith("simple") || key.startsWith("thirst") || key.startsWith("frenzy")
+        if (key.startsWith("cyclic") || key.startsWith("simple") || key.startsWith("thirst") || key.startsWith("frenzy")
                 || key.equals("combatRelief") || key.equals("heartbeat")) return "thirst";
         if (key.startsWith("trial") || key.startsWith("firstTrial") || key.startsWith("nextTrial")) return "trials";
         if (key.equals("initialSlots") || key.endsWith("Price") || key.equals("discoveryChance")

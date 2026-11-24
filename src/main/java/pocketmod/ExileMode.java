@@ -95,9 +95,12 @@ public final class ExileMode {
                 || p.isDead
                 || p.getHealth() <= 0
                 || p.isCreative()
-                || (p.isSpectator() && !Spector.isActive(p))) {ExileSymptoms.reset(s);return;}
+                || (p.isSpectator() && !Spector.isActive(p))) {ExileSymptoms.reset(s);ExileInfectionDamage.pulse(s,false);return;}
         if (PocketDimensionManager.isPocketDimension(p.dimension)) {
             ExileSymptoms.reset(s);
+            ExileInfectionDamage.pulse(s,false);
+            s.setBoolean("infection_damage_warning",false);
+            s.setBoolean("cycle_arena_paused",false);
             s.setInteger("stage", 0);
             s.setInteger("contamination", 0);
             int spent = s.getInteger("shelter") + 1;
@@ -106,11 +109,13 @@ public final class ExileMode {
             if (spent == Math.max(1, ExileConfig.pocketSeconds - 180))
                 message(p, "shelter_warning");
             if (spent >= ExileConfig.pocketSeconds) {
+                if(p.isPlayerSleeping())p.wakeUpPlayer(true,true,false);
                 PocketTeleporter.toggle(p);
                 message(p, "shelter_expired");
             }
             return;
         }
+        s.setBoolean("cycle_arena_paused",ExileCyclicThirst.active(p)&&ExileBossArenas.protects(p));
         int outside = Math.min(ExileConfig.pocketCooldown, s.getInteger("outside") + 1);
         s.setInteger("outside", outside);
         if (outside >= ExileConfig.pocketCooldown) s.setInteger("shelter", 0);
@@ -133,6 +138,9 @@ public final class ExileMode {
         s.setInteger("stage", stage);
         s.setInteger(
                 "contamination", (int) Math.min(100, exposure * 100 / ExileConfig.fullSeconds));
+        if(p.isPlayerSleeping()) {ExileEncounters.cancel(p);return;}
+        ExileInfectionDamage.advance(p,data.dangerous(p.dimension,cx,cz));
+        if(p.isDead||p.getHealth()<=0)return;
         ExileSymptoms.advance(p,s.getInteger("contamination"));
         ExileBloodthirst.advance(p);
         int thirst = s.getInteger("thirst");

@@ -9,7 +9,7 @@ public final class ExileSimpleThirst {
     private ExileSimpleThirst() {}
     public static boolean isSimple(EntityPlayerMP p) {
         int override=ExileDebug.enabled(p) ? ExileMode.state(p).getInteger("debug_thirst_model") : 0;
-        return override==1 || (override!=2 && ExileConfig.simpleThirst);
+        return override==1 || (override==0 && !ExileConfig.cyclicThirst && ExileConfig.simpleThirst);
     }
     public static boolean paused(EntityPlayerMP p) {
         return ExileDebug.enabled(p) && ExileMode.state(p).getBoolean("debug_thirst_pause");
@@ -41,6 +41,17 @@ public final class ExileSimpleThirst {
     public static void ensureModel(EntityPlayerMP p) {
         NBTTagCompound s=ExileMode.state(p);
         boolean simple=isSimple(p);
+        if(ExileCyclicThirst.active(p)) {
+            if(!s.getBoolean("thirst_cyclic_active")&&!s.getBoolean("thirst_simple_active"))
+                s.setInteger("legacy_thirst_saved",s.getInteger("thirst"));
+            ExileCyclicThirst.ensure(p);ExileCyclicThirst.canonical(s);
+            s.setBoolean("thirst_cyclic_active",true);s.setBoolean("thirst_simple_active",false);
+            return;
+        }
+        if(s.getBoolean("thirst_cyclic_active")) {
+            s.setBoolean("thirst_cyclic_active",false);s.setBoolean("cycle_arena_paused",false);
+            if(s.hasKey("legacy_thirst_saved"))s.setInteger("thirst",s.getInteger("legacy_thirst_saved"));
+        }
         if(!s.getBoolean("thirst_model_initialized") || simple!=s.getBoolean("thirst_simple_active")) {
             boolean wasSimple=s.getBoolean("thirst_simple_active");
             if(!s.getBoolean("thirst_model_initialized") || !wasSimple)
@@ -101,8 +112,10 @@ public final class ExileSimpleThirst {
     public static void debug(EntityPlayerMP p,int action,int value) {
         ensureModel(p); NBTTagCompound s=ExileMode.state(p); boolean simple=isSimple(p);
         if(action==15) {
-            s.setInteger("debug_thirst_model",simple?2:1);
+            s.setInteger("debug_thirst_model",ExileCyclicThirst.active(p)?1:simple?2:3);
             ensureModel(p);
+        } else if(ExileCyclicThirst.active(p)&&action!=14) {
+            ExileCyclicThirst.debug(p,action,value);
         } else if(action==14) s.setBoolean("debug_thirst_pause",!s.getBoolean("debug_thirst_pause"));
         else if(action==10 && (value==-1 || value==1)) {
             if(simple) s.setInteger("simple_points",Math.max(0,Math.min(ExileConfig.simpleThirstLimit,points(s)+value)));
@@ -131,6 +144,7 @@ public final class ExileSimpleThirst {
     }
     public static void snapshot(EntityPlayerMP p) {
         ensureModel(p); NBTTagCompound s=ExileMode.state(p);
+        if(ExileCyclicThirst.active(p))ExileCyclicThirst.snapshot(p);
         s.setInteger("simple_limit",ExileConfig.simpleThirstLimit);
         s.setInteger("simple_accel_max",ExileConfig.simpleAccelMax);
         s.setInteger("simple_speed",speed(p));
@@ -143,7 +157,7 @@ public final class ExileSimpleThirst {
                 Math.max(0,ExileConfig.simpleAccelSeconds-finite(s.getDouble("simple_accel_clock")))/speed(p)));
         String reason=s.getBoolean("cured")?"cured":p.isCreative()?"creative"
                 :p.isSpectator()&&!Spector.isActive(p)?"spectator":PocketDimensionManager.isPocketDimension(p.dimension)?"shelter"
-                :paused(p)?"paused":"active";
+                :p.isPlayerSleeping()?"sleep":s.getBoolean("cycle_arena_paused")?"arena":paused(p)?"paused":"active";
         s.setString("simple_status",reason);
     }
 }

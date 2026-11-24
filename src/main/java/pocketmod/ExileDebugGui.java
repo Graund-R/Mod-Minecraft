@@ -73,6 +73,15 @@ public final class ExileDebugGui extends GuiScreen {
         if(b.id==41)send(19,0);
     }
     private String[] thirstLines(NBTTagCompound s) {
+        if(s.getBoolean("thirst_cyclic_active"))return new String[]{
+            Tr.format("pocketmod.simple.model",Tr.format("pocketmod.simple.model_cyclic")),
+            Tr.format("pocketmod.cycle.debug_value",String.format(java.util.Locale.ROOT,"%.1f",s.getDouble("cycle_thirst"))),
+            Tr.format("pocketmod.simple.status",Tr.format("pocketmod.simple.status_"+s.getString("simple_status"))),
+            Tr.format("pocketmod.cycle.debug_habit",String.format(java.util.Locale.ROOT,"%.2f",s.getDouble("cycle_habit"))),
+            Tr.format("pocketmod.cycle.debug_rate",String.format(java.util.Locale.ROOT,"%.2f",s.getDouble("cycle_rate")),s.getInteger("simple_speed")),
+            Tr.format("pocketmod.cycle.debug_relief",String.format(java.util.Locale.ROOT,"%.1f",s.getDouble("cycle_ordinary_relief"))),
+            Tr.format("pocketmod.cycle.debug_calm",s.getInteger("cycle_calm_remaining"),s.getInteger("cycle_boss_count")),
+            Tr.format("pocketmod.cycle.debug_rule")};
         boolean simple=s.getBoolean("thirst_simple_active");
         java.util.List<String> lines=new java.util.ArrayList<>();
         lines.add(Tr.format("pocketmod.simple.model",Tr.format("pocketmod.simple.model_"+(simple?"simple":"legacy"))));
@@ -106,7 +115,8 @@ public final class ExileDebugGui extends GuiScreen {
                 b.enabled=d.getBoolean("edit")&&mc.player.dimension==0&&(b.id!=22||selected>0);
             if(b.id>=30&&b.id<=41) {
                 boolean simpleOnly=(b.id>=33&&b.id<=35)||b.id==37||b.id==38||b.id==40;
-                b.enabled=d.getBoolean("edit")&&(!simpleOnly||s.getBoolean("thirst_simple_active"));
+                boolean cyclic=s.getBoolean("thirst_cyclic_active");
+                b.enabled=d.getBoolean("edit")&&(!simpleOnly||s.getBoolean("thirst_simple_active")||(cyclic&&b.id!=38));
             }
             if(b.id>=10&&b.id<=14)b.displayString=(selected==b.id-10?"> ":"")+Tr.format("pocketmod.debug.stage",b.id-10);
         }

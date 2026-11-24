@@ -22,6 +22,11 @@ public final class ExileConfig {
     public static int pocketCooldown = 1200;
     public static boolean visuals = true;
     public static int blackeningMinutes=5;
+    public static int infectionDamageAfter=1200;
+    public static int infectionDamageInterval=2;
+    public static float infectionDamage=1;
+    public static int bedMaxContamination=50,bedMaxThirst=75;
+    public static float bedHealing=4;
     public static boolean infectionSounds=true;
     public static boolean infectionSymptoms=true;
     public static int initialSlots = 18;
@@ -29,6 +34,13 @@ public final class ExileConfig {
     public static int compassPrice = 50;
     public static float discoveryChance = 0.08f;
 
+    public static boolean cyclicThirst=true;
+    public static float cyclicBaseRate=10,cyclicHabitMax=6,cyclicHabitRate=.15f,cyclicKillBase=3;
+    public static int cyclicHabitSeconds=1800,cyclicBossCalm=180;
+    public static float cyclicBossStep=.05f,cyclicBossCap=.5f,cyclicCalmRate=.25f;
+    public static int cyclicCalmMin=45,cyclicCalmMax=75,cyclicCalmLow=15,cyclicCalmHigh=40;
+    public static float cyclicRateRandom=.15f,cyclicReliefRandom=.1f;
+    public static int cyclicRandomMin=60,cyclicRandomMax=120,cyclicRandomBlend=10;
     public static boolean simpleThirst = true;
     public static int simpleThirstLimit = 10;
     public static int simpleThirstSeconds = 60;
@@ -53,6 +65,29 @@ public final class ExileConfig {
 
     public static void load(Configuration cfg) {
         String c = "изгнанник";
+        cyclicThirst=cfg.getBoolean("cyclicThirst",c,true,"Use cyclic bloodthirst; legacy test models remain available in F8");
+        cyclicBaseRate=cfg.getFloat("cyclicBaseRate",c,10f,0.1f,100f,"Base thirst points per active minute");
+        cyclicHabitSeconds=cfg.getInt("cyclicHabitSeconds",c,1800,60,86400,"Active seconds per habit level");
+        cyclicHabitMax=cfg.getFloat("cyclicHabitMax",c,6f,0f,50f,"Maximum habit level");
+        cyclicHabitRate=cfg.getFloat("cyclicHabitRate",c,0.15f,0f,2f,"Additional rate per habit level");
+        cyclicKillBase=cfg.getFloat("cyclicKillBase",c,3f,1f,100f,"Ordinary relief is 100 divided by this value plus habit");
+        cyclicBossStep=cfg.getFloat("cyclicBossStep",c,0.05f,0f,1f,"Base-rate bonus per distinct boss victory");
+        cyclicBossCap=cfg.getFloat("cyclicBossCap",c,0.5f,0f,5f,"Maximum bonus from distinct bosses");
+        cyclicBossCalm=cfg.getInt("cyclicBossCalm",c,180,0,3600,"Calm after a first boss victory, active seconds");
+        cyclicCalmMin=cfg.getInt("cyclicCalmMin",c,45,0,600,"Minimum ordinary calm duration, active seconds");
+        cyclicCalmMax=cfg.getInt("cyclicCalmMax",c,75,0,600,"Maximum ordinary calm duration, active seconds");
+        cyclicCalmRate=cfg.getFloat("cyclicCalmRate",c,0.25f,0f,1f,"Fill rate during calm");
+        cyclicCalmLow=cfg.getInt("cyclicCalmLow",c,15,0,100,"Relief must lower thirst below this value to start calm");
+        cyclicCalmHigh=cfg.getInt("cyclicCalmHigh",c,40,1,100,"Thirst must reach this value before ordinary calm can trigger");
+        cyclicRateRandom=cfg.getFloat("cyclicRateRandom",c,0.15f,0f,0.5f,"Bounded fill-rate randomness around one");
+        cyclicReliefRandom=cfg.getFloat("cyclicReliefRandom",c,0.1f,0f,0.5f,"Bounded relief randomness around one");
+        cyclicRandomMin=cfg.getInt("cyclicRandomMin",c,60,10,3600,"Minimum seconds between fill-rate targets");
+        cyclicRandomMax=cfg.getInt("cyclicRandomMax",c,120,10,3600,"Maximum seconds between fill-rate targets");
+        cyclicRandomBlend=cfg.getInt("cyclicRandomBlend",c,10,1,120,"Seconds to blend between fill-rate targets");
+        cyclicCalmMax=Math.max(cyclicCalmMin,cyclicCalmMax);
+        cyclicCalmLow=Math.min(99,cyclicCalmLow);
+        cyclicCalmHigh=Math.max(cyclicCalmLow+1,cyclicCalmHigh);
+        cyclicRandomMax=Math.max(cyclicRandomMin,cyclicRandomMax);
         simpleThirst = cfg.getBoolean("simpleThirst", c, true, "Use predictable test thirst; false preserves the original context model");
         simpleThirstLimit = cfg.getInt("simpleThirstLimit", c, 10, 2, 100, "Simple thirst points to maximum");
         simpleThirstSeconds = cfg.getInt("simpleThirstSeconds", c, 60, 5, 3600, "Base active seconds per point");
@@ -166,7 +201,13 @@ public final class ExileConfig {
         frenzyStrength = cfg.getFloat("frenzyStrength", c, 0.25f, 0, 3, "Attack damage bonus at maximum bloodthirst");
         thirstExhaustion = cfg.getFloat("thirstExhaustion", c, 0.10f, 0, 4, "Additional exhaustion per second at maximum bloodthirst");
         heartbeat = cfg.getBoolean("heartbeat", c, true, "Enable local bloodthirst heartbeat");
-        blackeningMinutes=cfg.getInt("blackeningMinutes",c,5,1,30,"Minutes after full infection to black terrain, one darkness step per minute; also controls spread acceleration");
+        bedMaxContamination=cfg.getInt("bedMaxContamination",c,50,1,100,"Sleep requires local contamination below this percent");
+        bedMaxThirst=cfg.getInt("bedMaxThirst",c,75,1,100,"Sleep requires bloodthirst below this percent");
+        bedHealing=cfg.getFloat("bedHealing",c,4,0,20,"Maximum health restored by completed sleep; one food point per health point, keeping six food points in reserve");
+        infectionDamageAfter=cfg.getInt("infectionDamageAfter",c,1200,60,86400,"Local infection age before terrain damage, seconds since initial exposure; independent of depth");
+        infectionDamageInterval=cfg.getInt("infectionDamageInterval",c,2,1,60,"Seconds between mature infection damage pulses");
+        infectionDamage=cfg.getFloat("infectionDamage",c,1,0,20,"Damage per mature infection pulse; 1 means half a heart, 0 disables damage");
+        blackeningMinutes=cfg.getInt("blackeningMinutes",c,5,1,30,"Minutes after full infection to black terrain, continuous visual darkening; also controls spread acceleration");
         infectionSounds=cfg.getBoolean("infectionSounds",c,true,"Enable local infection wind, whispers and episode sounds");
         infectionSymptoms=cfg.getBoolean("infectionSymptoms",c,true,"Brief infection debuffs above 75 percent; rare 2-3 second blindness above 95 percent");
         visuals = cfg.getBoolean("visuals", c, true, "Enable contamination and bloodthirst screen effects");

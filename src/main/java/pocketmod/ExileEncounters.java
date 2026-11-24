@@ -322,6 +322,26 @@ public final class ExileEncounters {
         return false;
     }
 
+    static boolean strandedExpired(NBTTagCompound tag,boolean unreachable,long now) {
+        if(!unreachable) {tag.removeTag("pm_exile_stranded");return false;}
+        if(!tag.hasKey("pm_exile_stranded"))tag.setLong("pm_exile_stranded",now);
+        return now-tag.getLong("pm_exile_stranded")>=600;
+    }
+
+    private static boolean stranded(EntityLiving mob,EntityPlayer target) {
+        NBTTagCompound tag=mob.getEntityData();
+        if(mob instanceof EntityVex || tag.hasKey("pm_exile_trial") || tag.getBoolean("pm_exile_debug"))return false;
+        if(Math.abs(mob.posY-target.posY)<=20 || mob.canEntityBeSeen(target)) {
+            strandedExpired(tag,false,mob.world.getTotalWorldTime());return false;
+        }
+        if(mob.ticksExisted%200!=0)return false;
+        Path path=mob.getNavigator().getPathToEntityLiving(target);
+        BlockPos pos=target.getPosition();
+        boolean reachable=path!=null&&path.getFinalPathPoint()!=null&&path.getFinalPathPoint().distanceTo(
+                new net.minecraft.pathfinding.PathPoint(pos.getX(),pos.getY(),pos.getZ()))<=3;
+        return strandedExpired(tag,!reachable,mob.world.getTotalWorldTime());
+    }
+
     @SubscribeEvent
     public static void living(LivingEvent.LivingUpdateEvent event) {
         if (!(event.getEntityLiving() instanceof EntityLiving)
@@ -353,6 +373,7 @@ public final class ExileEncounters {
                 mob.setDead();
                 return;
             }
+            if(stranded(mob,target)) {mob.setDead();return;}
             mob.setAttackTarget(target);
             return;
         }

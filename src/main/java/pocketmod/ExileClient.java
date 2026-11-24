@@ -191,6 +191,7 @@ public final class ExileClient {
 
     private static double thirstFraction(Minecraft mc) {
         NBTTagCompound s = ExileMode.state(mc.player);
+        if(s.getBoolean("thirst_cyclic_active"))return ExileCyclicThirst.percent(s)/100;
         return ExileBloodthirst.fraction(
                 s.getInteger("thirst"),
                 ExileProgression.config(mc.player, "thirst", ExileConfig.thirstSeconds));
@@ -219,7 +220,10 @@ public final class ExileClient {
                     y + h,
                     fill >= 1 ? 0xFFFF3945 : 0xFFCC2337);
         mc.fontRenderer.drawStringWithShadow(
-                s.getBoolean("thirst_simple_active")
+                s.getBoolean("thirst_cyclic_active")
+                        ? Tr.format(s.getInteger("cycle_calm_remaining")>0?"pocketmod.cycle.hud_calm":"pocketmod.cycle.hud",
+                                fill>=1?100:(int)Math.floor(fill*100),s.getInteger("cycle_calm_remaining"))
+                        : s.getBoolean("thirst_simple_active")
                         ? (s.getInteger("simple_points")>=s.getInteger("simple_limit")
                             ? Tr.format("pocketmod.simple.bar",s.getInteger("simple_points"),s.getInteger("simple_limit"))
                             : "active".equals(s.getString("simple_status"))
@@ -233,7 +237,7 @@ public final class ExileClient {
 
     public static void drawScreenEffects(
             Minecraft mc, net.minecraft.client.gui.ScaledResolution res) {
-        if (!showThirst(mc) || !ExileConfig.visuals) return;
+        if (!showThirst(mc) || !ExileConfig.visuals || ExileMode.state(mc.player).getBoolean("cycle_arena_paused")) return;
         NBTTagCompound s = ExileMode.state(mc.player);
         double severity = ExileBloodthirst.symptoms(thirstFraction(mc));
         // A shared opacity budget keeps ability vision readable when the chunk is also infected.
@@ -312,7 +316,7 @@ public final class ExileClient {
             heartbeatTicks = 0;
             lastHeartbeatTick = -1000;
         }
-        if (!showThirst(mc) || mc.isGamePaused()) {
+        if (!showThirst(mc) || mc.isGamePaused() || ExileMode.state(mc.player).getBoolean("cycle_arena_paused")) {
             heartbeatTicks = 0;
             return;
         }

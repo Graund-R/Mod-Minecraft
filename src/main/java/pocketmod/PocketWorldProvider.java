@@ -29,7 +29,12 @@ public class PocketWorldProvider extends WorldProvider {
 
     @Override
     public boolean isSurfaceWorld() {
-        return false;
+        return ExileBeds.pocketSurfaceCheck();
+    }
+
+    @Override
+    public WorldSleepResult canSleepAt(net.minecraft.entity.player.EntityPlayer player, net.minecraft.util.math.BlockPos pos) {
+        return ExileBeds.pocketSurfaceCheck() ? WorldSleepResult.ALLOW : WorldSleepResult.DENY;
     }
 
     /** Нет неба как источника — яркость задаём таблицей (всегда день). */

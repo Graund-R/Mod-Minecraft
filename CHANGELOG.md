@@ -1,3 +1,21 @@
+## 2.34
+
+- Make cyclic bloodthirst the default: continuous habit, bounded smooth randomness, danger-weighted relief and hysteresis-based calm.
+- First victory over each boss type resets bloodthirst and habit, grants three active minutes of calm and adds a capped five-percent baseline step. Repeats give relief without resetting habit or restoring arena protection.
+- Persist independent random streams, calm timers and boss history; migrate old thirst and boss achievements. Freeze progression during sleep, shelter and protected fights.
+- Show the new bar and live F8 values; retain both older models for comparison.
+
+- Add Exile bed rules: sleep only at night, below 50% local contamination and 75% thirst, away from pursuers and undefeated bosses.
+- Completed sleep restores up to two hearts using food; early wake and repeat attempts in the same night give no extra recovery. Beds never replace resurrection totems.
+- Permit pocket beds in Exile using the outside night, preserve pocket lighting and access permissions, and coordinate outside/pocket sleepers before skipping dawn.
+- Sleep skips daylight only; curse clocks, thirst, infection and shelter budgets are not reset or advanced by the skipped hours.
+
+- Replace flat chunk colors with growing radial fields: gray and black centers, soft fringes, bridges and merged neighboring patches.
+- Interpolate blackening within each minute rather than stepping once per minute.
+- Add persistent mature-infection damage after twenty minutes: half a heart every two seconds by default, on every floor. Expose timing and damage in infection settings.
+- Retire long-stranded ordinary ground pursuers so surface populations can be replaced near a player who moves into caves. Preserve trial encounters and population limits.
+- Include all fixes from 2.33.
+
 ## 2.33
 
 - Keep infected terrain gray underwater; suppress the blue water overlay locally and neutralize underwater fog.

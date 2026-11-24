@@ -116,6 +116,7 @@ public final class BloodthirstSmoke {
     }
 
     public static void main(String[] args) throws Exception {
+        ExileConfig.cyclicThirst=false;
         ExileConfig.simpleThirst=false; // Exercise the retained original model.
         Field u = Unsafe.class.getDeclaredField("theUnsafe");
         u.setAccessible(true);
