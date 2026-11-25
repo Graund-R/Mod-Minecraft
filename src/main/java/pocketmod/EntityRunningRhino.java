@@ -78,12 +78,12 @@ public final class EntityRunningRhino extends EntityMob {
         getNavigator().clearPath();
         int state=action(),elapsed=duration-remaining;
         if(state==WINDUP){face(target,4);if(elapsed%8==0)particles(EnumParticleTypes.SMOKE_NORMAL,posX,posY+.2,posZ,6,1,.1,1);}
-        if(state==HORN&&elapsed==10)horn();
+        if(state==HORN&&elapsed==8)horn();
         if(state==CHARGE){chargeTick();if(action()!=CHARGE)return;}
         if(state==REAR){
-            if(elapsed==18&&hasTarget)support=new BlockPos(target.posX,target.getEntityBoundingBox().minY-.15,target.posZ);
-            if(elapsed>=18&&elapsed%4==0&&support!=null)particles(EnumParticleTypes.SMOKE_NORMAL,support.getX()+.5,support.getY()+1,support.getZ()+.5,10,1,.1,1);
-            if(elapsed==35)collapse();
+            if(elapsed==8&&hasTarget)support=new BlockPos(target.posX,target.getEntityBoundingBox().minY-.15,target.posZ);
+            if(elapsed>=8&&elapsed%4==0&&support!=null)particles(EnumParticleTypes.SMOKE_NORMAL,support.getX()+.5,support.getY()+1,support.getZ()+.5,10,1,.1,1);
+            if(elapsed==30)collapse();
         }
         if(state==OVERHEAT&&elapsed%8==0){particles(EnumParticleTypes.CLOUD,posX,posY+2.2,posZ,8,.8,.3,.8);}
         dataManager.set(REMAIN,--remaining);
@@ -93,17 +93,17 @@ public final class EntityRunningRhino extends EntityMob {
             if(len<.01){dx=-Math.sin(Math.toRadians(rotationYaw));dz=Math.cos(Math.toRadians(rotationYaw));len=1;}
             dashX=dx/len;dashZ=dz/len;rotationYaw=(float)(Math.atan2(-dashX,dashZ)*180/Math.PI);renderYawOffset=rotationYaw;
             chargeHits.clear();begin(CHARGE,30);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.5F,.65F);
-        }else if(state==CHARGE){begin(OVERHEAT,combo>0?26:70);sound(SoundEvents.BLOCK_FIRE_EXTINGUISH,1.4F,.65F);}
-        else if(state==OVERHEAT&&combo>0){combo--;begin(WINDUP,26);}
+        }else if(state==CHARGE){begin(OVERHEAT,combo>0?20:54);sound(SoundEvents.BLOCK_FIRE_EXTINGUISH,1.4F,.65F);}
+        else if(state==OVERHEAT&&combo>0){combo--;begin(WINDUP,20);}
         else{begin(ROAM,1);attackDelay=state==HORN?18:50;}
     }
     private void choose(EntityLivingBase target,boolean elevated){
         face(target,5);double distance=getDistanceSq(target);
         if(elevated){
-            if(tactics.shouldCollapse(true)){begin(REAR,55);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.4F,.65F);return;}
+            if(tactics.shouldCollapse(true)){begin(REAR,44);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.4F,.65F);return;}
             // Approaches, failed horn probes and circling alternate before a collapse is considered.
             if(--airProbe<=0){airProbe=65+rand.nextInt(35);tactics.attemptedHorn();
-                if(distance<13*13){begin(HORN,23);sound(SoundEvents.ENTITY_POLAR_BEAR_AMBIENT,1,.7F);return;}}
+                if(distance<13*13){begin(HORN,18);sound(SoundEvents.ENTITY_POLAR_BEAR_AMBIENT,1,.7F);return;}}
             if(ticksExisted%55==0)sound(SoundEvents.ENTITY_POLAR_BEAR_AMBIENT,.9F,.7F+rand.nextFloat()*.2F);
             if(circleTicks++%35==0){
                 double angle=Math.atan2(posZ-target.posZ,posX-target.posX)+(rand.nextBoolean()?1:-1)*(.6+rand.nextDouble());
@@ -114,9 +114,9 @@ public final class EntityRunningRhino extends EntityMob {
             }
         }else{
             airProbe=35;
-            if(attackDelay<=0&&distance<4.8*4.8){begin(HORN,23);return;}
+            if(attackDelay<=0&&distance<4.8*4.8){begin(HORN,18);return;}
             if(attackDelay<=0&&distance>=5*5&&distance<30*30&&canEntityBeSeen(target)){
-                combo=enraged()?1:0;begin(WINDUP,32);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.2F,.75F);return;
+                combo=enraged()?1:0;begin(WINDUP,24);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.2F,.75F);return;
             }
             if(ticksExisted%12==0)getNavigator().tryMoveToEntityLiving(target,1);
         }
@@ -149,7 +149,7 @@ public final class EntityRunningRhino extends EntityMob {
             }
         }
         if(ticksExisted%4==0){sound(SoundEvents.BLOCK_STONE_STEP,.9F,.65F);particles(EnumParticleTypes.SMOKE_NORMAL,posX,posY+.2,posZ,8,1,.1,1);}
-        if(obstruction||collidedHorizontally){combo=0;begin(STUCK,50);sound(SoundEvents.ENTITY_GENERIC_EXPLODE,1,.65F);particles(EnumParticleTypes.EXPLOSION_NORMAL,posX,posY+1,posZ,18,1,1,1);}
+        if(obstruction||collidedHorizontally){combo=0;begin(STUCK,38);sound(SoundEvents.ENTITY_GENERIC_EXPLODE,1,.65F);particles(EnumParticleTypes.EXPLOSION_NORMAL,posX,posY+1,posZ,18,1,1,1);}
     }
     private boolean breakBlock(BlockPos at){
         if(!world.isBlockLoaded(at)||!ForgeEventFactory.getMobGriefingEvent(world,this))return false;

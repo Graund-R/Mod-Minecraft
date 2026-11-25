@@ -26,14 +26,15 @@ public final class ModelRunningRhino extends ModelBase {
     }
     private static float n(JsonArray a,int i){return a.get(i).getAsFloat();}
     @Override public void render(Entity entity,float limb,float amount,float age,float yaw,float pitch,float scale){
-        EntityRunningRhino rhino=(EntityRunningRhino)entity;int action=rhino.action();float t=rhino.progress(age-entity.ticksExisted),rear=0;
-        if(action==EntityRunningRhino.REAR){rear=t<.6F?(float)Math.sin(Math.min(1,t/.35F)*Math.PI/2):Math.max(0,1-(t-.6F)/.12F);}
+        EntityRunningRhino rhino=(EntityRunningRhino)entity;int action=rhino.action();float t=rhino.progress(age-entity.ticksExisted);
+        RhinoAnimation.RearPose rear=action==EntityRunningRhino.REAR?RhinoAnimation.rear(t*RhinoAnimation.REAR_SECONDS):null;
         boolean charge=action==EntityRunningRhino.CHARGE;
-        float cycle=charge?age*.7F:limb*.65F;
-        float strength=charge?.72F:Math.min(.45F,amount*1.5F);
+        float cycle=charge?age*.95F:limb*.95F;
+        float strength=charge?1.1F:Math.min(.72F,amount*2.1F);
         GlStateManager.pushMatrix();GlStateManager.translate(0,24*scale,0);GlStateManager.scale(scale,-scale,scale);GlStateManager.rotate(90,0,1,0);
-        GlStateManager.translate(-18,8,0);GlStateManager.rotate(rear*57,0,0,1);GlStateManager.translate(18,-8,0);
-        if(charge)GlStateManager.translate(0,1+(float)Math.abs(Math.sin(cycle))*1.5F,0);
+        if(rear!=null){GlStateManager.translate(rear.x,rear.y,0);GlStateManager.rotate(rear.angle*DEG,0,0,1);}
+        else if(charge){GlStateManager.translate(0,1+(float)Math.abs(Math.sin(cycle))*2.7F,0);GlStateManager.rotate(-5+(float)Math.sin(cycle)*3,0,0,1);}
+        else if(action==EntityRunningRhino.ROAM)GlStateManager.translate(0,(float)Math.sin(age*.115F)*.6F,0);
         for(JsonElement element:parts){JsonObject p=element.getAsJsonObject();String group=p.get("group").getAsString();JsonArray pos=p.getAsJsonArray("pos"),size=p.getAsJsonArray("size"),rot=p.getAsJsonArray("rot");
             GlStateManager.pushMatrix();
             if(pivots.has(group)){
@@ -42,15 +43,20 @@ public final class ModelRunningRhino extends ModelBase {
                     float offset=(group.equals("frontL")||group.equals("backR"))?0:3.14159F;
                     float angle=(float)Math.sin(cycle+offset)*strength;
                     if(action!=EntityRunningRhino.ROAM&&!charge)angle=0;
-                    if(group.startsWith("front"))angle+=rear*.9F;
-                    GlStateManager.rotate(angle*DEG,0,0,1);
+                    float sx=1,sy=1;
+                    if(rear!=null){
+                        if(group.startsWith("back")){angle=rear.backAngle;sy=rear.backScale;}
+                        else{angle=rear.frontAngle;sx=sy=rear.frontScale;}
+                    }
+                    GlStateManager.rotate(angle*DEG,0,0,1);GlStateManager.scale(sx,sy,1);
                 }else if(group.equals("head")){
-                    float angle=charge?-.18F:action==EntityRunningRhino.WINDUP?-.12F*t:0;
-                    if(action==EntityRunningRhino.HORN){GlStateManager.rotate((float)Math.sin(t*Math.PI*2)*32,0,1,0);angle+=(float)Math.sin(t*Math.PI)*.28F;}
-                    if(action==EntityRunningRhino.STUCK)angle=-.22F+(float)Math.sin(age*.4F)*.025F;
-                    if(action==EntityRunningRhino.OVERHEAT)angle=-.16F+(float)Math.sin(age*.25F)*.045F;
+                    float angle=charge?-.26F:action==EntityRunningRhino.WINDUP?-.28F*t:0;
+                    if(rear!=null)angle=rear.head;
+                    if(action==EntityRunningRhino.HORN){GlStateManager.rotate(RhinoAnimation.hornYaw(t*.9F)*DEG,0,1,0);angle+=(float)Math.sin(t*Math.PI)*.42F;}
+                    if(action==EntityRunningRhino.STUCK)angle=-.32F+(float)Math.sin(age*.65F)*.06F;
+                    if(action==EntityRunningRhino.OVERHEAT)angle=-.24F+(float)Math.sin(age*.4F)*.07F;
                     GlStateManager.rotate(angle*DEG,0,0,1);
-                }else if(group.equals("tail"))GlStateManager.rotate((float)Math.sin(age*.13F)*10,0,1,0);
+                }else if(group.equals("tail"))GlStateManager.rotate((float)Math.sin(age*.2F)*19,0,1,0);
                 GlStateManager.translate(-gx,-gy,-gz);
             }
             GlStateManager.translate(n(pos,0),n(pos,1),n(pos,2));
