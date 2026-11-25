@@ -2,6 +2,7 @@ package pocketmod;
 /** Spatial rules are based on a visible position or the last actual incoming hit. */
 public final class RhinoCoverRules {
     private RhinoCoverRules(){}
+    public static boolean leaveWaterStalemate(boolean wet,int stalled,double distanceSq){return wet&&stalled>=60&&distanceSq>25;}
     public static boolean below(double dx,double dy,double dz){return dy<-.7&&dx*dx+dz*dz<30.25;}
     public static boolean shallow(double bossY,double knownY){double depth=bossY-knownY;return depth>.7&&depth<=4;}
     public static boolean bellyOpen(int action,float progress){return action==6&&progress*RhinoAnimation.REAR_SECONDS>=.55F&&progress*RhinoAnimation.REAR_SECONDS<1.5F;}

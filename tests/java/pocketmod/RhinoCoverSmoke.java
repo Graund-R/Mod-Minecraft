@@ -19,6 +19,10 @@ public final class RhinoCoverSmoke {
         check(!RhinoCoverRules.bellyHit(-2,0,2),"back armor excluded");
         check(!RhinoCoverRules.bellyHit(2,0,-1),"pit attack excluded from weak spot");
         check(!RhinoCoverRules.bellyHit(2,2,2),"side armor excluded");
+        check(RhinoCoverRules.leaveWaterStalemate(true,60,100),"retreat from unreachable water archer");
+        check(!RhinoCoverRules.leaveWaterStalemate(true,20,100),"try approaching before giving up");
+        check(!RhinoCoverRules.leaveWaterStalemate(true,100,16),"nearby wet target remains attackable");
+        check(!RhinoCoverRules.leaveWaterStalemate(false,100,100),"dry barriers use breach logic");
         System.out.println("Rhino cover: mandatory retreat, zero-distance escape, shallow/deep limits, weak-spot time and direction passed.");
     }
 }

@@ -30,7 +30,8 @@ public final class EntityRunningRhino extends EntityMob {
     private int remaining, duration, attackDelay=55, airProbe=35, circleTicks, combo, waveAge=-1;
     private double dashX,dashZ,waveX,waveY,waveZ;
     private BlockPos support, coverMark, breakMark;
-    private int coverMemory, blockedTicks, coverCooldown;
+    private int coverMemory, blockedTicks, coverCooldown, waterStall;
+    private double previousApproach=Double.NaN;
     private double retreatX,retreatZ;
     public boolean angry(){return action()==RETREAT||action()==DIG||action()==BREACH;}
     private boolean mobile(){return action()==ROAM||action()==RETREAT;}
@@ -57,10 +58,17 @@ public final class EntityRunningRhino extends EntityMob {
         retreatX=at[0];retreatZ=at[1];combo=0;begin(RETREAT,55);
         sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.5F,.65F);
     }
-    public EntityRunningRhino(World world) { super(world);setSize(2.8F,2.9F);stepHeight=1;experienceValue=60;enablePersistence();isImmuneToFire=true; }
+    public EntityRunningRhino(World world) { super(world);setSize(2.8F,2.9F);stepHeight=1;setPathPriority(net.minecraft.pathfinding.PathNodeType.WATER,0);experienceValue=60;enablePersistence();isImmuneToFire=true; }
+    @Override public boolean isPushedByWater(){return false;}
+    @Override public boolean canBreatheUnderwater(){return true;}
+    @Override public void moveRelative(float strafe,float vertical,float forward,float friction){
+        // Counter water drag only with a solid footing; deep water remains an obstacle to route around.
+        if(isInWater()&&onGround)friction*=4;
+        super.moveRelative(strafe,vertical,forward,friction);
+    }
     @Override protected void entityInit(){super.entityInit();dataManager.register(ACTION,ROAM);dataManager.register(REMAIN,0);dataManager.register(LENGTH,1);}
     @Override protected void initEntityAI(){
-        tasks.addTask(0,new EntityAISwimming(this));
+        // Heavy stone boss walks along the bottom instead of bobbing in a stream.
         tasks.addTask(7,new EntityAIWatchClosest(this,EntityPlayer.class,32));
         tasks.addTask(8,new EntityAILookIdle(this));
         targetTasks.addTask(1,new EntityAIHurtByTarget(this,false));
@@ -159,6 +167,16 @@ public final class EntityRunningRhino extends EntityMob {
         if(coverMark!=null&&RhinoCoverRules.below(coverMark.getX()+.5-posX,coverMark.getY()-posY,coverMark.getZ()+.5-posZ)){startRetreat();return;}
         if(coverMark!=null&&coverMark.getY()<posY-4){getNavigator().clearPath();return;}
         boolean seen=canEntityBeSeen(target);
+        if(coverMark!=null){
+            double approach=getDistanceSqToCenter(coverMark);
+            boolean wet=world.getBlockState(coverMark).getMaterial().isLiquid()||world.getBlockState(coverMark.down()).getMaterial().isLiquid();
+            if(wet&&approach>25&&!Double.isNaN(previousApproach)&&approach>=previousApproach-.05)waterStall++;
+            else waterStall=Math.max(0,waterStall-3);
+            previousApproach=approach;
+            if(coverCooldown==0&&RhinoCoverRules.leaveWaterStalemate(wet,waterStall,approach)){
+                waterStall=0;coverCooldown=160;startRetreat();return;
+            }
+        }
         if(coverMark!=null&&coverCooldown==0){
             boolean obstructed=!seen||getNavigator().noPath()&&distance>4.8*4.8;
             blockedTicks=obstructed?blockedTicks+1:Math.max(0,blockedTicks-2);
