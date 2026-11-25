@@ -47,6 +47,7 @@ public final class Dash {
 
     private static final class State {
         int age;
+        boolean effectsEnded;
         final Set<Integer> hit = new HashSet<Integer>();
         final Set<Integer> reflected = new HashSet<Integer>();
     }
@@ -58,7 +59,8 @@ public final class Dash {
     /** Любой телепорт (прыжок, тотем, вход и выход из кармана): прерывает рывок и блокирует новый на полсекунды. */
     public static void onTeleport(EntityPlayer p) {
         p.getEntityData().setLong(LOCK, p.world.getTotalWorldTime() + 10L);
-        ACTIVE.remove(p.getUniqueID());
+        State state=ACTIVE.remove(p.getUniqueID());
+        if(state!=null)DashEffects.cancel(p,p.getEntityData().getInteger(ID));
     }
 
     public static boolean isDashing(EntityPlayer p) {
@@ -233,6 +235,7 @@ public final class Dash {
         e.setInteger(ID, e.getInteger(ID) + 1);
         p.fallDistance = 0f;
         ACTIVE.put(p.getUniqueID(), new State());
+        DashEffects.start(p,e.getInteger(ID),ticks(p));
     }
 
     private static boolean isEnemy(EntityPlayerMP p, EntityLivingBase t) {
@@ -253,6 +256,7 @@ public final class Dash {
         State st = ACTIVE.get(p.getUniqueID());
         if (st == null) return;
         if (!p.isEntityAlive() || Spector.isActive(p) || p.isSpectator()) {
+            if(!st.effectsEnded)DashEffects.end(p,p.getEntityData().getInteger(ID));
             ACTIVE.remove(p.getUniqueID());
             return;
         }
@@ -260,6 +264,7 @@ public final class Dash {
         NBTTagCompound e = p.getEntityData();
         int dashTicks = ticks(p);
         double dmg = damage(p);
+        if(st.age>=dashTicks+1&&!st.effectsEnded){st.effectsEnded=true;DashEffects.end(p,e.getInteger(ID));}
 
         if (dmg > 0.0 && st.age <= dashTicks + 1) {
             double dx = e.getFloat(DX);

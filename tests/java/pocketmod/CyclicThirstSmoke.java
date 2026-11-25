@@ -33,7 +33,13 @@ public final class CyclicThirstSmoke {
         s=fresh(10,0,0);s.setInteger("cycle_calm_remaining",60);ExileCyclicThirst.tick(s,1);
         near(ExileCyclicThirst.percent(s),(10*(1+.15/1800))/240,"calm fills four times slower");
         check(s.getInteger("cycle_calm_remaining")==59,"calm uses active seconds");
-        s=fresh(11,100,6);near(ExileCyclicThirst.kill(s,1),100/9.0,"late ordinary relief");
+        s=fresh(11,100,6);near(ExileCyclicThirst.kill(s,1),0,"first late kill banks relief");
+        near(ExileCyclicThirst.percent(s),100,"banked relief preserves frenzy");
+        check(s.getInteger("cycle_kill_grace")==10,"kill gives ten active seconds without thirst damage");
+        NBTTagCompound saved=s.copy();ExileCyclicThirst.kill(s,1);ExileCyclicThirst.kill(saved,1);
+        check(s.equals(saved),"pending relief persists through reload");
+        near(ExileCyclicThirst.kill(s,1),100/3.0,"threshold applies all three banked kills at once");
+        near(s.getDouble("cycle_pending_relief"),0,"bank cleared after threshold");
         near(ExileCyclicThirst.habit(s),6,"ordinary kills do not erase accumulated habit");
         near(ExileCyclicThirst.weight(20,4,0),1,"ordinary danger normalization");
         check(ExileCyclicThirst.weight(20,12,0)>ExileCyclicThirst.weight(20,4,0),"attack increases relief");

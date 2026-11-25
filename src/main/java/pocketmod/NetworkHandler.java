@@ -56,6 +56,7 @@ public final class NetworkHandler {
         ExileSimpleThirst.snapshot(player);
         ExileDebug.snapshot(player);
         NBTTagCompound snapshot = PlayerData.root(player).copy();
+        snapshot.setTag("temporal", TemporalSystem.status(player));
         SyncedState.write(player, snapshot);
         CHANNEL_INSTANCE.sendTo(new SyncMessage(snapshot), player);
     }
@@ -147,6 +148,9 @@ public final class NetworkHandler {
         // Не допускаем NaN/Infinity в экономику и коэффициенты, а также лишние данные пакета.
         if (p == null || m == null || m.action == null
                 || !Double.isFinite(m.value) || m.text == null || m.text.length() > 128) return;
+        if (m.action == NetAction.TEMPORAL) { TemporalSystem.action(p,m.a,m.b);sync(p);return; }
+        if (!TemporalSystem.canMove(p)) return;
+        if (TemporalSystem.busy(p) && (m.action == NetAction.TOGGLE_POCKET || m.action == NetAction.OPEN_WAREHOUSE || m.action == NetAction.TOGGLE_SPECTOR)) return;
         if (ExileProgression.inMode(p) && (m.action == NetAction.TAKE_CREDIT || m.action == NetAction.SPIN_LOOT)) return;
         boolean shopAction = m.action == NetAction.EXILE_DEBUG || m.action == NetAction.TOGGLE_CHEAT_GAMEMODE || m.action == NetAction.EXILE_BASE || m.action == NetAction.EXILE_COMPASS || m.action == NetAction.TAKE_CREDIT
                 || m.action == NetAction.TOGGLE_DECOY

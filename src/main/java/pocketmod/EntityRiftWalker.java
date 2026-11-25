@@ -112,14 +112,16 @@ public class EntityRiftWalker extends EntityMob {
             dataManager.set(WINDUP, --charge);
             if (charge == 0) {
                 // A failed landing cancels the strike: no damage through walls or inside blocks.
+                Vec3d departure=new Vec3d(posX,posY+height*.5,posZ);
                 boolean landed = pattern % 3 == 0 || attemptTeleport(markX, markY, markZ);
+                if(landed&&pattern%3!=0){TeleportEffects.depart(this,(WorldServer)world,departure);TeleportEffects.arrive(this,(WorldServer)world,new Vec3d(posX,posY+height*.5,posZ));}
                 if (landed) {
                     world.setEntityState(this, (byte)60);
                     double x = pattern % 3 == 0 ? posX : markX;
                     double y = pattern % 3 == 0 ? posY : markY;
                     double z = pattern % 3 == 0 ? posZ : markZ;
                     double radius = pattern % 3 == 0 ? 4.5 : 2.8;
-                    world.playSound(null, x,y,z, SoundEvents.ENTITY_ENDERMEN_TELEPORT, SoundCategory.HOSTILE, 1.2F, 0.7F);
+                    if(pattern%3==0)world.playSound(null, x,y,z, SoundEvents.ENTITY_ENDERMEN_TELEPORT, SoundCategory.HOSTILE, 1.2F, 0.7F);
                     ((WorldServer)world).spawnParticle(EnumParticleTypes.DRAGON_BREATH,x,y+1,z,65,radius/2,0.6,radius/2,0.04);
                     for (EntityPlayer p : world.playerEntities) {
                         if (p.isCreative() || p.isSpectator() || !p.isEntityAlive()) continue;

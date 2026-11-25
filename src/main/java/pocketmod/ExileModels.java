@@ -23,6 +23,7 @@ public final class ExileModels {
 
     @SubscribeEvent
     public static void models(ModelRegistryEvent event) {
+        for(int tier=0;tier<3;tier++) ModelLoader.setCustomModelResourceLocation(TemporalItems.DIAL,tier,new ModelResourceLocation(new ResourceLocation(PocketMod.MODID,"temporal_dial_"+tier),"inventory"));
         for (int i = 0; i < AbilityDiscoveryItem.IDS.length; i++) {
             String id = AbilityDiscoveryItem.IDS[i];
             ModelLoader.setCustomModelResourceLocation(

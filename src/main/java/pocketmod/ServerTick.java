@@ -22,6 +22,7 @@ public class ServerTick {
         if (!(event.player instanceof EntityPlayerMP)) return;
 
         EntityPlayerMP player = (EntityPlayerMP) event.player;
+        if (!TemporalSystem.canMove(player)) return;
 
         long now = System.nanoTime() / 1000000L;
         Long prev = lastTick.put(player.getUniqueID(), now);

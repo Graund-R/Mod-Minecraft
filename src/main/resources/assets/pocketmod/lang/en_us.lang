@@ -1139,3 +1139,56 @@ pocketmod.cfg.22.cyclicRandomBlend.tooltip=Cyclic bloodthirst parameter. Default
 
 entity.pocketmod.running_rhino.name=Running Rhino
 entity.running_rhino.name=Running Rhino
+
+# Temporal Dial
+item.pocketmod.temporal_dial.0.name=Temporal Dial · Gold
+item.pocketmod.temporal_dial.1.name=Temporal Dial · Diamond
+item.pocketmod.temporal_dial.2.name=Temporal Dial · Void
+pocketmod.temporal.tooltip=Stasis: %s/4 · Rewind: %s s
+pocketmod.temporal.controls=Use: stasis · Sneak+use: settings
+pocketmod.temporal.key_rewind=Rewind / toggle scroll mode
+pocketmod.temporal.key_forward=Forward through recorded time
+pocketmod.temporal.key_preview=Foresight / return
+pocketmod.temporal.occupied=Another player is controlling time
+pocketmod.temporal.hooks_missing=Restart with the complete Pocket Mod build to enable temporal hooks
+pocketmod.temporal.unavailable=Leave specter, morph, mounts or pocket before using the dial
+pocketmod.temporal.empty=Recharge the dial with sneak+use
+pocketmod.temporal.started=Time stopped. Use again to resume
+pocketmod.temporal.preview_started=Foresight: O returns. All changes will be undone
+pocketmod.temporal.limit=Recording limit reached. Time released
+pocketmod.temporal.death_choice=Last chance: U or /stasis rewind 5. Automatic return in 60 s
+pocketmod.temporal.hud.1=STASIS · %s s
+pocketmod.temporal.hud.2=FORESIGHT · %s s
+pocketmod.temporal.hud.3=LAST CHANCE · %s s · U: rewind 5 s
+pocketmod.temporal.history=Past: %.1f s · Future: %.1f s · Charge: %.1f s
+pocketmod.temporal.wheel=Scroll: backward / forward · U: exit
+pocketmod.temporal.charge=Stasis charge: 1 ender pearl
+pocketmod.temporal.rewind_charge=Rewind +20 s: 1 eye of ender
+pocketmod.temporal.upgrade=Upgrade: 4 diamonds / 1 nether star
+pocketmod.temporal.close=Done
+pocketmod.temporal.share_on=Other players can move: yes
+pocketmod.temporal.share_off=Other players can move: no
+pocketmod.temporal.same_dimension=All players must be in the same dimension for rewind
+pocketmod.temporal.need_unlock=Unlock the time slow ability first
+
+# Dash presentation
+pocketmod.subtitle.dash_snap=Electric snap
+pocketmod.subtitle.dash_rush=Dash rush
+pocketmod.subtitle.dash_land=Dash landing
+pocketmod.cfg.21.dashVisuals=Afterimages and electricity
+pocketmod.cfg.21.dashFirstPerson=First-person speed lines
+pocketmod.cfg.21.dashSounds=Dash sounds
+
+# Spatial folds
+pocketmod.cfg.4.teleportVisuals=Teleport spatial folds
+pocketmod.cfg.4.teleportRefraction=Teleport refraction
+pocketmod.cfg.4.teleportSounds=Teleport sounds
+pocketmod.subtitle.teleport_fold=Space folds inward
+pocketmod.subtitle.teleport_unfold=Space unfolds
+
+pocketmod.temporal.key_activate=Stop / resume time
+
+pocketmod.cycle.banked=Banked relief: %s / 25. Thirst damage delayed for 10 s.
+
+pocketmod.exile.create_line1=Hardcore, spreading infection and bloodthirst.
+pocketmod.exile.create_line2=Keep moving and defeat bosses to survive.

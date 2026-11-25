@@ -103,7 +103,9 @@ public final class ExileBloodthirst {
             } else p.addExhaustion((float) (ExileConfig.thirstExhaustion * symptoms));
         }
         refreshModifiers(p);
-        if (thirst < ExileConfig.thirstSeconds) return;
+        int grace=Math.max(0,s.getInteger("cycle_kill_grace"));
+        if(grace>0)s.setInteger("cycle_kill_grace",grace-1);
+        if (thirst < ExileConfig.thirstSeconds || grace>0) return;
         int seconds = s.getInteger("thirst_damage_seconds") + 1;
         s.setInteger("thirst_damage_seconds", seconds % 2);
         if (seconds >= 2) {
@@ -267,7 +269,9 @@ public final class ExileBloodthirst {
             NBTTagCompound s = ExileMode.state(p);
             if(cyclic) {
                 boolean first=rewardCyclic(p,mob);
-                p.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(first?"pocketmod.cycle.boss_reset":"pocketmod.cycle.relief"),true);
+                if(s.getDouble("cycle_pending_relief")>0)
+                    p.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation("pocketmod.cycle.banked",String.format(java.util.Locale.ROOT,"%.1f",s.getDouble("cycle_pending_relief"))),true);
+                else p.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(first?"pocketmod.cycle.boss_reset":"pocketmod.cycle.relief"),true);
             } else if (!ExileSimpleThirst.isSimple(p)) {
             s.setInteger(
                     "thirst",

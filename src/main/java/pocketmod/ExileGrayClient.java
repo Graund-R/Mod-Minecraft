@@ -39,7 +39,21 @@ public final class ExileGrayClient implements IResourceManagerReloadListener {
     private final java.nio.FloatBuffer matrixBuffer=org.lwjgl.BufferUtils.createFloatBuffer(16);
     private final org.lwjgl.util.vector.Matrix4f inverseView=new org.lwjgl.util.vector.Matrix4f();
     public static String status="off";
+    private static ExileGrayClient instance;
+    private static boolean tilePass;
+    public static void beginTile(Object object) {
+        if(tilePass||instance==null||!(object instanceof net.minecraft.tileentity.TileEntity))return;
+        net.minecraft.tileentity.TileEntity tile=(net.minecraft.tileentity.TileEntity)object;
+        if(tile.getWorld()==null||tile.getWorld()!=Minecraft.getMinecraft().world)return;
+        net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher dispatcher=net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher.instance;
+        instance.pass.origin(dispatcher.staticPlayerX,dispatcher.staticPlayerY,dispatcher.staticPlayerZ);
+        tilePass=instance.pass.begin();
+        if(tilePass)instance.pass.color(1);
+    }
+    public static void endTile(){if(tilePass){try{instance.pass.end();}finally{tilePass=false;}}}
+
     public ExileGrayClient() {
+        instance=this;
         if(Minecraft.getMinecraft().getResourceManager() instanceof net.minecraft.client.resources.IReloadableResourceManager)
             ((net.minecraft.client.resources.IReloadableResourceManager)Minecraft.getMinecraft().getResourceManager()).registerReloadListener(this);
     }

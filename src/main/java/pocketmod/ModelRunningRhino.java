@@ -26,7 +26,10 @@ public final class ModelRunningRhino extends ModelBase {
     }
     private static float n(JsonArray a,int i){return a.get(i).getAsFloat();}
     @Override public void render(Entity entity,float limb,float amount,float age,float yaw,float pitch,float scale){
-        EntityRunningRhino rhino=(EntityRunningRhino)entity;int action=rhino.action();float t=rhino.progress(age-entity.ticksExisted);
+        EntityRunningRhino rhino=(EntityRunningRhino)entity;
+        renderPose(rhino.action(),rhino.progress(age-entity.ticksExisted),age,limb,amount,rhino.angry(),scale);
+    }
+    public void renderPose(int action,float t,float age,float limb,float amount,boolean angry,float scale){
         RhinoAnimation.RearPose rear=action==EntityRunningRhino.REAR?RhinoAnimation.rear(t*RhinoAnimation.REAR_SECONDS):null;
         boolean charge=action==EntityRunningRhino.CHARGE;
         float cycle=charge?age*.95F:limb*.95F;
@@ -57,7 +60,7 @@ public final class ModelRunningRhino extends ModelBase {
                     if(action==EntityRunningRhino.HORN){GlStateManager.rotate(RhinoAnimation.hornYaw(t*.9F)*DEG,0,1,0);angle+=(float)Math.sin(t*Math.PI)*.42F;}
                     if(action==EntityRunningRhino.STUCK)angle=-.32F+(float)Math.sin(age*.65F)*.06F;
                     if(action==EntityRunningRhino.OVERHEAT)angle=-.24F+(float)Math.sin(age*.4F)*.07F;
-                    if(rhino.angry()){GlStateManager.rotate((float)Math.sin(age*.7F)*18,0,1,0);angle+=Math.sin(age*.85F)*.1F;}
+                    if(angry){GlStateManager.rotate((float)Math.sin(age*.7F)*18,0,1,0);angle+=Math.sin(age*.85F)*.1F;}
                     if(action==EntityRunningRhino.DIG||action==EntityRunningRhino.BREACH)angle=-.15F+(float)Math.sin(t*Math.PI*3)*.48F;
                     GlStateManager.rotate(angle*DEG,0,0,1);
                 }else if(group.equals("bellyL")||group.equals("bellyR")){
@@ -71,9 +74,9 @@ public final class ModelRunningRhino extends ModelBase {
             GlStateManager.rotate(n(rot,2),0,0,1);GlStateManager.rotate(n(rot,1),0,1,0);GlStateManager.rotate(n(rot,0),1,0,0);
             int material=p.get("mat").getAsInt();
             float bx=OpenGlHelper.lastBrightnessX,by=OpenGlHelper.lastBrightnessY;
-            if(rhino.angry()&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,240,240);
+            if(angry&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,240,240);
             cube(n(size,0),n(size,1),n(size,2),material);
-            if(rhino.angry()&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,bx,by);
+            if(angry&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,bx,by);
             GlStateManager.popMatrix();
         }
         GlStateManager.popMatrix();

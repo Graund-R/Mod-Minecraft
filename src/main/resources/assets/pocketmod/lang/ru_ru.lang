@@ -1139,3 +1139,56 @@ pocketmod.cfg.22.cyclicRandomBlend.tooltip=Скорость плавно пер�
 
 entity.pocketmod.running_rhino.name=Бегущий Носорог
 entity.running_rhino.name=Бегущий Носорог
+
+# Temporal Dial
+item.pocketmod.temporal_dial.0.name=Хронокомпас · золото
+item.pocketmod.temporal_dial.1.name=Хронокомпас · алмаз
+item.pocketmod.temporal_dial.2.name=Хронокомпас · пустота
+pocketmod.temporal.tooltip=Остановок: %s/4 · Перемотки: %s с
+pocketmod.temporal.controls=ПКМ: остановка · Shift+ПКМ: настройки
+pocketmod.temporal.key_rewind=Перемотка / режим колеса
+pocketmod.temporal.key_forward=Вперёд по записи времени
+pocketmod.temporal.key_preview=Предвидение / вернуться
+pocketmod.temporal.occupied=Временем уже управляет другой игрок
+pocketmod.temporal.hooks_missing=Для работы хронокомпаса перезапусти игру с полной сборкой мода
+pocketmod.temporal.unavailable=Сначала выйди из спектра, облика, транспорта или кармана
+pocketmod.temporal.empty=Нужны заряды — Shift+ПКМ
+pocketmod.temporal.started=Время остановлено. ПКМ — продолжить
+pocketmod.temporal.preview_started=Предвидение: O — вернуться. Все изменения откатятся
+pocketmod.temporal.limit=Достигнут предел записи. Время освобождено
+pocketmod.temporal.death_choice=Последний шанс: U или /stasis rewind 5. Возврат через 60 с
+pocketmod.temporal.hud.1=СТАЗИС · %s с
+pocketmod.temporal.hud.2=ПРЕДВИДЕНИЕ · %s с
+pocketmod.temporal.hud.3=ПОСЛЕДНИЙ ШАНС · %s с · U: назад на 5 с
+pocketmod.temporal.history=Назад: %.1f с · Вперёд: %.1f с · Заряд: %.1f с
+pocketmod.temporal.wheel=Колесо мыши: назад / вперёд · U: выход
+pocketmod.temporal.charge=Заряд остановки: 1 эндер-жемчуг
+pocketmod.temporal.rewind_charge=Перемотка +20 с: 1 око Эндера
+pocketmod.temporal.upgrade=Улучшить: 4 алмаза / 1 звезда Незера
+pocketmod.temporal.close=Готово
+pocketmod.temporal.share_on=Другие игроки двигаются: да
+pocketmod.temporal.share_off=Другие игроки двигаются: нет
+pocketmod.temporal.same_dimension=Для перемотки все игроки должны быть в одном измерении
+pocketmod.temporal.need_unlock=Сначала открой способность замедления времени
+
+# Dash presentation
+pocketmod.subtitle.dash_snap=Электрический срыв
+pocketmod.subtitle.dash_rush=Рассечение воздуха
+pocketmod.subtitle.dash_land=Завершение рывка
+pocketmod.cfg.21.dashVisuals=Послеследы и электричество
+pocketmod.cfg.21.dashFirstPerson=Полосы скорости от первого лица
+pocketmod.cfg.21.dashSounds=Звуки рывка
+
+# Spatial folds
+pocketmod.cfg.4.teleportVisuals=Складка пространства при телепортации
+pocketmod.cfg.4.teleportRefraction=Искажение пространства при телепортации
+pocketmod.cfg.4.teleportSounds=Звуки телепортации
+pocketmod.subtitle.teleport_fold=Пространство сжимается
+pocketmod.subtitle.teleport_unfold=Пространство раскрывается
+
+pocketmod.temporal.key_activate=Стоп / продолжить время
+
+pocketmod.cycle.banked=Утоление накоплено: %s / 25. Урон жажды отложен на 10 с.
+
+pocketmod.exile.create_line1=Хардкор, заражение мира и жажда крови.
+pocketmod.exile.create_line2=Спасение — движение и победы над боссами.

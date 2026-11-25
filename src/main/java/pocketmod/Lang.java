@@ -24,6 +24,7 @@ public final class Lang {
         ru_ru13(RU);
         ru_ru14(RU);
         ru_ru15(RU);
+        ru_ru16(RU);
         en_us0(EN);
         en_us1(EN);
         en_us2(EN);
@@ -40,12 +41,15 @@ public final class Lang {
         en_us13(EN);
         en_us14(EN);
         en_us15(EN);
+        en_us16(EN);
     }
     private static void ru_ru0(Map<String,String> m) {
         m.put("death.attack.pocketmod.infection", "%1$s поглотило заражение");
         m.put("death.attack.pocketmod_bloodthirst", "%1$s погибает от жажды крови");
         m.put("entity.pocketmod.rift_walker.name", "Скиталец Разлома");
+        m.put("entity.pocketmod.running_rhino.name", "Бегущий Носорог");
         m.put("entity.rift_walker.name", "Скиталец Разлома");
+        m.put("entity.running_rhino.name", "Бегущий Носорог");
         m.put("generator.exile", "Изгнанник");
         m.put("item.pocketmod.ability_discovery.name", "Свиток открытия");
         m.put("item.pocketmod.discovery_bloodsucker.name", "Открытие — Кровосися");
@@ -77,6 +81,9 @@ public final class Lang {
         m.put("item.pocketmod.pocket_iron_key.name", "Железный ключ (одноразовый)");
         m.put("item.pocketmod.pocket_key.name", "Ключ кармана");
         m.put("item.pocketmod.resurrection_totem.name", "Тотем возрождения");
+        m.put("item.pocketmod.temporal_dial.0.name", "Хронокомпас · золото");
+        m.put("item.pocketmod.temporal_dial.1.name", "Хронокомпас · алмаз");
+        m.put("item.pocketmod.temporal_dial.2.name", "Хронокомпас · пустота");
         m.put("itemGroup.pocketmod", "Pocket Mod");
         m.put("key.categories.pocketmod", "Pocket Mod");
         m.put("key.pocketmod.cheat_gamemode", "Выживание / творчество с читами");
@@ -107,13 +114,13 @@ public final class Lang {
         m.put("pocketmod.ability.thermal", "Тепловизор");
         m.put("pocketmod.ability.totem", "Тотемы");
         m.put("pocketmod.ability.warehouse", "Карманный склад");
+    }
+    private static void ru_ru1(Map<String,String> m) {
         m.put("pocketmod.ability.wave", "Волна");
         m.put("pocketmod.body.breath", "Дыхание под водой");
         m.put("pocketmod.body.fire", "Огнестойкость");
         m.put("pocketmod.body.hearts", "Сердца");
         m.put("pocketmod.body.regen", "Регенерация");
-    }
-    private static void ru_ru1(Map<String,String> m) {
         m.put("pocketmod.body.speed", "Скорость");
         m.put("pocketmod.body.strength", "Сила");
         m.put("pocketmod.cfg.0.deathManaLoss", "Потеря маны при смерти");
@@ -179,13 +186,13 @@ public final class Lang {
         m.put("pocketmod.cfg.15.slowDesaturate", "Обесцвечивание при замедлении");
         m.put("pocketmod.cfg.15.slowDesaturate.tooltip", "Обесцвечивать картинку, пока время замедлено.");
         m.put("pocketmod.cfg.15.slowDrainBase", "Базовый расход замедления");
+    }
+    private static void ru_ru2(Map<String,String> m) {
         m.put("pocketmod.cfg.15.slowDrainBase.tooltip", "Расход = база / коэффициент замедления.");
         m.put("pocketmod.cfg.15.slowFluidRadius", "Радиус замедления жидкостей");
         m.put("pocketmod.cfg.15.slowFluidRadius.tooltip", "В каком радиусе (блоков) замедляется течение воды и лавы.");
         m.put("pocketmod.cfg.15.slowFluids", "Замедлять воду и лаву");
         m.put("pocketmod.cfg.15.slowFluids.tooltip", "Текущая вода и лава рядом с игроком тоже замедляются вместе со временем.");
-    }
-    private static void ru_ru2(Map<String,String> m) {
         m.put("pocketmod.cfg.15.slowMaxBubbles", "Макс. число пузырей");
         m.put("pocketmod.cfg.15.slowMaxBubbles.tooltip", "Сколько пузырей замедления одновременно обрабатывает сервер (ограничение нагрузки).");
         m.put("pocketmod.cfg.15.slowVisual", "Виньетка при замедлении");
@@ -251,13 +258,13 @@ public final class Lang {
         m.put("pocketmod.cfg.18.scannerLevel1", "Цена: Сканер руд, ур. 1");
         m.put("pocketmod.cfg.18.scannerLevel1.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.scannerLevel2", "Цена: Сканер руд, ур. 2");
+    }
+    private static void ru_ru3(Map<String,String> m) {
         m.put("pocketmod.cfg.18.scannerLevel2.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.scannerLevel3", "Цена: Сканер руд, ур. 3");
         m.put("pocketmod.cfg.18.scannerLevel3.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.shieldLevel1", "Цена: Щит из маны, ур. 1");
         m.put("pocketmod.cfg.18.shieldLevel1.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
-    }
-    private static void ru_ru3(Map<String,String> m) {
         m.put("pocketmod.cfg.18.shieldLevel2", "Цена: Щит из маны, ур. 2");
         m.put("pocketmod.cfg.18.shieldLevel2.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.slowLevel1", "Цена: Замедление времени, ур. 1");
@@ -323,17 +330,20 @@ public final class Lang {
         m.put("pocketmod.cfg.2.creditInterest", "Процент по кредиту");
         m.put("pocketmod.cfg.2.creditInterest.tooltip", "Надбавка к возврату (0.2 = 20%).");
         m.put("pocketmod.cfg.2.creditMax", "Максимальный кредит");
+    }
+    private static void ru_ru4(Map<String,String> m) {
         m.put("pocketmod.cfg.2.creditMax.tooltip", "Наибольшая сумма кредита в магазине.");
         m.put("pocketmod.cfg.2.creditMin", "Минимальный кредит");
         m.put("pocketmod.cfg.2.creditMin.tooltip", "Наименьшая сумма кредита в магазине.");
         m.put("pocketmod.cfg.2.creditPenaltyFactor", "Коэффициент наказания");
         m.put("pocketmod.cfg.2.creditPenaltyFactor.tooltip", "Множитель наказания за невозврат кредита.");
-    }
-    private static void ru_ru4(Map<String,String> m) {
         m.put("pocketmod.cfg.2.creditWarnings", "Предупреждения о сроке");
         m.put("pocketmod.cfg.2.creditWarnings.tooltip", "Предупреждать за 5 и за 1 минуту до срока возврата.");
         m.put("pocketmod.cfg.20.warehouseDeathCost", "Цена сохранения слота при смерти");
         m.put("pocketmod.cfg.20.warehouseDeathCost.tooltip", "Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.");
+        m.put("pocketmod.cfg.21.dashFirstPerson", "Полосы скорости от первого лица");
+        m.put("pocketmod.cfg.21.dashSounds", "Звуки рывка");
+        m.put("pocketmod.cfg.21.dashVisuals", "Послеследы и электричество");
         m.put("pocketmod.cfg.21.levelCharges", "Число зарядов по уровням");
         m.put("pocketmod.cfg.21.levelCharges.tooltip", "Сколько рывков подряд, по уровням 1-4.");
         m.put("pocketmod.cfg.21.levelCost", "Цена рывка по уровням");
@@ -392,6 +402,8 @@ public final class Lang {
         m.put("pocketmod.cfg.22.cyclicHabitSeconds.tooltip", "Активное время вне кармана, сна и защищённой арены. По умолчанию 1800 секунд.");
         m.put("pocketmod.cfg.22.cyclicKillBase", "Утоление: начальный знаменатель");
         m.put("pocketmod.cfg.22.cyclicKillBase.tooltip", "Обычная жертва снимает 100 / (значение + привыкание) пунктов, с учётом опасности и разброса.");
+    }
+    private static void ru_ru5(Map<String,String> m) {
         m.put("pocketmod.cfg.22.cyclicRandomBlend", "Скорость: плавный переход, сек");
         m.put("pocketmod.cfg.22.cyclicRandomBlend.tooltip", "Скорость плавно переходит к следующему случайному значению за это время.");
         m.put("pocketmod.cfg.22.cyclicRandomMax", "Скорость: максимум между изменениями, сек");
@@ -400,8 +412,6 @@ public final class Lang {
         m.put("pocketmod.cfg.22.cyclicRandomMin.tooltip", "Минимальная пауза между новыми случайными целями скорости.");
         m.put("pocketmod.cfg.22.cyclicRateRandom", "Разброс скорости");
         m.put("pocketmod.cfg.22.cyclicRateRandom.tooltip", "0.15 = плавные колебания скорости в пределах ±15%.");
-    }
-    private static void ru_ru5(Map<String,String> m) {
         m.put("pocketmod.cfg.22.cyclicReliefRandom", "Разброс утоления");
         m.put("pocketmod.cfg.22.cyclicReliefRandom.tooltip", "0.1 = разброс утоления от жертвы в пределах ±10%.");
         m.put("pocketmod.cfg.22.cyclicThirst", "Циклическая жажда");
@@ -464,6 +474,8 @@ public final class Lang {
         m.put("pocketmod.cfg.22.respawnLate.tooltip", "Задержка замены погибшего противника любого типа на поздних стадиях. Уже назначенные таймеры сохраняются.");
         m.put("pocketmod.cfg.22.respawnStage1", "После смерти: I стадия, сек");
         m.put("pocketmod.cfg.22.respawnStage1.tooltip", "Задержка замены погибшего противника любого типа на I стадии.");
+    }
+    private static void ru_ru6(Map<String,String> m) {
         m.put("pocketmod.cfg.22.respawnStage2", "После смерти: II стадия, сек");
         m.put("pocketmod.cfg.22.respawnStage2.tooltip", "Задержка замены погибшего противника любого типа на II стадии.");
         m.put("pocketmod.cfg.22.simpleAccelMax", "Предел ускорения жажды");
@@ -472,8 +484,6 @@ public final class Lang {
         m.put("pocketmod.cfg.22.simpleAccelSeconds.tooltip", "Период без убийства до следующего ускорения.");
         m.put("pocketmod.cfg.22.simpleAccelStep", "Прибавка скорости жажды");
         m.put("pocketmod.cfg.22.simpleAccelStep.tooltip", "Насколько увеличивается скорость при каждом шаге.");
-    }
-    private static void ru_ru6(Map<String,String> m) {
         m.put("pocketmod.cfg.22.simpleNightMultiplier", "Множитель жажды ночью");
         m.put("pocketmod.cfg.22.simpleNightMultiplier.tooltip", "Дополнительный множитель скорости ночью.");
         m.put("pocketmod.cfg.22.simpleThirst", "Упрощённая модель жажды");
@@ -530,9 +540,14 @@ public final class Lang {
         m.put("pocketmod.cfg.4.teleportRange2.tooltip", "Максимальная дальность в блоках.");
         m.put("pocketmod.cfg.4.teleportRange3", "Дальность телепорта, ур. 3");
         m.put("pocketmod.cfg.4.teleportRange3.tooltip", "Максимальная дальность в блоках.");
+        m.put("pocketmod.cfg.4.teleportRefraction", "Искажение пространства при телепортации");
+        m.put("pocketmod.cfg.4.teleportSounds", "Звуки телепортации");
+        m.put("pocketmod.cfg.4.teleportVisuals", "Складка пространства при телепортации");
         m.put("pocketmod.cfg.5.deathTotemCreateCost", "Создание тотема смерти");
         m.put("pocketmod.cfg.5.deathTotemCreateCost.tooltip", "Мана за создание тотема смерти после возрождения (0 = бесплатно; тратится только на телепорт к нему, x10).");
         m.put("pocketmod.cfg.5.totemColors", "Цвета маркеров");
+    }
+    private static void ru_ru7(Map<String,String> m) {
         m.put("pocketmod.cfg.5.totemColors.tooltip", "Цвета в формате RRGGBB, по порядку тотемов.");
         m.put("pocketmod.cfg.5.totemCreateCost", "Цена создания тотема");
         m.put("pocketmod.cfg.5.totemCreateCost.tooltip", "Мана за создание тотема.");
@@ -544,8 +559,6 @@ public final class Lang {
         m.put("pocketmod.cfg.5.totemDiscount2.tooltip", "Доля скидки (0.25 = 25%).");
         m.put("pocketmod.cfg.5.totemDiscount3", "Скидка на телепорт, ур. 3");
         m.put("pocketmod.cfg.5.totemDiscount3.tooltip", "Доля скидки (0.5 = 50%).");
-    }
-    private static void ru_ru7(Map<String,String> m) {
         m.put("pocketmod.cfg.5.totemMarkerRange", "Дальность маркеров тотемов");
         m.put("pocketmod.cfg.5.totemMarkerRange.tooltip", "С какого расстояния видны маркеры.");
         m.put("pocketmod.cfg.5.totemSlots1", "Слоты тотемов, ур. 1");
@@ -605,6 +618,8 @@ public final class Lang {
         m.put("pocketmod.cfg.cat.16", "Интерфейс");
         m.put("pocketmod.cfg.cat.17", "Волна");
         m.put("pocketmod.cfg.cat.18", "Цены способностей в магазине");
+    }
+    private static void ru_ru8(Map<String,String> m) {
         m.put("pocketmod.cfg.cat.19", "Сканер руд");
         m.put("pocketmod.cfg.cat.2", "Кредит");
         m.put("pocketmod.cfg.cat.20", "Карманный склад");
@@ -616,8 +631,6 @@ public final class Lang {
         m.put("pocketmod.cfg.cat.6", "Невидимость и приманка");
         m.put("pocketmod.cfg.cat.7", "Спектор");
         m.put("pocketmod.cfg.cat.8", "Тепловизор");
-    }
-    private static void ru_ru8(Map<String,String> m) {
         m.put("pocketmod.cfg.cat.9", "Щит");
         m.put("pocketmod.config.exile", "Изгнанник — сюжетный режим");
         m.put("pocketmod.config.group.enemies", "Противники и повторное появление");
@@ -627,6 +640,7 @@ public final class Lang {
         m.put("pocketmod.config.group.tools", "Инструмент сюжетного режима F8");
         m.put("pocketmod.config.group.trials", "Испытания и генерация");
         m.put("pocketmod.config.title", "Pocket Mod — настройки");
+        m.put("pocketmod.cycle.banked", "Утоление накоплено: %s / 25. Урон жажды отложен на 10 с.");
         m.put("pocketmod.cycle.boss_reset", "Новый босс повержен. Жажда и привыкание сброшены.");
         m.put("pocketmod.cycle.debug_calm", "Передышка: %s с; разных боссов: %s");
         m.put("pocketmod.cycle.debug_habit", "Привыкание: %s");
@@ -676,6 +690,8 @@ public final class Lang {
         m.put("pocketmod.debug.result_blocked", "не нашлось подходящих точек");
         m.put("pocketmod.debug.result_cancelled", "очередь отменена");
         m.put("pocketmod.debug.result_cap", "достигнут лимит мобов");
+    }
+    private static void ru_ru9(Map<String,String> m) {
         m.put("pocketmod.debug.result_partial", "группа создана частично");
         m.put("pocketmod.debug.result_peaceful", "мирная сложность");
         m.put("pocketmod.debug.result_queued", "отложенная группа, ожидание");
@@ -688,8 +704,6 @@ public final class Lang {
         m.put("pocketmod.debug.stage", "Стадия %s");
         m.put("pocketmod.debug.stopped", "остановлены");
         m.put("pocketmod.debug.terrain_age", "После полного: %s мин · чернота: %s%% · соседям: %s с/с");
-    }
-    private static void ru_ru9(Map<String,String> m) {
         m.put("pocketmod.debug.title", "Тестирование Изгнанника — F8");
         m.put("pocketmod.debug.vex", "Вредины");
         m.put("pocketmod.debug.wave", "Вызвать группу");
@@ -708,6 +722,8 @@ public final class Lang {
         m.put("pocketmod.exile.compass_set", "Компас настроен. Держи его в руке, чтобы видеть направление.");
         m.put("pocketmod.exile.compass_space", "Освободи доступный слот под компас.");
         m.put("pocketmod.exile.contamination_hud", "Заражение %s%%");
+        m.put("pocketmod.exile.create_line1", "Хардкор, заражение мира и жажда крови.");
+        m.put("pocketmod.exile.create_line2", "Спасение — движение и победы над боссами.");
         m.put("pocketmod.exile.direction", "Испытание — %s · %s м");
         m.put("pocketmod.exile.discovered", "Открыто в магазине — %s");
         m.put("pocketmod.exile.discovery_known", "Это открытие уже есть в магазине.");
@@ -746,6 +762,8 @@ public final class Lang {
         m.put("pocketmod.exile.trial_complete", "Испытание пройдено. Забери свиток открытия и активируй ПКМ по воздуху. Награда — 100 маны.");
         m.put("pocketmod.exile.trial_failed", "Испытание прервано. Вернись к алтарю для повторной попытки.");
         m.put("pocketmod.exile.trial_locked", "Сначала заверши предыдущее испытание.");
+    }
+    private static void ru_ru10(Map<String,String> m) {
         m.put("pocketmod.exile.trial_started", "Испытание началось. Победи стражей в пределах площадки.");
         m.put("pocketmod.exile.trial_used", "Это испытание уже пройдено или сейчас активно.");
         m.put("pocketmod.exile.verdict", "Приговор");
@@ -760,8 +778,6 @@ public final class Lang {
         m.put("pocketmod.gui.close", "Закрыть");
         m.put("pocketmod.gui.config", "Pocket Mod: настройки");
         m.put("pocketmod.gui.credit_active", "Кредит: вернуть %s, осталось %s");
-    }
-    private static void ru_ru10(Map<String,String> m) {
         m.put("pocketmod.gui.credit_amount", "Кредит: %s (вернуть %s за %s мин)");
         m.put("pocketmod.gui.death_totem_fee", "Создание: %s маны");
         m.put("pocketmod.gui.death_totem_info", "Он остаётся там, пока ты им не воспользуешься или не умрёшь снова. Телепорт к нему стоит около %s маны (x10).");
@@ -818,6 +834,8 @@ public final class Lang {
         m.put("pocketmod.info.bloodsucker.desc", "При низком здоровье восстанавливает здоровье за убийство враждебных существ в ближнем бою.");
         m.put("pocketmod.info.bloodsucker.key", "Пассивная способность");
         m.put("pocketmod.info.bloodsucker.l1", "25% maxHP моба, срабатывает при HP < 50%.");
+    }
+    private static void ru_ru11(Map<String,String> m) {
         m.put("pocketmod.info.bloodsucker.l2", "35% maxHP моба, срабатывает при HP < 60%.");
         m.put("pocketmod.info.bloodsucker.l3", "45% maxHP моба, срабатывает при HP < 75%.");
         m.put("pocketmod.info.bloodsucker.stats", "Срабатывает при здоровье ниже %s%%. Лечит на %s%% от максимального здоровья цели.");
@@ -832,8 +850,6 @@ public final class Lang {
         m.put("pocketmod.info.dash.change.refund", "Возврат заряда за задетого врага: %s → %s");
         m.put("pocketmod.info.dash.desc", "Рывок в выбранную сторону защищает от урона, кроме падения в пустоту. Дальность указана для свободного пути. Расход в списке уровней указан до множителя цен.");
         m.put("pocketmod.info.dash.key", "Дважды нажми клавишу движения в нужную сторону");
-    }
-    private static void ru_ru11(Map<String,String> m) {
         m.put("pocketmod.info.dash.l1", "Короткий рывок: около %s бл. за %s с. Мана %s, зарядов %s, восстановление заряда %s с. Врагов не задевает, снаряды не отражает.");
         m.put("pocketmod.info.dash.l2", "Дальний рывок: около %s бл. за %s с (максимальная дальность). Мана %s, зарядов %s, восстановление %s с. Сбитые враги получают %s урона, снаряды отражаются.");
         m.put("pocketmod.info.dash.l3", "Быстрее и чаще: то же расстояние (около %s бл.), но за %s с. Мана %s, зарядов %s, восстановление %s с, урон %s; после рывка ещё короткая неуязвимость, окно отражения снарядов длиннее.");
@@ -890,6 +906,8 @@ public final class Lang {
         m.put("pocketmod.info.softfall.change.drain", "Расход при падении: %s → %s маны/с");
         m.put("pocketmod.info.softfall.change.threshold", "Порог срабатывания: %s → %s бл.");
         m.put("pocketmod.info.softfall.desc", "Пассивно: после нескольких блоков падения падение замедляется и урон гасится. Мана тратится, пока падаешь; мана кончилась - падение обычное.");
+    }
+    private static void ru_ru12(Map<String,String> m) {
         m.put("pocketmod.info.softfall.key", "Включается само; пробел в падении — выключить / включить");
         m.put("pocketmod.info.softfall.l1", "Автоматическое срабатывание от %s бл. падения, базовый расход %s маны/с.");
         m.put("pocketmod.info.softfall.l2", "Автоматическое срабатывание от %s бл. падения, базовый расход %s маны/с.");
@@ -904,8 +922,6 @@ public final class Lang {
         m.put("pocketmod.info.teleport.l3", "Дальность %s блоков.");
         m.put("pocketmod.info.teleport.range", "Дальность %s бл.");
         m.put("pocketmod.info.teleport.silence", "Открывается «Тишина»: %s с после телепорта мобы не выбирают тебя целью, если эффект включён.");
-    }
-    private static void ru_ru12(Map<String,String> m) {
         m.put("pocketmod.info.thermal.change.drain", "Расход тепловизора: %s → %s маны/с");
         m.put("pocketmod.info.thermal.change.radius", "Радиус тепловизора: %s → %s бл.");
         m.put("pocketmod.info.thermal.change.scanner_owned", "Сканер II или выше уже куплен. Его радиус и параметры тепловизора останутся прежними.");
@@ -962,6 +978,8 @@ public final class Lang {
         m.put("pocketmod.loot.res.item", "Выпало: %s");
         m.put("pocketmod.loot.res.jackpot", "ДЖЕКПОТ! +%s маны");
         m.put("pocketmod.loot.res.medium", "Выигрыш: +%s маны");
+    }
+    private static void ru_ru13(Map<String,String> m) {
         m.put("pocketmod.loot.res.small", "Малый возврат: +%s маны");
         m.put("pocketmod.loot.spin", "Крутить %s");
         m.put("pocketmod.msg.access_paused", "Вход в это помещение сейчас закрыт (пауза)");
@@ -976,8 +994,6 @@ public final class Lang {
         m.put("pocketmod.msg.dash_blocked", "Сейчас рывок недоступен");
         m.put("pocketmod.msg.dash_cooldown", "Рывок перезаряжается: %s с");
         m.put("pocketmod.msg.death_totem_created", "Тотем смерти создан");
-    }
-    private static void ru_ru13(Map<String,String> m) {
         m.put("pocketmod.msg.death_totem_declined", "Тотем смерти не создан");
         m.put("pocketmod.msg.death_totem_used", "Тотем смерти использован");
         m.put("pocketmod.msg.decoy_failed", "Не удалось создать приманку");
@@ -1034,6 +1050,8 @@ public final class Lang {
         m.put("pocketmod.msg.slow_off", "Замедление выкл");
         m.put("pocketmod.msg.slow_on", "Замедление вкл");
         m.put("pocketmod.msg.slow_stop", "Стоп времени (x0)");
+    }
+    private static void ru_ru14(Map<String,String> m) {
         m.put("pocketmod.msg.softfall_empty", "Мана кончилась: падение снова обычное");
         m.put("pocketmod.msg.softfall_off", "Мягкое падение выключено (пробел — включить)");
         m.put("pocketmod.msg.softfall_on", "Мягкое падение");
@@ -1048,8 +1066,6 @@ public final class Lang {
         m.put("pocketmod.msg.thermal_on", "Тепловизор включён (враги красные, остальные белые)");
         m.put("pocketmod.msg.thermal_switched_off", "Тепловизор выключен");
         m.put("pocketmod.msg.totem_created", "Тотем создан: %s");
-    }
-    private static void ru_ru14(Map<String,String> m) {
         m.put("pocketmod.msg.totem_deleted", "Тотем удалён: %s");
         m.put("pocketmod.msg.totem_full", "Нет свободных слотов тотемов");
         m.put("pocketmod.msg.totem_in_pocket", "В карманном измерении тотемы недоступны");
@@ -1106,6 +1122,8 @@ public final class Lang {
         m.put("pocketmod.shop.need_mana", "Нужно %s маны");
         m.put("pocketmod.shop.pocket.access", "Покупка дверей и ключей, список доверенных и управление гостями.");
         m.put("pocketmod.shop.pocket.doors", "Двери и ключи");
+    }
+    private static void ru_ru15(Map<String,String> m) {
         m.put("pocketmod.shop.pocket.manage", "Управлять доступом");
         m.put("pocketmod.shop.regen.1", "+%s%% к насыщению от еды.");
         m.put("pocketmod.shop.regen.2", "+%s%% к насыщению от еды и медленное восстановление здоровья.");
@@ -1120,8 +1138,6 @@ public final class Lang {
         m.put("pocketmod.simple.button_accel_plus", "+ ускорение");
         m.put("pocketmod.simple.button_calm", "Без ускорения");
         m.put("pocketmod.simple.button_full", "Максимум");
-    }
-    private static void ru_ru15(Map<String,String> m) {
         m.put("pocketmod.simple.button_kill", "Тест убийства");
         m.put("pocketmod.simple.button_minus", "−1 поинт");
         m.put("pocketmod.simple.button_model", "Сменить модель");
@@ -1165,22 +1181,58 @@ public final class Lang {
         m.put("pocketmod.sleep.pursuers", "Преследователи слишком близко. Сейчас нельзя спать.");
         m.put("pocketmod.sleep.rested", "Ты отдохнул. Часть здоровья восстановлена за счёт еды.");
         m.put("pocketmod.sleep.thirst", "Жажда слишком сильна. Сначала утоли её.");
+        m.put("pocketmod.subtitle.dash_land", "Завершение рывка");
+        m.put("pocketmod.subtitle.dash_rush", "Рассечение воздуха");
+        m.put("pocketmod.subtitle.dash_snap", "Электрический срыв");
         m.put("pocketmod.subtitle.infection_surge", "Приступ заражения");
         m.put("pocketmod.subtitle.infection_whisper", "Тревожный шорох");
         m.put("pocketmod.subtitle.infection_wind", "Гул заражения");
+        m.put("pocketmod.subtitle.teleport_fold", "Пространство сжимается");
+        m.put("pocketmod.subtitle.teleport_unfold", "Пространство раскрывается");
         m.put("pocketmod.tab.body", "Тело");
         m.put("pocketmod.tab.guard", "Защита");
         m.put("pocketmod.tab.luck", "Лутка");
         m.put("pocketmod.tab.move", "Перемещение");
         m.put("pocketmod.tab.sense", "Разведка и сбор");
+    }
+    private static void ru_ru16(Map<String,String> m) {
         m.put("pocketmod.tab.space", "Карман");
+        m.put("pocketmod.temporal.charge", "Заряд остановки: 1 эндер-жемчуг");
+        m.put("pocketmod.temporal.close", "Готово");
+        m.put("pocketmod.temporal.controls", "ПКМ: остановка · Shift+ПКМ: настройки");
+        m.put("pocketmod.temporal.death_choice", "Последний шанс: U или /stasis rewind 5. Возврат через 60 с");
+        m.put("pocketmod.temporal.empty", "Нужны заряды — Shift+ПКМ");
+        m.put("pocketmod.temporal.history", "Назад: %.1f с · Вперёд: %.1f с · Заряд: %.1f с");
+        m.put("pocketmod.temporal.hooks_missing", "Для работы хронокомпаса перезапусти игру с полной сборкой мода");
+        m.put("pocketmod.temporal.hud.1", "СТАЗИС · %s с");
+        m.put("pocketmod.temporal.hud.2", "ПРЕДВИДЕНИЕ · %s с");
+        m.put("pocketmod.temporal.hud.3", "ПОСЛЕДНИЙ ШАНС · %s с · U: назад на 5 с");
+        m.put("pocketmod.temporal.key_activate", "Стоп / продолжить время");
+        m.put("pocketmod.temporal.key_forward", "Вперёд по записи времени");
+        m.put("pocketmod.temporal.key_preview", "Предвидение / вернуться");
+        m.put("pocketmod.temporal.key_rewind", "Перемотка / режим колеса");
+        m.put("pocketmod.temporal.limit", "Достигнут предел записи. Время освобождено");
+        m.put("pocketmod.temporal.need_unlock", "Сначала открой способность замедления времени");
+        m.put("pocketmod.temporal.occupied", "Временем уже управляет другой игрок");
+        m.put("pocketmod.temporal.preview_started", "Предвидение: O — вернуться. Все изменения откатятся");
+        m.put("pocketmod.temporal.rewind_charge", "Перемотка +20 с: 1 око Эндера");
+        m.put("pocketmod.temporal.same_dimension", "Для перемотки все игроки должны быть в одном измерении");
+        m.put("pocketmod.temporal.share_off", "Другие игроки двигаются: нет");
+        m.put("pocketmod.temporal.share_on", "Другие игроки двигаются: да");
+        m.put("pocketmod.temporal.started", "Время остановлено. ПКМ — продолжить");
+        m.put("pocketmod.temporal.tooltip", "Остановок: %s/4 · Перемотки: %s с");
+        m.put("pocketmod.temporal.unavailable", "Сначала выйди из спектра, облика, транспорта или кармана");
+        m.put("pocketmod.temporal.upgrade", "Улучшить: 4 алмаза / 1 звезда Незера");
+        m.put("pocketmod.temporal.wheel", "Колесо мыши: назад / вперёд · U: выход");
         m.put("tile.pocketmod.resurrection_totem.name", "Тотем возрождения");
     }
     private static void en_us0(Map<String,String> m) {
         m.put("death.attack.pocketmod.infection", "%1$s was consumed by the infection");
         m.put("death.attack.pocketmod_bloodthirst", "%1$s succumbed to bloodthirst");
         m.put("entity.pocketmod.rift_walker.name", "Rift Walker");
+        m.put("entity.pocketmod.running_rhino.name", "Running Rhino");
         m.put("entity.rift_walker.name", "Rift Walker");
+        m.put("entity.running_rhino.name", "Running Rhino");
         m.put("generator.exile", "Exile");
         m.put("item.pocketmod.ability_discovery.name", "Discovery scroll");
         m.put("item.pocketmod.discovery_bloodsucker.name", "Discovery — Bloodsucker");
@@ -1212,6 +1264,9 @@ public final class Lang {
         m.put("item.pocketmod.pocket_iron_key.name", "Iron Key (single use)");
         m.put("item.pocketmod.pocket_key.name", "Pocket Key");
         m.put("item.pocketmod.resurrection_totem.name", "Resurrection totem");
+        m.put("item.pocketmod.temporal_dial.0.name", "Temporal Dial · Gold");
+        m.put("item.pocketmod.temporal_dial.1.name", "Temporal Dial · Diamond");
+        m.put("item.pocketmod.temporal_dial.2.name", "Temporal Dial · Void");
         m.put("itemGroup.pocketmod", "Pocket Mod");
         m.put("key.categories.pocketmod", "Pocket Mod");
         m.put("key.pocketmod.cheat_gamemode", "Toggle survival / creative with cheats");
@@ -1242,13 +1297,13 @@ public final class Lang {
         m.put("pocketmod.ability.thermal", "Thermal Vision");
         m.put("pocketmod.ability.totem", "Totems");
         m.put("pocketmod.ability.warehouse", "Pocket Warehouse");
+    }
+    private static void en_us1(Map<String,String> m) {
         m.put("pocketmod.ability.wave", "Shockwave");
         m.put("pocketmod.body.breath", "Water breathing");
         m.put("pocketmod.body.fire", "Fire resistance");
         m.put("pocketmod.body.hearts", "Hearts");
         m.put("pocketmod.body.regen", "Regeneration");
-    }
-    private static void en_us1(Map<String,String> m) {
         m.put("pocketmod.body.speed", "Speed");
         m.put("pocketmod.body.strength", "Strength");
         m.put("pocketmod.cfg.0.deathManaLoss", "Потеря маны при смерти");
@@ -1314,13 +1369,13 @@ public final class Lang {
         m.put("pocketmod.cfg.15.slowDesaturate", "Обесцвечивание при замедлении");
         m.put("pocketmod.cfg.15.slowDesaturate.tooltip", "Обесцвечивать картинку, пока время замедлено.");
         m.put("pocketmod.cfg.15.slowDrainBase", "Базовый расход замедления");
+    }
+    private static void en_us2(Map<String,String> m) {
         m.put("pocketmod.cfg.15.slowDrainBase.tooltip", "Расход = база / коэффициент замедления.");
         m.put("pocketmod.cfg.15.slowFluidRadius", "Радиус замедления жидкостей");
         m.put("pocketmod.cfg.15.slowFluidRadius.tooltip", "В каком радиусе (блоков) замедляется течение воды и лавы.");
         m.put("pocketmod.cfg.15.slowFluids", "Замедлять воду и лаву");
         m.put("pocketmod.cfg.15.slowFluids.tooltip", "Текущая вода и лава рядом с игроком тоже замедляются вместе со временем.");
-    }
-    private static void en_us2(Map<String,String> m) {
         m.put("pocketmod.cfg.15.slowMaxBubbles", "Макс. число пузырей");
         m.put("pocketmod.cfg.15.slowMaxBubbles.tooltip", "Сколько пузырей замедления одновременно обрабатывает сервер (ограничение нагрузки).");
         m.put("pocketmod.cfg.15.slowVisual", "Виньетка при замедлении");
@@ -1386,13 +1441,13 @@ public final class Lang {
         m.put("pocketmod.cfg.18.scannerLevel1", "Цена: Сканер руд, ур. 1");
         m.put("pocketmod.cfg.18.scannerLevel1.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.scannerLevel2", "Цена: Сканер руд, ур. 2");
+    }
+    private static void en_us3(Map<String,String> m) {
         m.put("pocketmod.cfg.18.scannerLevel2.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.scannerLevel3", "Цена: Сканер руд, ур. 3");
         m.put("pocketmod.cfg.18.scannerLevel3.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.shieldLevel1", "Цена: Щит из маны, ур. 1");
         m.put("pocketmod.cfg.18.shieldLevel1.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
-    }
-    private static void en_us3(Map<String,String> m) {
         m.put("pocketmod.cfg.18.shieldLevel2", "Цена: Щит из маны, ур. 2");
         m.put("pocketmod.cfg.18.shieldLevel2.tooltip", "Цена этого уровня в магазине. Если стоит 0, используется цена по умолчанию.");
         m.put("pocketmod.cfg.18.slowLevel1", "Цена: Замедление времени, ур. 1");
@@ -1458,17 +1513,20 @@ public final class Lang {
         m.put("pocketmod.cfg.2.creditInterest", "Процент по кредиту");
         m.put("pocketmod.cfg.2.creditInterest.tooltip", "Надбавка к возврату (0.2 = 20%).");
         m.put("pocketmod.cfg.2.creditMax", "Максимальный кредит");
+    }
+    private static void en_us4(Map<String,String> m) {
         m.put("pocketmod.cfg.2.creditMax.tooltip", "Наибольшая сумма кредита в магазине.");
         m.put("pocketmod.cfg.2.creditMin", "Минимальный кредит");
         m.put("pocketmod.cfg.2.creditMin.tooltip", "Наименьшая сумма кредита в магазине.");
         m.put("pocketmod.cfg.2.creditPenaltyFactor", "Коэффициент наказания");
         m.put("pocketmod.cfg.2.creditPenaltyFactor.tooltip", "Множитель наказания за невозврат кредита.");
-    }
-    private static void en_us4(Map<String,String> m) {
         m.put("pocketmod.cfg.2.creditWarnings", "Предупреждения о сроке");
         m.put("pocketmod.cfg.2.creditWarnings.tooltip", "Предупреждать за 5 и за 1 минуту до срока возврата.");
         m.put("pocketmod.cfg.20.warehouseDeathCost", "Цена сохранения слота при смерти");
         m.put("pocketmod.cfg.20.warehouseDeathCost.tooltip", "Мана за каждый занятый слот. Если маны не хватает, содержимое слота выпадает.");
+        m.put("pocketmod.cfg.21.dashFirstPerson", "First-person speed lines");
+        m.put("pocketmod.cfg.21.dashSounds", "Dash sounds");
+        m.put("pocketmod.cfg.21.dashVisuals", "Afterimages and electricity");
         m.put("pocketmod.cfg.21.levelCharges", "Число зарядов по уровням");
         m.put("pocketmod.cfg.21.levelCharges.tooltip", "Сколько рывков подряд, по уровням 1-4.");
         m.put("pocketmod.cfg.21.levelCost", "Цена рывка по уровням");
@@ -1527,6 +1585,8 @@ public final class Lang {
         m.put("pocketmod.cfg.22.cyclicHabitSeconds.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
         m.put("pocketmod.cfg.22.cyclicKillBase", "Relief denominator before habit");
         m.put("pocketmod.cfg.22.cyclicKillBase.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
+    }
+    private static void en_us5(Map<String,String> m) {
         m.put("pocketmod.cfg.22.cyclicRandomBlend", "Rate transition, seconds");
         m.put("pocketmod.cfg.22.cyclicRandomBlend.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
         m.put("pocketmod.cfg.22.cyclicRandomMax", "Maximum time between rate targets, seconds");
@@ -1535,8 +1595,6 @@ public final class Lang {
         m.put("pocketmod.cfg.22.cyclicRandomMin.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
         m.put("pocketmod.cfg.22.cyclicRateRandom", "Fill-rate variation");
         m.put("pocketmod.cfg.22.cyclicRateRandom.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
-    }
-    private static void en_us5(Map<String,String> m) {
         m.put("pocketmod.cfg.22.cyclicReliefRandom", "Relief variation");
         m.put("pocketmod.cfg.22.cyclicReliefRandom.tooltip", "Cyclic bloodthirst parameter. Default and valid range are shown in settings.");
         m.put("pocketmod.cfg.22.cyclicThirst", "Cyclic bloodthirst");
@@ -1599,6 +1657,8 @@ public final class Lang {
         m.put("pocketmod.cfg.22.respawnLate.tooltip", "Respawn after death: stages III–IV, seconds.");
         m.put("pocketmod.cfg.22.respawnStage1", "Respawn after death: stage I, seconds");
         m.put("pocketmod.cfg.22.respawnStage1.tooltip", "Respawn after death: stage I, seconds.");
+    }
+    private static void en_us6(Map<String,String> m) {
         m.put("pocketmod.cfg.22.respawnStage2", "Respawn after death: stage II, seconds");
         m.put("pocketmod.cfg.22.respawnStage2.tooltip", "Respawn after death: stage II, seconds.");
         m.put("pocketmod.cfg.22.simpleAccelMax", "Maximum acceleration steps");
@@ -1607,8 +1667,6 @@ public final class Lang {
         m.put("pocketmod.cfg.22.simpleAccelSeconds.tooltip", "Bloodthirst acceleration interval, seconds.");
         m.put("pocketmod.cfg.22.simpleAccelStep", "Bloodthirst acceleration step");
         m.put("pocketmod.cfg.22.simpleAccelStep.tooltip", "Bloodthirst acceleration step.");
-    }
-    private static void en_us6(Map<String,String> m) {
         m.put("pocketmod.cfg.22.simpleNightMultiplier", "Night bloodthirst multiplier");
         m.put("pocketmod.cfg.22.simpleNightMultiplier.tooltip", "Night bloodthirst multiplier.");
         m.put("pocketmod.cfg.22.simpleThirst", "Simple bloodthirst model");
@@ -1665,9 +1723,14 @@ public final class Lang {
         m.put("pocketmod.cfg.4.teleportRange2.tooltip", "Максимальная дальность в блоках.");
         m.put("pocketmod.cfg.4.teleportRange3", "Дальность телепорта, ур. 3");
         m.put("pocketmod.cfg.4.teleportRange3.tooltip", "Максимальная дальность в блоках.");
+        m.put("pocketmod.cfg.4.teleportRefraction", "Teleport refraction");
+        m.put("pocketmod.cfg.4.teleportSounds", "Teleport sounds");
+        m.put("pocketmod.cfg.4.teleportVisuals", "Teleport spatial folds");
         m.put("pocketmod.cfg.5.deathTotemCreateCost", "Создание тотема смерти");
         m.put("pocketmod.cfg.5.deathTotemCreateCost.tooltip", "Мана за создание тотема смерти после возрождения (0 = бесплатно; тратится только на телепорт к нему, x10).");
         m.put("pocketmod.cfg.5.totemColors", "Цвета маркеров");
+    }
+    private static void en_us7(Map<String,String> m) {
         m.put("pocketmod.cfg.5.totemColors.tooltip", "Цвета в формате RRGGBB, по порядку тотемов.");
         m.put("pocketmod.cfg.5.totemCreateCost", "Цена создания тотема");
         m.put("pocketmod.cfg.5.totemCreateCost.tooltip", "Мана за создание тотема.");
@@ -1679,8 +1742,6 @@ public final class Lang {
         m.put("pocketmod.cfg.5.totemDiscount2.tooltip", "Доля скидки (0.25 = 25%).");
         m.put("pocketmod.cfg.5.totemDiscount3", "Скидка на телепорт, ур. 3");
         m.put("pocketmod.cfg.5.totemDiscount3.tooltip", "Доля скидки (0.5 = 50%).");
-    }
-    private static void en_us7(Map<String,String> m) {
         m.put("pocketmod.cfg.5.totemMarkerRange", "Дальность маркеров тотемов");
         m.put("pocketmod.cfg.5.totemMarkerRange.tooltip", "С какого расстояния видны маркеры.");
         m.put("pocketmod.cfg.5.totemSlots1", "Слоты тотемов, ур. 1");
@@ -1740,6 +1801,8 @@ public final class Lang {
         m.put("pocketmod.cfg.cat.16", "Интерфейс");
         m.put("pocketmod.cfg.cat.17", "Волна");
         m.put("pocketmod.cfg.cat.18", "Цены способностей в магазине");
+    }
+    private static void en_us8(Map<String,String> m) {
         m.put("pocketmod.cfg.cat.19", "Сканер руд");
         m.put("pocketmod.cfg.cat.2", "Кредит");
         m.put("pocketmod.cfg.cat.20", "Карманный склад");
@@ -1751,8 +1814,6 @@ public final class Lang {
         m.put("pocketmod.cfg.cat.6", "Невидимость и приманка");
         m.put("pocketmod.cfg.cat.7", "Спектор");
         m.put("pocketmod.cfg.cat.8", "Тепловизор");
-    }
-    private static void en_us8(Map<String,String> m) {
         m.put("pocketmod.cfg.cat.9", "Щит");
         m.put("pocketmod.config.exile", "Exile — Story mode");
         m.put("pocketmod.config.group.enemies", "Enemies and respawning");
@@ -1762,6 +1823,7 @@ public final class Lang {
         m.put("pocketmod.config.group.tools", "Story mode tool — F8");
         m.put("pocketmod.config.group.trials", "Trials and generation");
         m.put("pocketmod.config.title", "Pocket Mod — Settings");
+        m.put("pocketmod.cycle.banked", "Banked relief: %s / 25. Thirst damage delayed for 10 s.");
         m.put("pocketmod.cycle.boss_reset", "New boss defeated. Bloodthirst and habit reset.");
         m.put("pocketmod.cycle.debug_calm", "Calm: %s s; distinct bosses: %s");
         m.put("pocketmod.cycle.debug_habit", "Habit: %s");
@@ -1811,6 +1873,8 @@ public final class Lang {
         m.put("pocketmod.debug.result_blocked", "no suitable positions");
         m.put("pocketmod.debug.result_cancelled", "queue cancelled");
         m.put("pocketmod.debug.result_cap", "population cap reached");
+    }
+    private static void en_us9(Map<String,String> m) {
         m.put("pocketmod.debug.result_partial", "partial wave");
         m.put("pocketmod.debug.result_peaceful", "peaceful difficulty");
         m.put("pocketmod.debug.result_queued", "wave queued");
@@ -1823,8 +1887,6 @@ public final class Lang {
         m.put("pocketmod.debug.stage", "Stage %s");
         m.put("pocketmod.debug.stopped", "stopped");
         m.put("pocketmod.debug.terrain_age", "After full: %s min · blackness: %s%% · spread: %s s/s");
-    }
-    private static void en_us9(Map<String,String> m) {
         m.put("pocketmod.debug.title", "Exile testing — F8");
         m.put("pocketmod.debug.vex", "Vex");
         m.put("pocketmod.debug.wave", "Spawn wave");
@@ -1843,6 +1905,8 @@ public final class Lang {
         m.put("pocketmod.exile.compass_set", "Compass set. Hold it to see the direction.");
         m.put("pocketmod.exile.compass_space", "Free an accessible slot for the compass.");
         m.put("pocketmod.exile.contamination_hud", "Contamination %s%%");
+        m.put("pocketmod.exile.create_line1", "Hardcore, spreading infection and bloodthirst.");
+        m.put("pocketmod.exile.create_line2", "Keep moving and defeat bosses to survive.");
         m.put("pocketmod.exile.direction", "Trial — %s · %s m");
         m.put("pocketmod.exile.discovered", "Shop discovery — %s");
         m.put("pocketmod.exile.discovery_known", "This discovery is already available in the shop.");
@@ -1881,6 +1945,8 @@ public final class Lang {
         m.put("pocketmod.exile.trial_complete", "Trial complete. Pick up the discovery scroll and right-click the air to activate it. Reward — 100 mana.");
         m.put("pocketmod.exile.trial_failed", "Trial interrupted. Return to the altar to retry.");
         m.put("pocketmod.exile.trial_locked", "Complete the previous trial first.");
+    }
+    private static void en_us10(Map<String,String> m) {
         m.put("pocketmod.exile.trial_started", "Trial started. Defeat its guardians nearby.");
         m.put("pocketmod.exile.trial_used", "Trial already complete or active.");
         m.put("pocketmod.exile.verdict", "Sentence");
@@ -1895,8 +1961,6 @@ public final class Lang {
         m.put("pocketmod.gui.close", "Close");
         m.put("pocketmod.gui.config", "Pocket Mod: Config");
         m.put("pocketmod.gui.credit_active", "Credit: owe %s, %s left");
-    }
-    private static void en_us10(Map<String,String> m) {
         m.put("pocketmod.gui.credit_amount", "Credit: %s (repay %s in %s min)");
         m.put("pocketmod.gui.death_totem_fee", "Creation: %s mana");
         m.put("pocketmod.gui.death_totem_info", "It stays there until you use it or die again. Teleporting to it costs about %s mana (x10).");
@@ -1953,6 +2017,8 @@ public final class Lang {
         m.put("pocketmod.info.bloodsucker.desc", "Restores health when you defeat hostile creatures in melee while low on health.");
         m.put("pocketmod.info.bloodsucker.key", "Passive ability");
         m.put("pocketmod.info.bloodsucker.l1", "25% mob max HP if your HP < 50%.");
+    }
+    private static void en_us11(Map<String,String> m) {
         m.put("pocketmod.info.bloodsucker.l2", "35% mob max HP if your HP < 60%.");
         m.put("pocketmod.info.bloodsucker.l3", "45% mob max HP if your HP < 75%.");
         m.put("pocketmod.info.bloodsucker.stats", "Triggers below %s%% health. Heals you for %s%% of the target’s maximum health.");
@@ -1967,8 +2033,6 @@ public final class Lang {
         m.put("pocketmod.info.dash.change.refund", "Charge refund per enemy hit: %s → %s");
         m.put("pocketmod.info.dash.desc", "Dash in the chosen direction with protection from damage except the void. Range assumes a clear path. The level list shows mana costs before the price multiplier.");
         m.put("pocketmod.info.dash.key", "Double-tap a movement key");
-    }
-    private static void en_us11(Map<String,String> m) {
         m.put("pocketmod.info.dash.l1", "Short dash: about %s blocks in %s s. Costs %s mana, %s charges, %s s to recover a charge. Does not hit enemies or reflect projectiles.");
         m.put("pocketmod.info.dash.l2", "Long dash: about %s blocks in %s s (maximum distance). Costs %s mana, %s charges, %s s to recover. Enemies hit take %s damage, projectiles are reflected.");
         m.put("pocketmod.info.dash.l3", "Faster and more often: same distance (about %s blocks) in only %s s. Costs %s mana, %s charges, %s s to recover, %s damage; a short invulnerability after the dash and a longer projectile-reflect window.");
@@ -2025,6 +2089,8 @@ public final class Lang {
         m.put("pocketmod.info.softfall.change.drain", "Drain while falling: %s → %s mana/s");
         m.put("pocketmod.info.softfall.change.threshold", "Activation threshold: %s → %s blocks");
         m.put("pocketmod.info.softfall.desc", "Passive: after a few blocks of falling the fall slows down and damage is absorbed. Costs mana while falling; out of mana - a normal fall.");
+    }
+    private static void en_us12(Map<String,String> m) {
         m.put("pocketmod.info.softfall.key", "Activates by itself; Space while falling toggles it off / on");
         m.put("pocketmod.info.softfall.l1", "Triggers automatically after falling %s blocks, with a base drain of %s mana/s.");
         m.put("pocketmod.info.softfall.l2", "Triggers automatically after falling %s blocks, with a base drain of %s mana/s.");
@@ -2039,8 +2105,6 @@ public final class Lang {
         m.put("pocketmod.info.teleport.l3", "Range %s blocks.");
         m.put("pocketmod.info.teleport.range", "Range: %s blocks.");
         m.put("pocketmod.info.teleport.silence", "Unlocks Silence: if enabled, mobs do not target you for %s s after teleporting.");
-    }
-    private static void en_us12(Map<String,String> m) {
         m.put("pocketmod.info.thermal.change.drain", "Thermal vision drain: %s → %s mana/s");
         m.put("pocketmod.info.thermal.change.radius", "Thermal vision radius: %s → %s blocks");
         m.put("pocketmod.info.thermal.change.scanner_owned", "You already own Ore Scanner II or higher. Scanner range and thermal vision stats stay the same.");
@@ -2097,6 +2161,8 @@ public final class Lang {
         m.put("pocketmod.loot.res.item", "You got: %s");
         m.put("pocketmod.loot.res.jackpot", "JACKPOT! +%s mana");
         m.put("pocketmod.loot.res.medium", "Win: +%s mana");
+    }
+    private static void en_us13(Map<String,String> m) {
         m.put("pocketmod.loot.res.small", "Small refund: +%s mana");
         m.put("pocketmod.loot.spin", "Spin %s");
         m.put("pocketmod.msg.access_paused", "Entry to this space is closed right now (paused)");
@@ -2111,8 +2177,6 @@ public final class Lang {
         m.put("pocketmod.msg.dash_blocked", "Dash is not available right now");
         m.put("pocketmod.msg.dash_cooldown", "Dash is recharging: %s s");
         m.put("pocketmod.msg.death_totem_created", "Death totem created");
-    }
-    private static void en_us13(Map<String,String> m) {
         m.put("pocketmod.msg.death_totem_declined", "No death totem created");
         m.put("pocketmod.msg.death_totem_used", "Тотем смерти использован");
         m.put("pocketmod.msg.decoy_failed", "Could not create the decoy");
@@ -2169,6 +2233,8 @@ public final class Lang {
         m.put("pocketmod.msg.slow_off", "Time slow off");
         m.put("pocketmod.msg.slow_on", "Time slow on");
         m.put("pocketmod.msg.slow_stop", "Time stop (x0)");
+    }
+    private static void en_us14(Map<String,String> m) {
         m.put("pocketmod.msg.softfall_empty", "Out of mana: the fall is normal again");
         m.put("pocketmod.msg.softfall_off", "Soft fall off (Space to turn it back on)");
         m.put("pocketmod.msg.softfall_on", "Soft fall");
@@ -2183,8 +2249,6 @@ public final class Lang {
         m.put("pocketmod.msg.thermal_on", "Thermal vision on (enemies red, others white)");
         m.put("pocketmod.msg.thermal_switched_off", "Thermal vision off");
         m.put("pocketmod.msg.totem_created", "Totem created: %s");
-    }
-    private static void en_us14(Map<String,String> m) {
         m.put("pocketmod.msg.totem_deleted", "Totem deleted: %s");
         m.put("pocketmod.msg.totem_full", "No free totem slots");
         m.put("pocketmod.msg.totem_in_pocket", "Totems are unavailable in the pocket dimension");
@@ -2241,6 +2305,8 @@ public final class Lang {
         m.put("pocketmod.shop.need_mana", "Requires %s mana");
         m.put("pocketmod.shop.pocket.access", "Buy doors and keys, manage trusted players and guests.");
         m.put("pocketmod.shop.pocket.doors", "Doors and keys");
+    }
+    private static void en_us15(Map<String,String> m) {
         m.put("pocketmod.shop.pocket.manage", "Manage access");
         m.put("pocketmod.shop.regen.1", "+%s%% food saturation.");
         m.put("pocketmod.shop.regen.2", "+%s%% food saturation and slow health regeneration.");
@@ -2255,8 +2321,6 @@ public final class Lang {
         m.put("pocketmod.simple.button_accel_plus", "+ acceleration");
         m.put("pocketmod.simple.button_calm", "No acceleration");
         m.put("pocketmod.simple.button_full", "Maximum");
-    }
-    private static void en_us15(Map<String,String> m) {
         m.put("pocketmod.simple.button_kill", "Simulate kill");
         m.put("pocketmod.simple.button_minus", "−1 point");
         m.put("pocketmod.simple.button_model", "Switch model");
@@ -2300,15 +2364,49 @@ public final class Lang {
         m.put("pocketmod.sleep.pursuers", "Pursuers are too close. You cannot sleep now.");
         m.put("pocketmod.sleep.rested", "You rested. Food restored some of your health.");
         m.put("pocketmod.sleep.thirst", "Your bloodthirst is too strong. Sate it before sleeping.");
+        m.put("pocketmod.subtitle.dash_land", "Dash landing");
+        m.put("pocketmod.subtitle.dash_rush", "Dash rush");
+        m.put("pocketmod.subtitle.dash_snap", "Electric snap");
         m.put("pocketmod.subtitle.infection_surge", "Infection surges");
         m.put("pocketmod.subtitle.infection_whisper", "An unsettling rustle");
         m.put("pocketmod.subtitle.infection_wind", "Infection rumbles");
+        m.put("pocketmod.subtitle.teleport_fold", "Space folds inward");
+        m.put("pocketmod.subtitle.teleport_unfold", "Space unfolds");
         m.put("pocketmod.tab.body", "Body");
         m.put("pocketmod.tab.guard", "Defense");
         m.put("pocketmod.tab.luck", "Loot");
         m.put("pocketmod.tab.move", "Movement");
         m.put("pocketmod.tab.sense", "Exploration");
+    }
+    private static void en_us16(Map<String,String> m) {
         m.put("pocketmod.tab.space", "Pocket");
+        m.put("pocketmod.temporal.charge", "Stasis charge: 1 ender pearl");
+        m.put("pocketmod.temporal.close", "Done");
+        m.put("pocketmod.temporal.controls", "Use: stasis · Sneak+use: settings");
+        m.put("pocketmod.temporal.death_choice", "Last chance: U or /stasis rewind 5. Automatic return in 60 s");
+        m.put("pocketmod.temporal.empty", "Recharge the dial with sneak+use");
+        m.put("pocketmod.temporal.history", "Past: %.1f s · Future: %.1f s · Charge: %.1f s");
+        m.put("pocketmod.temporal.hooks_missing", "Restart with the complete Pocket Mod build to enable temporal hooks");
+        m.put("pocketmod.temporal.hud.1", "STASIS · %s s");
+        m.put("pocketmod.temporal.hud.2", "FORESIGHT · %s s");
+        m.put("pocketmod.temporal.hud.3", "LAST CHANCE · %s s · U: rewind 5 s");
+        m.put("pocketmod.temporal.key_activate", "Stop / resume time");
+        m.put("pocketmod.temporal.key_forward", "Forward through recorded time");
+        m.put("pocketmod.temporal.key_preview", "Foresight / return");
+        m.put("pocketmod.temporal.key_rewind", "Rewind / toggle scroll mode");
+        m.put("pocketmod.temporal.limit", "Recording limit reached. Time released");
+        m.put("pocketmod.temporal.need_unlock", "Unlock the time slow ability first");
+        m.put("pocketmod.temporal.occupied", "Another player is controlling time");
+        m.put("pocketmod.temporal.preview_started", "Foresight: O returns. All changes will be undone");
+        m.put("pocketmod.temporal.rewind_charge", "Rewind +20 s: 1 eye of ender");
+        m.put("pocketmod.temporal.same_dimension", "All players must be in the same dimension for rewind");
+        m.put("pocketmod.temporal.share_off", "Other players can move: no");
+        m.put("pocketmod.temporal.share_on", "Other players can move: yes");
+        m.put("pocketmod.temporal.started", "Time stopped. Use again to resume");
+        m.put("pocketmod.temporal.tooltip", "Stasis: %s/4 · Rewind: %s s");
+        m.put("pocketmod.temporal.unavailable", "Leave specter, morph, mounts or pocket before using the dial");
+        m.put("pocketmod.temporal.upgrade", "Upgrade: 4 diamonds / 1 nether star");
+        m.put("pocketmod.temporal.wheel", "Scroll: backward / forward · U: exit");
         m.put("tile.pocketmod.resurrection_totem.name", "Resurrection totem");
     }
 }

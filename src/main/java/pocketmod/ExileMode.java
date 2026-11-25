@@ -62,6 +62,7 @@ public final class ExileMode {
 
     @SubscribeEvent
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
+        if (TemporalSystem.frozen(event.world)) return;
         if (event.phase != TickEvent.Phase.END
                 || event.world.isRemote
                 || event.world.provider.getDimension() != 0
@@ -80,6 +81,7 @@ public final class ExileMode {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof EntityPlayerMP)) return;
         EntityPlayerMP p = (EntityPlayerMP) event.player;
+        if (!TemporalSystem.canMove(p)) return;
         ExileBloodthirst.refreshModifiers(p);
         if (!enabled(p.world)) return;
         ExileProgression.enforce(p);
@@ -96,6 +98,7 @@ public final class ExileMode {
                 || p.getHealth() <= 0
                 || p.isCreative()
                 || (p.isSpectator() && !Spector.isActive(p))) {ExileSymptoms.reset(s);ExileInfectionDamage.pulse(s,false);return;}
+        if (TemporalSystem.frozen(p.world)) {ExileBloodthirst.advance(p);return;}
         if (PocketDimensionManager.isPocketDimension(p.dimension)) {
             ExileSymptoms.reset(s);
             ExileInfectionDamage.pulse(s,false);

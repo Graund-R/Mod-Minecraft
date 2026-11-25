@@ -85,7 +85,7 @@ public final class EntityRunningRhino extends EntityMob {
     public int action(){return dataManager.get(ACTION);}
     public float progress(float partial){return MathHelper.clamp(1F-(dataManager.get(REMAIN)-partial)/(float)Math.max(1,dataManager.get(LENGTH)),0,1);}
     public boolean enraged(){return getHealth()<=getMaxHealth()*.5F;}
-    private void begin(int state,int ticks){getNavigator().clearPath();remaining=duration=ticks;dataManager.set(ACTION,state);dataManager.set(REMAIN,ticks);dataManager.set(LENGTH,ticks);}
+    private void begin(int state,int ticks){int old=action();if(old==CHARGE&&state!=CHARGE)DashEffects.end(this,0);getNavigator().clearPath();remaining=duration=ticks;dataManager.set(ACTION,state);dataManager.set(REMAIN,ticks);dataManager.set(LENGTH,ticks);if(state==CHARGE&&old!=CHARGE)DashEffects.start(this,0,ticks);}
     @Override public boolean isNonBoss(){return false;}
     @Override protected boolean canDespawn(){return false;}
     @Override protected ResourceLocation getLootTable(){return LootTableList.EMPTY;}

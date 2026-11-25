@@ -8,8 +8,11 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 public class CommonProxy {
     public void preInit() {}
     public void init() {}
+    public void openTemporalPanel() {}
 
     public void registerClientMessages() {
+        NetworkHandler.CHANNEL_INSTANCE.registerMessage(TeleportEffects.Ignore.class,TeleportEffects.Message.class,5,net.minecraftforge.fml.relauncher.Side.CLIENT);
+        NetworkHandler.CHANNEL_INSTANCE.registerMessage(DashEffects.Ignore.class,DashEffects.Message.class,4,net.minecraftforge.fml.relauncher.Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(IgnoreSyncHandler.class,
                 NetworkHandler.SyncMessage.class, 0, net.minecraftforge.fml.relauncher.Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(IgnorePocketSyncHandler.class,

@@ -9,9 +9,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public final class ExileDebugGui extends GuiScreen {
-    private boolean thirstPage;
-    private int radius = ExileConfig.debugAreaRadius;
-    private int selected=1,scroll;
+    private static boolean thirstPage=ClientViewState.number("debug.thirst",0)==1;
+    private static int radius = ExileConfig.debugAreaRadius;
+    private static int selected=Math.max(0,Math.min(4,ClientViewState.number("debug.selected",1))),scroll=ClientViewState.number("debug.scroll",0);
     private int left() { return Math.max(8,width/2-210); }
     @Override public void initGui() {
         buttonList.clear();
@@ -130,5 +130,6 @@ public final class ExileDebugGui extends GuiScreen {
         super.handleMouseInput();int wheel=org.lwjgl.input.Mouse.getEventDWheel();
         if(wheel!=0)scroll=Math.max(0,scroll+(wheel>0?-1:1));
     }
-    @Override public boolean doesGuiPauseGame(){return false;}
+    @Override public void onGuiClosed(){ClientViewState.save("debug.","thirst",thirstPage?1:0,"selected",selected,"scroll",scroll);}
+    @Override public boolean doesGuiPauseGame(){return true;}
 }

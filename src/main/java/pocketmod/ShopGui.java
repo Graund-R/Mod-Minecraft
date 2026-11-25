@@ -31,13 +31,13 @@ public class ShopGui extends GuiScreen {
     private static final int BTN_DOOR_MANAGE = 232;
     private static final int BTN_MORPHISM = 233;
 
-    private static ShopCatalog.Tab tab = ShopCatalog.TABS[0];
-    private static int selected = initialSelection();
+    private static ShopCatalog.Tab tab = ShopCatalog.TABS[Math.max(0,Math.min(ShopCatalog.TABS.length-1,ClientViewState.number("shop.tab",0)))];
+    private static int selected = Math.max(-1,Math.min(tab.cards.length-1,ClientViewState.number("shop.selected",initialSelection())));
     private final Map<GuiButton, ShopCatalog.Tab> tabButtons = new HashMap<>();
     private final Map<GuiButton, Integer> cardButtons = new HashMap<>();
-    private int tabOffset;
-    private int cardOffset;
-    private int detailScroll;
+    private static int tabOffset;
+    private static int cardOffset=ClientViewState.number("shop.offset",0);
+    private static int detailScroll=ClientViewState.number("shop.detail",0);
     private int detailMaxScroll;
     private boolean alignSelectedTab = true;
 
@@ -782,6 +782,9 @@ public class ShopGui extends GuiScreen {
         }
     }
 
+    @Override
+    public void onGuiClosed(){int index=0;for(int i=0;i<ShopCatalog.TABS.length;i++)if(tab==ShopCatalog.TABS[i])index=i;
+        ClientViewState.save("shop.","tab",index,"selected",selected,"offset",cardOffset,"detail",detailScroll);}
     @Override
     public boolean doesGuiPauseGame() {
         return true;

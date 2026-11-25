@@ -15,12 +15,24 @@ public final class ClientPacketHandlers {
     private ClientPacketHandlers() {}
 
     public static void register() {
+        NetworkHandler.CHANNEL_INSTANCE.registerMessage(TeleportHandler.class,TeleportEffects.Message.class,5,Side.CLIENT);
+        NetworkHandler.CHANNEL_INSTANCE.registerMessage(DashHandler.class,DashEffects.Message.class,4,Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(SyncHandler.class,
                 NetworkHandler.SyncMessage.class, 0, Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(PocketSyncHandler.class,
                 NetworkHandler.PocketSyncMessage.class, 2, Side.CLIENT);
         NetworkHandler.CHANNEL_INSTANCE.registerMessage(PromptHandler.class,
                 NetworkHandler.PromptMessage.class, 3, Side.CLIENT);
+    }
+
+    public static final class TeleportHandler implements IMessageHandler<TeleportEffects.Message,IMessage>{
+        public IMessage onMessage(TeleportEffects.Message message,MessageContext context){Minecraft.getMinecraft().addScheduledTask(() -> TeleportVisuals.receive(message));return null;}
+    }
+
+    public static final class DashHandler implements IMessageHandler<DashEffects.Message,IMessage> {
+        @Override public IMessage onMessage(DashEffects.Message message,MessageContext context){
+            Minecraft.getMinecraft().addScheduledTask(() -> DashVisuals.receive(message));return null;
+        }
     }
 
     public static class PromptHandler implements IMessageHandler<NetworkHandler.PromptMessage, IMessage> {
@@ -44,6 +56,7 @@ public final class ClientPacketHandlers {
                 EntityPlayer player = Minecraft.getMinecraft().player;
                 if (player != null && message.data != null) {
                     PlayerData.replace(player, message.data);
+                    TemporalSystem.clientState(message.data.getCompoundTag("temporal"),player.dimension);
                     JmHook.fire();
                 }
             });

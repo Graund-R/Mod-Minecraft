@@ -21,5 +21,55 @@
     "sounds": [
       "pocketmod:infection_surge"
     ]
+  },
+  "dash_snap": {
+    "subtitle": "pocketmod.subtitle.dash_snap",
+    "sounds": [
+      {
+        "name": "pocketmod:dash_snap",
+        "volume": 1,
+        "pitch": 1
+      }
+    ]
+  },
+  "dash_rush": {
+    "subtitle": "pocketmod.subtitle.dash_rush",
+    "sounds": [
+      {
+        "name": "pocketmod:dash_rush",
+        "volume": 1,
+        "pitch": 1
+      }
+    ]
+  },
+  "dash_land": {
+    "subtitle": "pocketmod.subtitle.dash_land",
+    "sounds": [
+      {
+        "name": "pocketmod:dash_land",
+        "volume": 1,
+        "pitch": 1
+      }
+    ]
+  },
+  "teleport_fold": {
+    "subtitle": "pocketmod.subtitle.teleport_fold",
+    "sounds": [
+      {
+        "name": "pocketmod:teleport_fold",
+        "volume": 1,
+        "pitch": 1
+      }
+    ]
+  },
+  "teleport_unfold": {
+    "subtitle": "pocketmod.subtitle.teleport_unfold",
+    "sounds": [
+      {
+        "name": "pocketmod:teleport_unfold",
+        "volume": 1,
+        "pitch": 1
+      }
+    ]
   }
 }

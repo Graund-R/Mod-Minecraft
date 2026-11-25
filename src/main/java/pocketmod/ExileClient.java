@@ -24,8 +24,6 @@ import org.lwjgl.input.Mouse;
 
 @SideOnly(Side.CLIENT)
 public final class ExileClient {
-    private static final int BUTTON = 9451;
-    private GuiButton createButton;
     private final net.minecraft.client.settings.KeyBinding cheatMode =
             new net.minecraft.client.settings.KeyBinding(
                     "key.pocketmod.cheat_gamemode",
@@ -50,21 +48,17 @@ public final class ExileClient {
     private static final Field MODE_BUTTON =
             ReflectionHelper.findField(GuiCreateWorld.class, "btnGameMode", "field_146343_z");
 
+    private static final Field DESC1=ReflectionHelper.findField(GuiCreateWorld.class,"gameModeDesc1","field_146323_G");
+    private static final Field DESC2=ReflectionHelper.findField(GuiCreateWorld.class,"gameModeDesc2","field_146328_H");
+    private static final Field BONUS_BUTTON=ReflectionHelper.findField(GuiCreateWorld.class,"btnBonusItems","field_146326_C");
+
     @SubscribeEvent
     public void init(GuiScreenEvent.InitGuiEvent.Post e) {
         if (!(e.getGui() instanceof GuiCreateWorld)) return;
         GuiCreateWorld gui = (GuiCreateWorld) e.getGui();
         ExileWorldCreationClient.initialize(gui);
         ExileWorldCreationClient.refresh(gui);
-        createButton =
-                new GuiButton(
-                        BUTTON,
-                        gui.width / 2 + 5,
-                        115,
-                        150,
-                        20,
-                        Tr.format("pocketmod.exile.mode"));
-        e.getButtonList().add(createButton);
+
     }
 
     @SubscribeEvent
@@ -73,12 +67,13 @@ public final class ExileClient {
         GuiCreateWorld gui = (GuiCreateWorld) e.getGui();
         try {
             GuiButton mode = (GuiButton) MODE_BUTTON.get(gui);
-            mode.x = gui.width / 2 - 155;
+            mode.x = gui.width / 2 - 75;
             mode.width = 150;
-            if (createButton != null) {
-                createButton.visible = !MORE.getBoolean(gui);
-                createButton.displayString =
-                        (ExileWorldCreationClient.selected(gui) ? "\u00a7a" : "") + Tr.format("pocketmod.exile.mode");
+            if(ExileWorldCreationClient.selected(gui)) {
+                mode.displayString = Tr.format("selectWorld.gameMode") + ": " + Tr.format("pocketmod.exile.mode");
+                DESC1.set(gui,Tr.format("pocketmod.exile.create_line1"));
+                DESC2.set(gui,Tr.format("pocketmod.exile.create_line2"));
+                ((GuiButton)BONUS_BUTTON.get(gui)).enabled=false;
             }
         } catch (IllegalAccessException ex) {
             throw new IllegalStateException(ex);
@@ -90,11 +85,10 @@ public final class ExileClient {
         if (!(e.getGui() instanceof GuiCreateWorld)) return;
         GuiCreateWorld gui = (GuiCreateWorld) e.getGui();
         if (!e.getButton().enabled) return;
-        if (e.getButton().id == BUTTON) {
-            ExileWorldCreationClient.set(gui, !ExileWorldCreationClient.selected(gui));
-            ExileWorldCreationClient.refresh(gui);
+        if (e.getButton().id == 2) {
+            ExileWorldCreationClient.cycle(gui);
             e.setCanceled(true);
-        } else if (e.getButton().id == 2 && ExileWorldCreationClient.selected(gui)) ExileWorldCreationClient.set(gui, false);
+        }
         else if (e.getButton().id == 0 && ExileWorldCreationClient.selected(gui)) {
             e.setCanceled(true);
             ExileWorldCreationClient.create(gui);

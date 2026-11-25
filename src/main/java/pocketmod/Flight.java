@@ -30,11 +30,11 @@ public class Flight {
     }
 
     static int heightForLevel(int level) {
-        return PocketConfig.flightHeight[level - 1];
+        return level <= 0 ? 0 : PocketConfig.flightHeight[Math.min(level, PocketConfig.flightHeight.length) - 1];
     }
 
     static float speedForLevel(int level) {
-        return PocketConfig.flightSpeed[level - 1];
+        return level <= 0 ? 0 : PocketConfig.flightSpeed[Math.min(level, PocketConfig.flightSpeed.length) - 1];
     }
 
     /** Базовый расход (висение у точки взлёта). */

@@ -105,7 +105,7 @@ public class TimeSlow {
     }
 
     private static void worldTick(TickEvent.WorldTickEvent event) {
-        if (event.world.isRemote) return;
+        if (event.world.isRemote || TemporalSystem.frozen(event.world)) return;
         if (!(event.world instanceof WorldServer)) return;
         WorldServer world = (WorldServer) event.world;
         WorldState st = state(world);

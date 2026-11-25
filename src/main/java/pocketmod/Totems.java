@@ -212,7 +212,7 @@ public class Totems {
         Abilities.clearMobTargets(p, 16.0);
         p.dismountRidingEntity();
         p.fallDistance = 0f;
-        Abilities.teleportFx((WorldServer) p.world, from, from);
+        TeleportEffects.depart(p,(WorldServer)p.world,from);
 
         Dash.onTeleport(p);
         if (p.dimension == t.dim) {
@@ -222,7 +222,7 @@ public class Totems {
         }
 
         Vec3d to = new Vec3d(pos[0], pos[1] + 1.0, pos[2]);
-        Abilities.teleportFx((WorldServer) p.world, to, to);
+        if(p.dimension==t.dim)TeleportEffects.arrive(p,(WorldServer)p.world,to);
     }
 
     // ===== Временный тотем смерти (x10, до использования или следующей смерти) =====
@@ -338,7 +338,7 @@ public class Totems {
         Abilities.clearMobTargets(p, 16.0);
         p.dismountRidingEntity();
         p.fallDistance = 0f;
-        Abilities.teleportFx((WorldServer) p.world, from, from);
+        TeleportEffects.depart(p,(WorldServer)p.world,from);
         Dash.onTeleport(p);
         if (p.dimension == t.dim) {
             p.connection.setPlayerLocation(pos[0], pos[1], pos[2], p.rotationYaw, p.rotationPitch);
@@ -346,7 +346,7 @@ public class Totems {
             p.changeDimension(t.dim, new PocketTeleporter(pos[0], pos[1], pos[2]));
         }
         Vec3d to = new Vec3d(pos[0], pos[1] + 1.0, pos[2]);
-        Abilities.teleportFx((WorldServer) p.world, to, to);
+        if(p.dimension==t.dim)TeleportEffects.arrive(p,(WorldServer)p.world,to);
         p.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.death_totem_used"), true);
     }
 }

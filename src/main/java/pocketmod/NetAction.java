@@ -37,7 +37,8 @@ public enum NetAction {
     EXILE_COMPASS(33),
     TOGGLE_CHEAT_GAMEMODE(34),
     EXILE_DEBUG(35),
-    RESURRECTION_READY(36);
+    RESURRECTION_READY(36),
+    TEMPORAL(37);
 
     public final int id;
     NetAction(int id) { this.id = id; }

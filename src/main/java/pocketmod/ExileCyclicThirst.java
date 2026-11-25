@@ -100,7 +100,17 @@ public final class ExileCyclicThirst {
         if(before>=ExileConfig.cyclicCalmHigh)state.setBoolean("cycle_calm_armed",true);
         double relief=ordinaryRelief(state)*bounded(danger,.25,4)
                 *(1-ExileConfig.cyclicReliefRandom+2*ExileConfig.cyclicReliefRandom*random(state,"relief"));
-        state.setDouble("cycle_thirst",Math.max(0,before-relief));
+        state.setInteger("cycle_kill_grace",10);
+        state.setInteger("thirst_damage_seconds",0);
+        if(before>=100) {
+            double pending=state.getDouble("cycle_pending_relief")+relief;
+            if(pending<25) {state.setDouble("cycle_pending_relief",pending);canonical(state);return 0;}
+            state.setDouble("cycle_pending_relief",0);
+            state.setDouble("cycle_thirst",Math.max(0,before-pending));
+        } else {
+            state.setDouble("cycle_pending_relief",0);
+            state.setDouble("cycle_thirst",Math.max(0,before-relief));
+        }
         if(percent(state)<ExileConfig.cyclicCalmLow&&state.getBoolean("cycle_calm_armed")) {
             state.setInteger("cycle_calm_remaining",Math.max(state.getInteger("cycle_calm_remaining"),duration(state,"calm",ExileConfig.cyclicCalmMin,ExileConfig.cyclicCalmMax)));
             state.setBoolean("cycle_calm_armed",false);
@@ -117,7 +127,7 @@ public final class ExileCyclicThirst {
     }
     static boolean victory(NBTTagCompound state,String id) {
         if(!recordBoss(state,id))return false;
-        state.setDouble("cycle_thirst",0);state.setDouble("cycle_habit_seconds",0);
+        state.setDouble("cycle_thirst",0);state.setDouble("cycle_habit_seconds",0);state.setDouble("cycle_pending_relief",0);state.setInteger("cycle_kill_grace",0);
         state.setInteger("cycle_calm_remaining",ExileConfig.cyclicBossCalm);
         state.setBoolean("cycle_calm_armed",false);state.setInteger("thirst_damage_seconds",0);
         canonical(state);return true;
@@ -145,9 +155,10 @@ public final class ExileCyclicThirst {
         } else if(action==16)kill(state,1);
         else if(action==18)state.setDouble("cycle_habit_seconds",0);
         else if(action==19) {
-            state.setDouble("cycle_thirst",0);state.setDouble("cycle_habit_seconds",0);
+            state.setDouble("cycle_thirst",0);state.setDouble("cycle_habit_seconds",0);state.setDouble("cycle_pending_relief",0);state.setInteger("cycle_kill_grace",0);
             state.setInteger("cycle_calm_remaining",0);state.setBoolean("cycle_calm_armed",false);
         }
+        if(action!=16){state.setDouble("cycle_pending_relief",0);state.setInteger("cycle_kill_grace",0);}
         canonical(state);state.setInteger("thirst_damage_seconds",0);
     }
     static void snapshot(EntityPlayerMP player) {

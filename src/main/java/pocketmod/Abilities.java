@@ -317,9 +317,10 @@ public class Abilities {
         player.dismountRidingEntity();
         player.fallDistance = 0f;
         Dash.onTeleport(player);
+        TeleportEffects.depart(player,(WorldServer)world,from);
         player.connection.setPlayerLocation(land.getX() + 0.5, land.getY(), land.getZ() + 0.5,
                 player.rotationYaw, player.rotationPitch);
-        teleportFx((WorldServer) world, from, to);
+        TeleportEffects.arrive(player,(WorldServer)world,to);
         if (isSilenceEnabled(player) && AbilityStorage.getLevel(player, AbilityType.TELEPORT) >= PocketConfig.silenceMinLevel) {
             player.getEntityData().setInteger(KEY_SILENT, player.ticksExisted + PocketConfig.silenceTicks);
         }
@@ -346,20 +347,6 @@ public class Abilities {
             last = below;
         }
         return last;
-    }
-
-    static void teleportFx(WorldServer ws, Vec3d from, Vec3d to) {
-        double len = from.distanceTo(to);
-        int steps = (int) Math.min(40.0, Math.max(2.0, len / 1.5));
-        for (int i = 0; i <= steps; i++) {
-            double t = (double) i / (double) steps;
-            ws.spawnParticle(EnumParticleTypes.PORTAL,
-                    from.x + (to.x - from.x) * t,
-                    from.y + (to.y - from.y) * t,
-                    from.z + (to.z - from.z) * t,
-                    3, 0.2, 0.2, 0.2, 0.05);
-        }
-        ws.playSound(null, to.x, to.y, to.z, SoundEvents.ENTITY_ENDERMEN_TELEPORT, SoundCategory.PLAYERS, 0.8F, 1.2F);
     }
 
     private static BlockPos findTopLanding(World world, BlockPos hitBlock) {

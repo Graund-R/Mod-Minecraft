@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.38", acceptedMinecraftVersions = "[1.12.2]",
+@Mod(modid = PocketMod.MODID, name = "Pocket Mod", version = "2.43", acceptedMinecraftVersions = "[1.12.2]",
         guiFactory = "pocketmod.ConfigGuiFactory")
 public class PocketMod {
 
@@ -66,6 +66,7 @@ public class PocketMod {
     public void serverStarting(FMLServerStartingEvent event) {
         PocketDimensionManager.load(event.getServer().getWorld(0));
         event.registerServerCommand(new CommandExile());
+        event.registerServerCommand(new CommandStasis());
         event.registerServerCommand(new CommandManaAdd());
         event.registerServerCommand(new CommandPocketDebug());
     }

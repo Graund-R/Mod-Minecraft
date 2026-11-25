@@ -48,6 +48,16 @@ public final class WorldCreationSmoke {
         check(ExileWorldCreationClient.selected(legacyGui)&&type(legacyGui)==WorldType.DEFAULT.getId(),"legacy terrain selection converts to independent mode");
         check(ExileGrayClient.amount(20)>0&&ExileGrayClient.amount(20)<ExileGrayClient.amount(50)
             &&ExileGrayClient.amount(50)<ExileGrayClient.amount(80)&&ExileGrayClient.amount(80)<ExileGrayClient.amount(100),"grayscale already grows through all infection stages");
+        Field locale=net.minecraft.client.resources.I18n.class.getDeclaredField("i18nLocale");locale.setAccessible(true);
+        locale.set(null,new net.minecraft.client.resources.Locale());
+        GuiCreateWorld cycle=gui(WorldType.DEFAULT);
+        for(String name:new String[]{"btnGameMode","btnMapFeatures","btnBonusItems","btnMapType","btnAllowCommands"})
+            field(cycle,name,new net.minecraft.client.gui.GuiButton(0,0,0,""));
+        field(cycle,"gameMode","survival");
+        ExileWorldCreationClient.cycle(cycle);check("hardcore".equals(ExileWorldCreationClient.mode(cycle))&&!ExileWorldCreationClient.selected(cycle),"mode button cycles to vanilla hardcore");
+        ExileWorldCreationClient.cycle(cycle);check("creative".equals(ExileWorldCreationClient.mode(cycle)),"mode button cycles to creative");
+        ExileWorldCreationClient.cycle(cycle);check(ExileWorldCreationClient.selected(cycle),"fourth mode is exile");
+        ExileWorldCreationClient.cycle(cycle);check("survival".equals(ExileWorldCreationClient.mode(cycle))&&!ExileWorldCreationClient.selected(cycle),"mode button returns to ordinary survival");
         WorldType modded=new WorldType("fixture_modded");
         WorldSettings chosen=null;
         for(WorldType terrain:new WorldType[]{WorldType.DEFAULT,WorldType.FLAT,WorldType.CUSTOMIZED,modded}){
@@ -62,8 +72,8 @@ public final class WorldCreationSmoke {
             WorldSettings settings=ExileWorldCreationClient.settings(gui,42);
             check(settings.getTerrainType()==terrain,"selected generator passed intact");
             check(settings.getGeneratorOptions().equals(gui.chunkProviderSettingsJson),"raw generator settings unchanged");
-            check(settings.getGameType()==GameType.SURVIVAL&&!settings.getHardcoreEnabled(),"custom survival rather than vanilla hardcore");
-            check(!settings.isMapFeaturesEnabled()&&settings.areCommandsAllowed()&&settings.isBonusChestEnabled(),"structures, cheats and bonus settings retained");
+            check(settings.getGameType()==GameType.SURVIVAL&&settings.getHardcoreEnabled(),"exile creates a hardcore survival world");
+            check(!settings.isMapFeaturesEnabled()&&settings.areCommandsAllowed()&&!settings.isBonusChestEnabled(),"structures, cheats and bonus settings retained");
             check(settings.getSeed()==123456,"seed retained");
             ExileWorldCreationClient.set(gui,false);
             check(type(gui)==terrain.getId(),"disabling mode keeps generator");

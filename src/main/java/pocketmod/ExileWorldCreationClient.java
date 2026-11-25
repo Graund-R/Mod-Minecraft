@@ -23,12 +23,26 @@ final class ExileWorldCreationClient {
     private static final Field HARDCORE=field("hardCoreMode","field_146337_w");
     private static final Field STRUCTURES=field("generateStructuresEnabled","field_146341_s");
     private static final Field BONUS=field("bonusChestEnabled","field_146338_v");
+    private static final Field CHEATS_SET=field("allowCheatsWasSetByUser","field_146339_u");
     private static final Field CHEATS=field("allowCheats","field_146340_t");
     private static final Field SEED=field("worldSeedField","field_146335_h");
     private static final Field NAME=field("worldNameField","field_146333_g");
     private static final Field FOLDER=field("saveDirName","field_146336_i");
     private static final Field GENERATED=field("alreadyGenerated","field_146345_x");
     private ExileWorldCreationClient() {}
+    static String mode(GuiCreateWorld gui) {
+        try {return (String)MODE.get(gui);}catch(IllegalAccessException e){throw new IllegalStateException(e);}
+    }
+    static void cycle(GuiCreateWorld gui) {
+        try {
+            if(selected(gui)){set(gui,false);MODE.set(gui,"survival");HARDCORE.setBoolean(gui,false);}
+            else if("creative".equals(mode(gui)))set(gui,true);
+            else if("survival".equals(mode(gui))){MODE.set(gui,"hardcore");HARDCORE.setBoolean(gui,true);}
+            else {MODE.set(gui,"creative");HARDCORE.setBoolean(gui,false);}
+            if(!CHEATS_SET.getBoolean(gui))CHEATS.setBoolean(gui,!selected(gui)&&"creative".equals(mode(gui)));
+            refresh(gui);
+        }catch(IllegalAccessException e){throw new IllegalStateException(e);}
+    }
     static boolean selected(GuiCreateWorld gui) {return Boolean.TRUE.equals(choices.get(gui));}
     static void set(GuiCreateWorld gui,boolean enabled) {
         choices.put(gui,enabled);
@@ -61,10 +75,10 @@ final class ExileWorldCreationClient {
         try {
             WorldType terrain=WorldType.WORLD_TYPES[TYPE.getInt(gui)];
             WorldSettings settings=new WorldSettings(seed(((GuiTextField)SEED.get(gui)).getText(),randomSeed),
-                    GameType.getByName((String)MODE.get(gui)),STRUCTURES.getBoolean(gui),HARDCORE.getBoolean(gui),terrain);
+                    GameType.getByName((String)MODE.get(gui)),STRUCTURES.getBoolean(gui),selected(gui)||HARDCORE.getBoolean(gui),terrain);
             settings.setGeneratorOptions(gui.chunkProviderSettingsJson);
             if(BONUS.getBoolean(gui)&&!settings.getHardcoreEnabled())settings.enableBonusChest();
-            if(CHEATS.getBoolean(gui)&&!settings.getHardcoreEnabled())settings.enableCommands();
+            if(CHEATS.getBoolean(gui)&&(selected(gui)||!settings.getHardcoreEnabled()))settings.enableCommands();
             return settings;
         } catch(IllegalAccessException e){throw new IllegalStateException(e);}
     }

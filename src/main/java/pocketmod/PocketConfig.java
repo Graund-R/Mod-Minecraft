@@ -67,6 +67,8 @@ public class PocketConfig {
     // Рывок
     // По уровням 1..4. Дальность = скорость x тики: на 2 уровне она уже максимальная (8 блоков), дальше растут
     // скорость (рывок короче по времени), число зарядов, перезарядка, урон, отражение и бонусы.
+    public static boolean teleportVisuals=true,teleportRefraction=true,teleportSounds=true;
+    public static boolean dashVisuals=true, dashFirstPerson=true, dashSounds=true;
     public static double[] dashCost = { 14, 12, 10, 8 };
     public static double[] dashCharges = { 1, 2, 2, 3 };
     public static double[] dashRechargeSec = { 6.0, 3.0, 2.2, 1.5 };
@@ -263,6 +265,12 @@ public class PocketConfig {
         slowFluidRadius = cfg.getInt("slowFluidRadius", "замедление", 48, 8, 96, "Radius (blocks) in which fluids are slowed");
         slowBubbleRadius = cfg.getInt("slowBubbleRadius", "замедление", 48, 8, 128, "Radius of the slow-time bubble around each player");
         slowMaxBubbles = cfg.getInt("slowMaxBubbles", "замедление", 8, 1, 64, "How many slow-time bubbles the server processes at once");
+        teleportVisuals=cfg.getBoolean("teleportVisuals", "способности", true, "Spatial fold geometry at departure and arrival, independent of upgrades");
+        teleportRefraction=cfg.getBoolean("teleportRefraction", "способности", true, "Brief world-only refraction composed with infection haze; no HUD or FOV changes");
+        teleportSounds=cfg.getBoolean("teleportSounds", "способности", true, "Spatial compression and release sounds");
+        dashVisuals=cfg.getBoolean("dashVisuals", "рывок", true, "Afterimages, electrical trails and brief flashes; identical at every ability level");
+        dashFirstPerson=cfg.getBoolean("dashFirstPerson", "рывок", true, "Brief speed lines at screen edges, without camera shake or FOV changes");
+        dashSounds=cfg.getBoolean("dashSounds", "рывок", true, "Dash snap, air rush and landing sounds");
         dashCost = arr(cfg, "levelCost", "рывок", dashCost, "Мана за рывок по уровням 1..4");
         dashCharges = arr(cfg, "levelCharges", "рывок", dashCharges, "Сколько рывков подряд по уровням");
         dashRechargeSec = arr(cfg, "levelRechargeSec", "рывок", dashRechargeSec, "Секунд на восстановление одного заряда по уровням");

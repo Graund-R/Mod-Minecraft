@@ -40,7 +40,7 @@ public final class ExileAtmosphereClient {
     private void sound(Minecraft mc,SoundEvent sound,float volume,float pitch) {
         if(!ExileConfig.infectionSounds)return;
         int duration=sound==ExileSounds.INFECTION_WIND?245:sound==ExileSounds.INFECTION_WHISPER?85:65;
-        ISound record=new FadingSound(sound,volume,pitch,duration);
+        ISound record=new FadingSound(sound,volume*2,pitch,duration);
         mc.getSoundHandler().playSound(record);playing.add(record);
     }
     private static boolean active(Minecraft mc) {
@@ -62,10 +62,11 @@ public final class ExileAtmosphereClient {
         event.setGreen(event.getGreen() + (light - event.getGreen()) * amount);
         event.setBlue(event.getBlue() + (light - event.getBlue()) * amount);
     }
-    @SubscribeEvent public void convection(net.minecraftforge.client.event.RenderWorldLastEvent event) {
+    @SubscribeEvent(priority=net.minecraftforge.fml.common.eventhandler.EventPriority.LOWEST) public void convection(net.minecraftforge.client.event.RenderWorldLastEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (ExileConfig.visuals && active(mc) && strength > .01f)
-            ExileConvectionClient.render(strength, (mc.player.ticksExisted + event.getPartialTicks()) / 20f);
+        float haze=ExileConfig.visuals && active(mc)?strength:0;
+        float[] lenses=TeleportVisuals.lenses(event.getPartialTicks());
+        if(mc.player!=null&&(haze>.01F||lenses.length>0))ExileConvectionClient.render(haze,(mc.player.ticksExisted+event.getPartialTicks())/20F,lenses);
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         if(event.phase!=TickEvent.Phase.END)return;

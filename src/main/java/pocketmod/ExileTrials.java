@@ -61,6 +61,7 @@ public final class ExileTrials implements IWorldGenerator {
 
     @SubscribeEvent
     public static void worldTick(net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent e) {
+        if (TemporalSystem.frozen(e.world)) return;
         if (e.phase != net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END
                 || e.world.isRemote || e.world.provider.getDimension() != 0
                 || e.world.getTotalWorldTime() % 20 != 0 || !ExileMode.enabled(e.world)

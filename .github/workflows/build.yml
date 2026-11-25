@@ -64,6 +64,9 @@ jobs:
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
           sed -i "s#^version = .*#version = \"$MODVER\"#" build.gradle
           sed -i -E "s/version\s*=\s*\"[0-9]+(\.[0-9]+)*\"/version = \"$MODVER\"/" src/main/java/pocketmod/PocketMod.java
+          cat >> build.gradle <<'GRADLE'
+          jar { manifest { attributes "FMLCorePlugin": "pocketmod.temporal.TemporalCorePlugin", "FMLCorePluginContainsFMLMod": "true" } }
+          GRADLE
       - name: Test rhino attack decisions
         run: |
           mkdir -p /tmp/rhino-check
@@ -83,6 +86,16 @@ jobs:
       - name: Build
         working-directory: mdk
         run: ./gradlew build --no-daemon
+      - name: Test optional Metamorph compatibility
+        run: python3 tests/run-compat.py mdk
+      - name: Test gameplay regressions without Minecraft
+        run: python3 tests/run-gameplay.py mdk
+      - name: Test dash presentation without Minecraft
+        run: python3 tests/run-dash.py mdk
+      - name: Test teleport presentation without Minecraft
+        run: python3 tests/run-teleport.py mdk
+      - name: Test temporal history and tick hooks
+        run: python3 tests/run-temporal.py mdk
       - name: Prepare direct downloads
         shell: bash
         run: |
@@ -94,6 +107,7 @@ jobs:
           with zipfile.ZipFile('dist/pocketmod.jar') as jar:
               assert jar.testzip() is None
               assert 'pocketmod/PocketMod.class' in jar.namelist()
+              assert not any(name.startswith('com/example/') for name in jar.namelist()), 'Forge template classes leaked into the mod'
               assert 'assets/pocketmod/lang/ru_ru.lang' in jar.namelist()
           PY
           git archive --format=zip --output=dist/pocketmod-source.zip HEAD

@@ -393,8 +393,12 @@ public class ClientHandler {
     private static final String TEAM_HOT = "pm_hot";
     private static final java.util.Set<String> hotNames = new java.util.HashSet<String>();
 
-    private static boolean hostile(EntityLivingBase e) {
-        if (e instanceof net.minecraft.entity.monster.IMob) return true;
+    static boolean hostile(EntityLivingBase e) {
+        if(e instanceof net.minecraft.entity.passive.EntityTameable && ((net.minecraft.entity.passive.EntityTameable)e).isTamed())return false;
+        net.minecraft.util.ResourceLocation id=net.minecraft.entity.EntityList.getKey(e);
+        if(e instanceof net.minecraft.entity.monster.EntitySpider || (id!=null && id.getResourcePath().contains("spider")))return true;
+        if(e instanceof net.minecraft.entity.EntityLiving && ((net.minecraft.entity.EntityLiving)e).getAttackTarget() instanceof EntityPlayer)return true;
+        if (e instanceof net.minecraft.entity.monster.IMob || e instanceof net.minecraft.entity.monster.EntityMob) return true;
         if (e instanceof net.minecraft.entity.passive.EntityWolf && ((net.minecraft.entity.passive.EntityWolf) e).isAngry()) return true;
         return false;
     }

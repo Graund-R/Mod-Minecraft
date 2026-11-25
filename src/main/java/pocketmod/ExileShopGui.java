@@ -13,8 +13,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 /** Discovery-aware shop: categories, selectable cards and a separate purchase action. */
 @SideOnly(Side.CLIENT)
 public final class ExileShopGui extends GuiScreen {
-    private int category, offset, detailScroll, detailMax, ticks;
-    private String selected = "base_inventory";
+    private static int category=Math.max(0,Math.min(ShopCatalog.TABS.length,ClientViewState.number("exile.category",0))),
+        offset=ClientViewState.number("exile.offset",0), detailScroll=ClientViewState.number("exile.detail",0);
+    private int detailMax, ticks;
+    private static String selected = ClientViewState.text("exile.selected","base_inventory");
     private final List<String> entries = new ArrayList<>();
     private int left, right, top, bottom, listWidth;
 
@@ -301,5 +303,7 @@ public final class ExileShopGui extends GuiScreen {
     }
 
     @Override
-    public boolean doesGuiPauseGame() { return false; }
+    public void onGuiClosed(){ClientViewState.save("exile.","category",category,"offset",offset,"detail",detailScroll,"selected",selected==null?"":selected);}
+    @Override
+    public boolean doesGuiPauseGame() { return true; }
 }

@@ -20,41 +20,6 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 @Mod.EventBusSubscriber(modid = PocketMod.MODID)
 public final class ExileEncounters {
-    /** Задача с приоритетом движения удерживает обычный AI от возвращения в опасную область. */
-    private static final class EscapeTask extends net.minecraft.entity.ai.EntityAIBase {
-        private final EntityLiving mob;
-
-        EscapeTask(EntityLiving mob) {
-            this.mob = mob;
-            setMutexBits(3);
-        }
-
-        @Override
-        public boolean shouldExecute() {
-            if (mob.getEntityData().getBoolean(ExileMode.PURSUER)) return false;
-            BlockPos p = mob.getPosition();
-            return ExileWorldData.get(mob.world)
-                            .exposure(mob.dimension, p.getX() >> 4, p.getZ() >> 4)
-                    >= ExileConfig.fleeSeconds;
-        }
-
-        @Override
-        public void updateTask() {
-            mob.setAttackTarget(null);
-        }
-    }
-
-    @SubscribeEvent
-    public static void join(net.minecraftforge.event.entity.EntityJoinWorldEvent e) {
-        if (e.getWorld().isRemote
-                || !(e.getEntity() instanceof EntityLiving)
-                || !ExileMode.enabled(e.getWorld())
-                || PocketDimensionManager.isPocketDimension(e.getEntity().dimension)) return;
-        EntityLiving mob = (EntityLiving) e.getEntity();
-        if (mob.isNonBoss() && !(mob instanceof EntityDecoy))
-            mob.tasks.addTask(0, new EscapeTask(mob));
-    }
-
     private ExileEncounters() {}
 
     static int typeCap(int stage,int kind) {
@@ -192,6 +157,7 @@ public final class ExileEncounters {
         if(e.player instanceof EntityPlayerMP) cancel((EntityPlayerMP)e.player);
     }
     @SubscribeEvent public static void queueTick(net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent e) {
+        if (TemporalSystem.frozen(e.player.world)) return;
         if(e.phase!=net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END || !(e.player instanceof EntityPlayerMP)) return;
         EntityPlayerMP p=(EntityPlayerMP)e.player;
         respawnTick(p);
@@ -342,6 +308,14 @@ public final class ExileEncounters {
         return strandedExpired(tag,!reachable,mob.world.getTotalWorldTime());
     }
 
+    @SubscribeEvent public static void join(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
+        if(event.getWorld().isRemote||!(event.getEntity() instanceof net.minecraft.entity.EntityCreature))return;
+        net.minecraft.entity.EntityCreature mob=(net.minecraft.entity.EntityCreature)event.getEntity();
+        for(net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry entry:mob.tasks.taskEntries)
+            if(entry.action instanceof ExileEscapeTask)return;
+        mob.tasks.addTask(0,new ExileEscapeTask(mob));
+    }
+
     @SubscribeEvent
     public static void living(LivingEvent.LivingUpdateEvent event) {
         if (!(event.getEntityLiving() instanceof EntityLiving)
@@ -387,43 +361,7 @@ public final class ExileEncounters {
             mob.setDead();
             return;
         }
-        if (exposure < ExileConfig.fleeSeconds) return;
-        mob.setAttackTarget(null);
-        double cleanest = exposure;
-        BlockPos destination = null;
-        int pathsTried = 0;
-        for (int dx = -3; dx <= 3; dx++)
-            for (int dz = -3; dz <= 3; dz++) {
-                if (dx == 0 && dz == 0 || pathsTried >= 4) continue;
-                BlockPos column =
-                        new BlockPos(((cx + dx) << 4) + 8, origin.getY(), ((cz + dz) << 4) + 8);
-                if (!mob.world.isBlockLoaded(column)) continue;
-                double next = data.exposure(mob.dimension, cx + dx, cz + dz);
-                if (next >= cleanest) continue;
-                for (int dy = -4; dy <= 4; dy++) {
-                    BlockPos feet = column.up(dy);
-                    if (!PocketTeleporter.standable(mob.world, feet)) continue;
-                    if (++pathsTried > 4) break;
-                    Path path = mob.getNavigator().getPathToPos(feet);
-                    if (path == null
-                            || path.getFinalPathPoint() == null
-                            || path.getFinalPathPoint()
-                                            .distanceTo(
-                                                    new net.minecraft.pathfinding.PathPoint(
-                                                            feet.getX(), feet.getY(), feet.getZ()))
-                                    > 2) continue;
-                    destination = feet;
-                    cleanest = next;
-                    break;
-                }
-            }
-        if (destination != null)
-            mob.getNavigator()
-                    .tryMoveToXYZ(
-                            destination.getX() + 0.5,
-                            destination.getY(),
-                            destination.getZ() + 0.5,
-                            1.3);
+
     }
 
     @SubscribeEvent
