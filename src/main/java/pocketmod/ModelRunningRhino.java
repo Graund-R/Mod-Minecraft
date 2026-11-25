@@ -42,7 +42,9 @@ public final class ModelRunningRhino extends ModelBase {
                 if(group.startsWith("front")||group.startsWith("back")){
                     float offset=(group.equals("frontL")||group.equals("backR"))?0:3.14159F;
                     float angle=(float)Math.sin(cycle+offset)*strength;
-                    if(action!=EntityRunningRhino.ROAM&&!charge)angle=0;
+                    if(action!=EntityRunningRhino.ROAM&&!charge&&action!=EntityRunningRhino.RETREAT)angle=0;
+                    if(action==EntityRunningRhino.RETREAT)angle=(float)Math.sin(age*.65F+offset)*Math.max(.28F,amount*1.5F);
+                    if(action==EntityRunningRhino.DIG&&group.startsWith("front"))angle=(float)Math.sin(t*Math.PI*5)*.55F;
                     float sx=1,sy=1;
                     if(rear!=null){
                         if(group.startsWith("back")){angle=rear.backAngle;sy=rear.backScale;}
@@ -55,13 +57,24 @@ public final class ModelRunningRhino extends ModelBase {
                     if(action==EntityRunningRhino.HORN){GlStateManager.rotate(RhinoAnimation.hornYaw(t*.9F)*DEG,0,1,0);angle+=(float)Math.sin(t*Math.PI)*.42F;}
                     if(action==EntityRunningRhino.STUCK)angle=-.32F+(float)Math.sin(age*.65F)*.06F;
                     if(action==EntityRunningRhino.OVERHEAT)angle=-.24F+(float)Math.sin(age*.4F)*.07F;
+                    if(rhino.angry()){GlStateManager.rotate((float)Math.sin(age*.7F)*18,0,1,0);angle+=Math.sin(age*.85F)*.1F;}
+                    if(action==EntityRunningRhino.DIG||action==EntityRunningRhino.BREACH)angle=-.15F+(float)Math.sin(t*Math.PI*3)*.48F;
                     GlStateManager.rotate(angle*DEG,0,0,1);
+                }else if(group.equals("bellyL")||group.equals("bellyR")){
+                    float open=rear==null?0:Math.min(1,Math.max(0,(t*RhinoAnimation.REAR_SECONDS-.35F)/.25F));
+                    if(t*RhinoAnimation.REAR_SECONDS>=1.5F)open=0;
+                    GlStateManager.rotate((group.equals("bellyL")?1:-1)*open*65,1,0,0);
                 }else if(group.equals("tail"))GlStateManager.rotate((float)Math.sin(age*.2F)*19,0,1,0);
                 GlStateManager.translate(-gx,-gy,-gz);
             }
             GlStateManager.translate(n(pos,0),n(pos,1),n(pos,2));
             GlStateManager.rotate(n(rot,2),0,0,1);GlStateManager.rotate(n(rot,1),0,1,0);GlStateManager.rotate(n(rot,0),1,0,0);
-            cube(n(size,0),n(size,1),n(size,2),p.get("mat").getAsInt());GlStateManager.popMatrix();
+            int material=p.get("mat").getAsInt();
+            float bx=OpenGlHelper.lastBrightnessX,by=OpenGlHelper.lastBrightnessY;
+            if(rhino.angry()&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,240,240);
+            cube(n(size,0),n(size,1),n(size,2),material);
+            if(rhino.angry()&&(material==7||material==8))OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,bx,by);
+            GlStateManager.popMatrix();
         }
         GlStateManager.popMatrix();
     }

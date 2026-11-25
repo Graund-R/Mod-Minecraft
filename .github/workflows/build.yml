@@ -67,9 +67,10 @@ jobs:
       - name: Test rhino attack decisions
         run: |
           mkdir -p /tmp/rhino-check
-          javac -encoding UTF-8 -d /tmp/rhino-check src/main/java/pocketmod/RhinoTactics.java src/main/java/pocketmod/RhinoAnimation.java tests/java/pocketmod/RhinoTacticsSmoke.java tests/java/pocketmod/RhinoAnimationSmoke.java
+          javac -encoding UTF-8 -d /tmp/rhino-check src/main/java/pocketmod/RhinoTactics.java src/main/java/pocketmod/RhinoAnimation.java tests/java/pocketmod/RhinoTacticsSmoke.java tests/java/pocketmod/RhinoAnimationSmoke.java src/main/java/pocketmod/RhinoCoverRules.java tests/java/pocketmod/RhinoCoverSmoke.java
           java -cp /tmp/rhino-check pocketmod.RhinoTacticsSmoke
           java -cp /tmp/rhino-check pocketmod.RhinoAnimationSmoke
+          java -cp /tmp/rhino-check pocketmod.RhinoCoverSmoke
       - name: Optional JourneyMap API
         if: hashFiles('optional/journeymap/JmPlugin.java') != ''
         shell: bash

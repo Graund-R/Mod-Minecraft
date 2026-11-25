@@ -20,7 +20,7 @@ import net.minecraftforge.event.ForgeEventFactory;
 
 /** Heavy dash boss. All damage, target snapshots and destruction are authoritative on the server. */
 public final class EntityRunningRhino extends EntityMob {
-    public static final int ROAM=0, HORN=1, WINDUP=2, CHARGE=3, STUCK=4, OVERHEAT=5, REAR=6, RECOVER=7;
+    public static final int ROAM=0, HORN=1, WINDUP=2, CHARGE=3, STUCK=4, OVERHEAT=5, REAR=6, RECOVER=7, RETREAT=8, DIG=9, BREACH=10;
     private static final DataParameter<Integer> ACTION=EntityDataManager.createKey(EntityRunningRhino.class,DataSerializers.VARINT);
     private static final DataParameter<Integer> REMAIN=EntityDataManager.createKey(EntityRunningRhino.class,DataSerializers.VARINT);
     private static final DataParameter<Integer> LENGTH=EntityDataManager.createKey(EntityRunningRhino.class,DataSerializers.VARINT);
@@ -29,7 +29,34 @@ public final class EntityRunningRhino extends EntityMob {
     private final Set<UUID> chargeHits=new HashSet<>(),waveHits=new HashSet<>();
     private int remaining, duration, attackDelay=55, airProbe=35, circleTicks, combo, waveAge=-1;
     private double dashX,dashZ,waveX,waveY,waveZ;
-    private BlockPos support;
+    private BlockPos support, coverMark, breakMark;
+    private int coverMemory, blockedTicks, coverCooldown;
+    private double retreatX,retreatZ;
+    public boolean angry(){return action()==RETREAT||action()==DIG||action()==BREACH;}
+    private boolean mobile(){return action()==ROAM||action()==RETREAT;}
+    public boolean bellyOpen(float partial){return RhinoCoverRules.bellyOpen(action(),progress(partial));}
+    @Override public boolean attackEntityFrom(DamageSource source,float amount){
+        if(source==DamageSource.IN_WALL&&action()==REAR)return false;
+        Entity attacker=source.getTrueSource(),direct=source.getImmediateSource();
+        if(attacker instanceof EntityLivingBase&&valid((EntityLivingBase)attacker)){
+            double dx=attacker.posX-posX,dz=attacker.posZ-posZ,yaw=Math.toRadians(rotationYaw);
+            double h=direct!=null&&direct!=attacker?direct.posY-posY:attacker.posY+attacker.getEyeHeight()-posY;
+            if(bellyOpen(0)&&RhinoCoverRules.bellyHit(-dx*Math.sin(yaw)+dz*Math.cos(yaw),dx*Math.cos(yaw)+dz*Math.sin(yaw),h))amount*=1.8F;
+        }
+        boolean hit=super.attackEntityFrom(source,amount);
+        if(hit&&!world.isRemote&&isEntityAlive()&&attacker instanceof EntityLivingBase&&valid((EntityLivingBase)attacker)){
+            remember((EntityLivingBase)attacker);setAttackTarget((EntityLivingBase)attacker);
+            if(RhinoCoverRules.below(attacker.posX-posX,attacker.posY-posY,attacker.posZ-posZ)&&action()!=RETREAT)startRetreat();
+        }
+        return hit;
+    }
+    private void remember(EntityLivingBase p){coverMark=new BlockPos(p.posX,p.posY,p.posZ);coverMemory=200;}
+    private void startRetreat(){
+        if(coverMark==null)return;
+        double[] at=RhinoCoverRules.retreat(posX,posZ,coverMark.getX()+.5,coverMark.getZ()+.5,Math.toRadians(rotationYaw));
+        retreatX=at[0];retreatZ=at[1];combo=0;begin(RETREAT,55);
+        sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.5F,.65F);
+    }
     public EntityRunningRhino(World world) { super(world);setSize(2.8F,2.9F);stepHeight=1;experienceValue=60;enablePersistence();isImmuneToFire=true; }
     @Override protected void entityInit(){super.entityInit();dataManager.register(ACTION,ROAM);dataManager.register(REMAIN,0);dataManager.register(LENGTH,1);}
     @Override protected void initEntityAI(){
@@ -62,21 +89,44 @@ public final class EntityRunningRhino extends EntityMob {
     @Override public void setDead(){super.setDead();if(bar!=null)bar.setVisible(false);}
     private boolean valid(EntityLivingBase p){return p!=null&&p.isEntityAlive()&&(!(p instanceof EntityPlayer)||(!((EntityPlayer)p).isCreative()&&!((EntityPlayer)p).isSpectator()));}
     @Override public void onLivingUpdate(){
-        if(action()!=ROAM){motionX=motionZ=0;moveForward=moveStrafing=0;}
+        if(!mobile()){motionX=motionZ=0;moveForward=moveStrafing=0;}
         super.onLivingUpdate();
+        float desiredHeight=action()==REAR?6.2F:2.9F;
+        if(height!=desiredHeight)setSize(2.8F,desiredHeight);
         if(world.isRemote){if(action()==OVERHEAT&&ticksExisted%3==0)world.spawnParticle(EnumParticleTypes.CLOUD,posX,posY+2.4,posZ,.02,.13,.02);return;}
         if(!isEntityAlive())return;
         bar.setPercent(getHealth()/getMaxHealth());
+        if(coverCooldown>0)coverCooldown--;
+        if(coverMemory>0)coverMemory--;else coverMark=null;
         if(waveAge>=0)waveTick();
         EntityLivingBase target=getAttackTarget();
         boolean hasTarget=valid(target)&&getDistanceSq(target)<64*64;
+        boolean visible=hasTarget&&canEntityBeSeen(target);
+        if(visible)remember(target);
         boolean elevated=hasTarget&&target.posY>posY+2.8;
         tactics.tick(elevated,action()==ROAM);
         if(attackDelay>0)attackDelay--;
         if(!hasTarget&&action()!=ROAM){begin(ROAM,1);combo=0;support=null;}
         if(action()==ROAM){if(hasTarget)choose(target,elevated);return;}
-        getNavigator().clearPath();
         int state=action(),elapsed=duration-remaining;
+        if(state!=RETREAT)getNavigator().clearPath();
+        if(state==RETREAT){
+            if(elapsed%10==0){
+                net.minecraft.pathfinding.Path path=getNavigator().getPathToXYZ(retreatX,posY,retreatZ);
+                if(path!=null)getNavigator().setPath(path,1.1);
+                else {
+                    Vec3d away=new Vec3d(retreatX-posX,0,retreatZ-posZ).normalize();
+                    Vec3d across=new Vec3d(-away.z,0,away.x).scale(elapsed%20==0?4:-4);
+                    getNavigator().tryMoveToXYZ(posX+away.x*3+across.x,posY,posZ+away.z*3+across.z,1.1);
+                }
+            }
+            if(elapsed%12==0){sound(SoundEvents.ENTITY_POLAR_BEAR_AMBIENT,1.3F,.65F);particles(EnumParticleTypes.SMOKE_NORMAL,posX,posY+2,posZ,7,.7,.15,.7);}
+            if(coverMark!=null)getLookHelper().setLookPosition(coverMark.getX()+.5,coverMark.getY()+1,coverMark.getZ()+.5,12,12);
+        }
+        if(state==DIG||state==BREACH){
+            if(breakMark!=null){double dx=breakMark.getX()+.5-posX,dz=breakMark.getZ()+.5-posZ;rotationYaw=(float)(Math.atan2(-dx,dz)*180/Math.PI);renderYawOffset=rotationYaw;}
+            if(elapsed==15)breakCover(state==DIG);
+        }
         if(state==WINDUP){face(target,4);if(elapsed%8==0)particles(EnumParticleTypes.SMOKE_NORMAL,posX,posY+.2,posZ,6,1,.1,1);}
         if(state==HORN&&elapsed==8)horn();
         if(state==CHARGE){chargeTick();if(action()!=CHARGE)return;}
@@ -88,6 +138,13 @@ public final class EntityRunningRhino extends EntityMob {
         if(state==OVERHEAT&&elapsed%8==0){particles(EnumParticleTypes.CLOUD,posX,posY+2.2,posZ,8,.8,.3,.8);}
         dataManager.set(REMAIN,--remaining);
         if(remaining>0)return;
+        if(state==RETREAT){
+            if(coverMark!=null&&RhinoCoverRules.shallow(posY,coverMark.getY())&&coverCooldown==0&&getDistanceSqToCenter(coverMark)<11*11){
+                breakMark=findPitEdge();if(breakMark!=null){begin(DIG,38);return;}
+            }
+            begin(ROAM,1);attackDelay=40;return;
+        }
+        if(state==DIG||state==BREACH){coverCooldown=100;blockedTicks=0;breakMark=null;}
         if(state==WINDUP){
             double dx=target.posX-posX,dz=target.posZ-posZ,len=Math.sqrt(dx*dx+dz*dz);
             if(len<.01){dx=-Math.sin(Math.toRadians(rotationYaw));dz=Math.cos(Math.toRadians(rotationYaw));len=1;}
@@ -99,6 +156,23 @@ public final class EntityRunningRhino extends EntityMob {
     }
     private void choose(EntityLivingBase target,boolean elevated){
         face(target,5);double distance=getDistanceSq(target);
+        if(coverMark!=null&&RhinoCoverRules.below(coverMark.getX()+.5-posX,coverMark.getY()-posY,coverMark.getZ()+.5-posZ)){startRetreat();return;}
+        if(coverMark!=null&&coverMark.getY()<posY-4){getNavigator().clearPath();return;}
+        boolean seen=canEntityBeSeen(target);
+        if(coverMark!=null&&coverCooldown==0){
+            boolean obstructed=!seen||getNavigator().noPath()&&distance>4.8*4.8;
+            blockedTicks=obstructed?blockedTicks+1:Math.max(0,blockedTicks-2);
+            if(blockedTicks>=30){
+                RayTraceResult ray=world.rayTraceBlocks(new Vec3d(posX,posY+1,posZ),new Vec3d(coverMark.getX()+.5,coverMark.getY()+1,coverMark.getZ()+.5),false,true,false);
+                if(ray!=null&&ray.typeOfHit==RayTraceResult.Type.BLOCK){
+                    BlockPos at=ray.getBlockPos();
+                    if(at.distanceSq(posX,posY+1,posZ)<=5.5*5.5){breakMark=at;begin(BREACH,34);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.2F,.65F);return;}
+                    if(ticksExisted%12==0)getNavigator().tryMoveToXYZ(at.getX()+.5,posY,at.getZ()+.5,1);
+                    return;
+                }
+            }
+        }
+        if(!seen){if(coverMark!=null&&ticksExisted%12==0)getNavigator().tryMoveToXYZ(coverMark.getX()+.5,coverMark.getY(),coverMark.getZ()+.5,1);return;}
         if(elevated){
             if(tactics.shouldCollapse(true)){begin(REAR,44);sound(SoundEvents.ENTITY_POLAR_BEAR_WARNING,1.4F,.65F);return;}
             // Approaches, failed horn probes and circling alternate before a collapse is considered.
@@ -150,6 +224,28 @@ public final class EntityRunningRhino extends EntityMob {
         }
         if(ticksExisted%4==0){sound(SoundEvents.BLOCK_STONE_STEP,.9F,.65F);particles(EnumParticleTypes.SMOKE_NORMAL,posX,posY+.2,posZ,8,1,.1,1);}
         if(obstruction||collidedHorizontally){combo=0;begin(STUCK,38);sound(SoundEvents.ENTITY_GENERIC_EXPLODE,1,.65F);particles(EnumParticleTypes.EXPLOSION_NORMAL,posX,posY+1,posZ,18,1,1,1);}
+    }
+    private BlockPos findPitEdge(){
+        if(coverMark==null)return null;
+        Vec3d toward=new Vec3d(coverMark.getX()+.5-posX,0,coverMark.getZ()+.5-posZ).normalize();
+        // Start at the rim we can actually reach, never excavate remotely beneath the player.
+        for(int i=4;i>=1;i--){
+            BlockPos p=new BlockPos(posX+toward.x*i,posY-.1,posZ+toward.z*i);
+            if(world.isBlockLoaded(p)&&world.getBlockState(p).getMaterial().blocksMovement())return p;
+        }
+        return null;
+    }
+    private void breakCover(boolean digging){
+        if(breakMark==null)return;
+        if(breakMark.distanceSq(posX,posY,posZ)>6*6)return;
+        BlockPos from=breakMark.add(-1,digging?-1:-1,-1),to=breakMark.add(1,digging?0:2,1);
+        for(BlockPos p:BlockPos.getAllInBox(from,to)){
+            // Never remove the column currently supporting the boss itself.
+            if(digging&&p.getY()<posY&&Math.abs(p.getX()+.5-posX)<1.6&&Math.abs(p.getZ()+.5-posZ)<1.6)continue;
+            breakBlock(p);
+        }
+        sound(SoundEvents.BLOCK_STONE_BREAK,1.5F,.65F);
+        particles(EnumParticleTypes.SMOKE_LARGE,breakMark.getX()+.5,breakMark.getY()+1,breakMark.getZ()+.5,24,1,.4,1);
     }
     private boolean breakBlock(BlockPos at){
         if(!world.isBlockLoaded(at)||!ForgeEventFactory.getMobGriefingEvent(world,this))return false;
