@@ -41,6 +41,10 @@ public class AbilityStorage {
 
     public static boolean tryUpgrade(EntityPlayer player, AbilityType type) {
         if (!ExileProgression.require(player, type.id)) return false;
+        if(TimeBranches.child(type)&&!AbilityStorage.isUnlocked(player,AbilityType.SLOW)) {
+            player.sendStatusMessage(new TextComponentTranslation("pocketmod.temporal.need_parent"),true);return false;
+        }
+        if(TemporalSystem.busy(player))return false;
         int cur = getUpgradeLevel(player, type);
         int cost = type.costForNextLevel(cur);
         if (cost < 0) {

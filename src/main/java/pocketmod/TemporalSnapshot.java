@@ -47,6 +47,8 @@ final class TemporalSnapshot {
             NBTTagCompound n=new NBTTagCompound();
             net.minecraft.util.ResourceLocation type=EntityList.getKey(e);if(type==null)continue;
             e.writeToNBT(n);n.setString("id",type.toString());n.removeTag("Passengers");
+            n.setTag("pocket_time_pose",TemporalPose.capture(e));
+            if(e instanceof EntityLiving&&((EntityLiving)e).getAttackTarget()!=null)n.setUniqueId("pocket_time_target",((EntityLiving)e).getAttackTarget().getUniqueID());
             if(e.isRiding())n.setUniqueId("pocket_vehicle",e.getRidingEntity().getUniqueID());
             f.entities.put(e.getUniqueID(),n);CompressedStreamTools.write(n,out);
             if(f.entities.size()>1024)throw new IOException("entity limit");
@@ -111,6 +113,15 @@ final class TemporalSnapshot {
             Entity e=current.get(entry.getKey());
             if(e==null) {e=EntityList.createEntityFromNBT(n.copy(),world);if(e!=null){track.restoringSpawn=true;try{world.spawnEntity(e);}finally{track.restoringSpawn=false;}}}
             else {e.readFromNBT(n.copy());e.setPosition(e.posX,e.posY,e.posZ);e.velocityChanged=true;}
+            if(e!=null)TemporalPose.apply(e,n.getCompoundTag("pocket_time_pose"));
+        }
+        for(Map.Entry<UUID,NBTTagCompound> entry:entities.entrySet()) {
+            Entity entity=world.getEntityFromUuid(entry.getKey());
+            if(entity instanceof EntityLiving){
+                Entity target=entry.getValue().hasUniqueId("pocket_time_target")?world.getEntityFromUuid(entry.getValue().getUniqueId("pocket_time_target")):null;
+                if(target==null&&entry.getValue().hasUniqueId("pocket_time_target"))target=world.getPlayerEntityByUUID(entry.getValue().getUniqueId("pocket_time_target"));
+                ((EntityLiving)entity).setAttackTarget(target instanceof EntityLivingBase?(EntityLivingBase)target:null);
+            }
         }
         for(Map.Entry<UUID,NBTTagCompound> entry:entities.entrySet()) {
             if(!entry.getValue().hasUniqueId("pocket_vehicle"))continue;
@@ -145,7 +156,8 @@ final class TemporalSnapshot {
             player.experienceTotal=n.getInteger("xp");player.experienceLevel=n.getInteger("level");player.experience=n.getFloat("xpbar");
             player.clearActivePotions();NBTTagList effects=n.getTagList("effects",10);
             for(int i=0;i<effects.tagCount();i++){PotionEffect effect=PotionEffect.readCustomPotionEffectFromNBT(effects.getCompoundTagAt(i));if(effect!=null)player.addPotionEffect(effect);}
-            PlayerData.replace(player,n.getCompoundTag("pocket"));
+            PlayerData.replace(player,TimeBranches.restoreCost(n.getCompoundTag("pocket"),PlayerData.root(player)));
+            if(track.mode==4||track.mode==5)player.getEntityData().setBoolean("pocketmod_slow",false);
             player.connection.setPlayerLocation(n.getDouble("x"),n.getDouble("y"),n.getDouble("z"),n.getFloat("yaw"),n.getFloat("pitch"));
             player.motionX=n.getDouble("mx");player.motionY=n.getDouble("my");player.motionZ=n.getDouble("mz");
             player.velocityChanged=true;player.inventory.markDirty();player.sendContainerToPlayer(player.inventoryContainer);

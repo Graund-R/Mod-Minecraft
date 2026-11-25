@@ -19,7 +19,9 @@ public enum AbilityType {
     ORE_SCANNER("scanner", 250, 500, 900),
     WAREHOUSE("warehouse", 200, 400, 700),
     DASH("dash", 300, 550, 900, 1400),
-    MORPHISM("morphism", 500);
+    MORPHISM("morphism", 500),
+    TIME_REWIND("time_rewind", 700, 1400, 2400),
+    TIME_FUTURE("time_future", 1200, 2400, 4000);
 
     public final String id;
     public final int[] levelCosts;

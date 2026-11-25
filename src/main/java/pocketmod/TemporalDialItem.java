@@ -17,7 +17,7 @@ import net.minecraftforge.fml.relauncher.*;
 public final class TemporalDialItem extends Item {
     public TemporalDialItem() {
         setRegistryName(PocketMod.MODID,"temporal_dial");setUnlocalizedName("pocketmod.temporal_dial");
-        setMaxStackSize(1);setHasSubtypes(true);setCreativeTab(PocketCreativeTab.ITEMS);
+        setMaxStackSize(1);setHasSubtypes(true);
     }
     public static boolean isDial(ItemStack stack) { return !stack.isEmpty() && stack.getItem() instanceof TemporalDialItem; }
     public static int tier(ItemStack stack) { return Math.max(0,Math.min(2,stack.getMetadata())); }
@@ -45,16 +45,12 @@ public final class TemporalDialItem extends Item {
         if (isInCreativeTab(tab)) for(int i=0;i<3;i++) out.add(new ItemStack(this,1,i));
     }
     @Override public ActionResult<ItemStack> onItemRightClick(World world,EntityPlayer player,EnumHand hand) {
-        ItemStack dial=player.getHeldItem(hand);
-        if (world.isRemote) {
-            if (player.isSneaking()) PocketMod.proxy.openTemporalPanel();
-        } else if (!player.isSneaking()) TemporalSystem.use((EntityPlayerMP)player,dial);
-        return new ActionResult<ItemStack>(EnumActionResult.SUCCESS,dial);
+        if(world.isRemote)PocketMod.proxy.openTemporalPanel();
+        return new ActionResult<ItemStack>(EnumActionResult.SUCCESS,player.getHeldItem(hand));
     }
+
     @Override @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack,World world,List<String> lines,ITooltipFlag flag) {
-        NBTTagCompound n=data(stack);
-        lines.add(net.minecraft.client.resources.I18n.format("pocketmod.temporal.tooltip",n.getInteger("charges"),n.getInteger("rewind")/20));
-        lines.add(net.minecraft.client.resources.I18n.format("pocketmod.temporal.controls"));
+        lines.add(net.minecraft.client.resources.I18n.format("pocketmod.temporal.legacy"));
     }
 }

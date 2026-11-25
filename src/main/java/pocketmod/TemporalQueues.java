@@ -8,8 +8,8 @@ import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
 /** Piston/note/chest block events live outside the scheduled tick list in 1.12.2. */
 final class TemporalQueues {
-    private static final Field QUEUES=ReflectionHelper.findField(WorldServer.class,"blockEventQueue","field_147490_S");
-    private static final Field INDEX=ReflectionHelper.findField(WorldServer.class,"blockEventCacheIndex","field_147489_T");
+    private static final Field QUEUES=ReflectionHelper.findField(WorldServer.class,new String[]{"blockEventQueue","field_147490_S"});
+    private static final Field INDEX=ReflectionHelper.findField(WorldServer.class,new String[]{"blockEventCacheIndex","field_147489_T"});
     @SuppressWarnings("unchecked")
     private static List<BlockEventData>[] queues(WorldServer w)throws IllegalAccessException{return (List<BlockEventData>[])QUEUES.get(w);}
     static List<BlockEventData> copy(WorldServer world) {

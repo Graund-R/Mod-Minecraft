@@ -24,6 +24,7 @@ final class ShopStyle {
     }
 
     static void icon(Minecraft mc, String id, int x, int y, int size) {
+        if(id.equals("time_rewind")||id.equals("time_future"))id="slow";
         GlStateManager.enableBlend();
         GlStateManager.color(1, 1, 1, 1);
         mc.getTextureManager().bindTexture(new ResourceLocation("pocketmod",

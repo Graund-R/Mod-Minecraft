@@ -193,6 +193,8 @@ public class PocketConfig {
 
     public static float invisCostPerSec = 0.4f;
     public static float slowDrainBase = 2.0f;
+    public static double[] timeRewindSeconds={5,10,20},timeFutureSeconds={5,10,15};
+    public static double[] timeRewindMana={80,60,40},timeFutureMana={20,15,10},timeFutureEntry={100,90,80};
 
     /** Перечитать значения после правки в игровом экране настроек. */
     public static void reload() {
@@ -406,6 +408,11 @@ public class PocketConfig {
         invisCostPerSec = cfg.getFloat("invisCostPerSec", "невидимость", 0.4f, 0f, 10000f, "Mana per second while invisible (level 1; level 2 x0.75, level 3 x0.5)");
         slowDrainBase = cfg.getFloat("slowDrainBase", "замедление", 2.0f, 0f, 10000f, "Slow time cost: mana/sec = base / factor (factor 0.25 -> base*4)");
 
+        timeRewindSeconds=arr(cfg,"rewindSeconds","управление временем",timeRewindSeconds,"Rewind depth by level, seconds, maximum 20");
+        timeFutureSeconds=arr(cfg,"futureSeconds","управление временем",timeFutureSeconds,"Future recording duration by level, seconds, maximum 20");
+        timeRewindMana=arr(cfg,"rewindMana","управление временем",timeRewindMana,"Mana per second of rewind by level");
+        timeFutureMana=arr(cfg,"futureMana","управление временем",timeFutureMana,"Mana per second while recording future by level");
+        timeFutureEntry=arr(cfg,"futureEntry","управление временем",timeFutureEntry,"Future activation cost by level");
         for (AbilityType t : AbilityType.values()) {
             for (int i = 0; i < t.levelCosts.length; i++) {
                 String key = t.id + "Level" + (i + 1);

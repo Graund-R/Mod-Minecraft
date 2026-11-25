@@ -93,6 +93,9 @@ public final class ExileShopGui extends GuiScreen {
             buy.primary = true;
             buy.enabled = price >= 0 && Mana.get(mc.player) >= price;
             if (price >= 0 && !buy.enabled) buy.displayString = Tr.format("pocketmod.shop.need_mana", price);
+            if(!base(selected)&&!selected.startsWith("body_")&&TimeBranches.child(type(selected))&&!AbilityStorage.isUnlocked(mc.player,AbilityType.SLOW)) {
+                buy.enabled=false;buy.displayString=Tr.format("pocketmod.temporal.need_parent");
+            }
             buttonList.add(buy);
         }
         int footer = height - 27;

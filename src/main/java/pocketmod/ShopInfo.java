@@ -35,6 +35,8 @@ public class ShopInfo {
                 return Tr.format(k, ClientHandler.keyName("invis"));
             case SLOW:
                 return Tr.format(k, ClientHandler.keyName("slow"));
+            case TIME_REWIND:return Tr.format(k,TemporalClient.rewindKey());
+            case TIME_FUTURE:return Tr.format(k,TemporalClient.futureKey());
             case DECOY:
                 return Tr.format(k, ClientHandler.keyName("invis"));
             case SPECTOR:
@@ -70,8 +72,10 @@ public class ShopInfo {
             case INVISIBILITY:
                 return Tr.format(k, n(Abilities.noticeRangeFor(lvl)), n(Abilities.invisDrainFor(lvl)));
             case SLOW:
-                if (Abilities.minSlowFactorForLevel(lvl) == 0) return Tr.format(k, n(PocketConfig.slowZeroDrain));
+                if (Abilities.minSlowFactorForLevel(lvl) == 0) return Tr.format(k, n(PocketConfig.slowZeroDrain*TimeBranches.slowDiscount(lvl)));
                 return Tr.format(k, n(Abilities.minSlowFactorForLevel(lvl)));
+            case TIME_REWIND:return Tr.format("pocketmod.info.time_rewind.stats",n(TimeBranches.rewindTicks(lvl)/20.0),n(TimeBranches.rewindRate(lvl)));
+            case TIME_FUTURE:return Tr.format("pocketmod.info.time_future.stats",n(TimeBranches.futureTicks(lvl)/20.0),n(TimeBranches.futureEntry(lvl)),n(TimeBranches.futureRate(lvl)));
             case DECOY:
                 return Tr.format(k, PocketConfig.decoyMaxSec, PocketConfig.decoyCost);
             case THERMAL:
@@ -143,6 +147,10 @@ public class ShopInfo {
         int next = current + 1;
         List<String> lines = new ArrayList<>();
         switch (ability) {
+            case TIME_REWIND:
+                lines.add(level(ability,next));break;
+            case TIME_FUTURE:
+                lines.add(level(ability,next));break;
             case SHIELD:
                 addChange(lines, "shield", "cost", Shield.manaPerDamage(current) * multiplier,
                         Shield.manaPerDamage(next) * multiplier);
@@ -151,7 +159,7 @@ public class ShopInfo {
                 addChange(lines, "slow", "factor", Abilities.minSlowFactorForLevel(current),
                         Abilities.minSlowFactorForLevel(next));
                 if (Abilities.minSlowFactorForLevel(next) == 0) {
-                    lines.add(Tr.format("pocketmod.info.slow.change.stop", n(PocketConfig.slowZeroDrain * multiplier)));
+                    lines.add(Tr.format("pocketmod.info.slow.change.stop", n(PocketConfig.slowZeroDrain * TimeBranches.slowDiscount(next) * multiplier)));
                 }
                 break;
             case BLOODSUCKER:

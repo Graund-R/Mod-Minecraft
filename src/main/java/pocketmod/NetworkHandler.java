@@ -244,7 +244,10 @@ public final class NetworkHandler {
             case WAREHOUSE_CLICK: WarehouseSlots.click(p, m.a, m.b); break;
             case SET_SLOW_FACTOR:
                 float factor = (float) Math.max(Abilities.minSlowFactor(p), Math.min(0.75, m.value));
+                boolean restart=Abilities.isSlow(p);
+                if(restart){TemporalSystem.stopOwned(p);p.getEntityData().setBoolean("pocketmod_slow",false);}
                 Abilities.setSlowFactor(p, factor);
+                if(restart)Abilities.toggleSlow(p);
                 p.sendStatusMessage(new TextComponentTranslation(
                         factor <= 0.001f ? "pocketmod.msg.slow_stop" : "pocketmod.msg.slow_factor",
                         String.format("%.2f", factor)), true);

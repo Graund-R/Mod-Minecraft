@@ -163,7 +163,9 @@ public class ShopGui extends GuiScreen {
                     Tr.format("pocketmod.shop.pocket.manage")));
         } else if (card != null) {
             AbilityType ability = card.ability;
-            buttonList.add(new ShopStyle.Button(BTN_BUYSEL, px, y, buyWidth, 20, buyLabel(ability)));
+            ShopStyle.Button purchase=new ShopStyle.Button(BTN_BUYSEL,px,y,buyWidth,20,buyLabel(ability));
+            if(TimeBranches.child(ability)&&!AbilityStorage.isUnlocked(player,AbilityType.SLOW)){purchase.enabled=false;purchase.displayString=Tr.format("pocketmod.temporal.need_parent");}
+            buttonList.add(purchase);
             if (ability == AbilityType.WAREHOUSE) {
                 buttonList.add(new ShopStyle.Button(BTN_OPEN_WAREHOUSE, actionX, y, buyWidth, 20, Tr.format("pocketmod.gui.warehouse_open")));
             } else if (ability == AbilityType.INVISIBILITY) {

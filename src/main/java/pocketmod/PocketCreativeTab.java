@@ -20,6 +20,7 @@ public final class PocketCreativeTab {
             }
             // Include future items even if their author forgot to assign the creative tab.
             for (net.minecraft.item.Item item : net.minecraftforge.fml.common.registry.ForgeRegistries.ITEMS) {
+                if(item instanceof TemporalDialItem)continue;
                 if (item.getRegistryName()==null || !PocketMod.MODID.equals(item.getRegistryName().getResourceDomain())) continue;
                 boolean present=false;
                 for(ItemStack stack:items) if(stack.getItem()==item){present=true;break;}

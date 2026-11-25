@@ -203,7 +203,10 @@ public class Abilities {
             player.sendStatusMessage(new TextComponentTranslation("pocketmod.msg.need_shop"), true);
             return;
         }
+        if(TemporalSystem.toggleOwnedStop(player))return;
+        if(TemporalSystem.busy(player)){TemporalSystem.message(player,"occupied");return;}
         boolean now = !isSlow(player);
+        if(now&&getSlowFactor(player)<=.001F){TemporalSystem.stasis(player);return;}
         if (now) {
             double cost = TimeSlow.drainPerSec(player);
             if (Mana.get(player) < cost) {

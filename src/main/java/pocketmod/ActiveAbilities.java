@@ -21,6 +21,7 @@ public final class ActiveAbilities {
     static {
         register(new LegacyInvisibility());
         register(new LegacySlow());
+        register(new TimelineAbility());
         register(new SpectorAbility());
         register(new ThermalAbility());
         register(new ShieldAbility());
@@ -164,6 +165,14 @@ public final class ActiveAbilities {
         @Override public double drainPerSec(EntityPlayer p) { return TimeSlow.drainPerSec(p); }
         @Override public void tick(EntityPlayerMP p) { Abilities.tickSlow(p); }
         @Override public boolean chargedByRegistry() { return false; }
+    }
+
+    private static final class TimelineAbility extends Base {
+        TimelineAbility(){super("time_branches");}
+        @Override public boolean isActive(EntityPlayer p){return TemporalSystem.drainPerSec(p)>0;}
+        @Override public double drainPerSec(EntityPlayer p){return TemporalSystem.drainPerSec(p);}
+        @Override public void tick(EntityPlayerMP p){}
+        @Override public boolean chargedByRegistry(){return false;}
     }
 
     private static final class LegacySoftFall extends Base {

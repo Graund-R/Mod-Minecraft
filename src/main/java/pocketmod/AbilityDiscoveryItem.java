@@ -41,7 +41,9 @@ public final class AbilityDiscoveryItem extends Item {
         "body_strength",
         "body_fire",
         "body_breath",
-        "body_regen"
+        "body_regen",
+        "time_rewind",
+        "time_future"
     };
 
     public AbilityDiscoveryItem() {
