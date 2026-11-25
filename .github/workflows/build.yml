@@ -64,6 +64,11 @@ jobs:
           sed -i 's#^archivesBaseName = .*#archivesBaseName = "pocketmod"#' build.gradle
           sed -i "s#^version = .*#version = \"$MODVER\"#" build.gradle
           sed -i -E "s/version\s*=\s*\"[0-9]+(\.[0-9]+)*\"/version = \"$MODVER\"/" src/main/java/pocketmod/PocketMod.java
+      - name: Test rhino attack decisions
+        run: |
+          mkdir -p /tmp/rhino-check
+          javac -encoding UTF-8 -d /tmp/rhino-check src/main/java/pocketmod/RhinoTactics.java tests/java/pocketmod/RhinoTacticsSmoke.java
+          java -cp /tmp/rhino-check pocketmod.RhinoTacticsSmoke
       - name: Optional JourneyMap API
         if: hashFiles('optional/journeymap/JmPlugin.java') != ''
         shell: bash

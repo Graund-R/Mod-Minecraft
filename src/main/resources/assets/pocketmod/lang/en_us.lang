@@ -1136,3 +1136,6 @@ pocketmod.cfg.22.cyclicRandomMax=Maximum time between rate targets, seconds
 pocketmod.cfg.22.cyclicRandomMax.tooltip=Cyclic bloodthirst parameter. Default and valid range are shown in settings.
 pocketmod.cfg.22.cyclicRandomBlend=Rate transition, seconds
 pocketmod.cfg.22.cyclicRandomBlend.tooltip=Cyclic bloodthirst parameter. Default and valid range are shown in settings.
+
+entity.pocketmod.running_rhino.name=Running Rhino
+entity.running_rhino.name=Running Rhino

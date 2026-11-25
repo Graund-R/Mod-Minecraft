@@ -123,6 +123,7 @@ public class ClientHandler {
     public static void registerRenderers() {
         RenderingRegistry.registerEntityRenderingHandler(EntityDecoy.class, manager -> new RenderDecoy(manager));
         RenderingRegistry.registerEntityRenderingHandler(EntityRiftWalker.class, RenderRiftWalker::new);
+        RenderingRegistry.registerEntityRenderingHandler(EntityRunningRhino.class, RenderRunningRhino::new);
     }
 
     private static void resetHold(Hold h) {

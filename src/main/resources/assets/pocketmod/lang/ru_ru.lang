@@ -1136,3 +1136,6 @@ pocketmod.cfg.22.cyclicRandomMax=Скорость: максимум между �
 pocketmod.cfg.22.cyclicRandomMax.tooltip=Максимальная пауза между новыми случайными целями скорости.
 pocketmod.cfg.22.cyclicRandomBlend=Скорость: плавный переход, сек
 pocketmod.cfg.22.cyclicRandomBlend.tooltip=Скорость плавно переходит к следующему случайному значению за это время.
+
+entity.pocketmod.running_rhino.name=Бегущий Носорог
+entity.running_rhino.name=Бегущий Носорог
