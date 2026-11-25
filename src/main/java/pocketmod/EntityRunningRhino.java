@@ -33,6 +33,8 @@ public final class EntityRunningRhino extends EntityMob {
     private int coverMemory, blockedTicks, coverCooldown, waterStall;
     private double previousApproach=Double.NaN;
     private double retreatX,retreatZ;
+    private UUID opponent;
+    private boolean recoveringAfterLoad;
     public boolean angry(){return action()==RETREAT||action()==DIG||action()==BREACH;}
     private boolean mobile(){return action()==ROAM||action()==RETREAT;}
     public boolean bellyOpen(float partial){return RhinoCoverRules.bellyOpen(action(),progress(partial));}
@@ -95,7 +97,33 @@ public final class EntityRunningRhino extends EntityMob {
     @Override public void addTrackingPlayer(EntityPlayerMP p){super.addTrackingPlayer(p);bar.addPlayer(p);}
     @Override public void removeTrackingPlayer(EntityPlayerMP p){super.removeTrackingPlayer(p);bar.removePlayer(p);}
     @Override public void setDead(){super.setDead();if(bar!=null)bar.setVisible(false);}
-    private boolean valid(EntityLivingBase p){return p!=null&&p.isEntityAlive()&&(!(p instanceof EntityPlayer)||(!((EntityPlayer)p).isCreative()&&!((EntityPlayer)p).isSpectator()));}
+    private boolean valid(EntityLivingBase p){return p!=null&&p.world==world&&p.isEntityAlive()&&(!(p instanceof EntityPlayer)||(!((EntityPlayer)p).isCreative()&&!((EntityPlayer)p).isSpectator()));}
+    /** Resolve the live player object again after reconnect, crash recovery or timeline restoration. */
+    EntityLivingBase recoverTarget() {
+        EntityLivingBase target=getAttackTarget();
+        boolean canonical=!(target instanceof EntityPlayer)||world.getPlayerEntityByUUID(target.getUniqueID())==target;
+        if(valid(target)&&canonical&&getDistanceSq(target)<64*64) {
+            if(target instanceof EntityPlayer)opponent=target.getUniqueID();
+            recoveringAfterLoad=false;return target;
+        }
+        if(opponent!=null) {
+            EntityPlayer player=world.getPlayerEntityByUUID(opponent);
+            if(valid(player)&&getDistanceSq(player)<64*64) {
+                setAttackTarget(player);remember(player);recoveringAfterLoad=false;return player;
+            }
+        }
+        if(ticksExisted%20==0||recoveringAfterLoad) {
+            EntityPlayer nearest=null;double distance=48*48;
+            for(EntityPlayer player:world.playerEntities) {
+                double next=getDistanceSq(player);
+                if(valid(player)&&next<distance&&(recoveringAfterLoad||canEntityBeSeen(player))) {nearest=player;distance=next;}
+            }
+            if(nearest!=null) {
+                opponent=nearest.getUniqueID();setAttackTarget(nearest);remember(nearest);recoveringAfterLoad=false;return nearest;
+            }
+        }
+        setAttackTarget(null);return null;
+    }
     @Override public void onLivingUpdate(){
         if(!mobile()){motionX=motionZ=0;moveForward=moveStrafing=0;}
         super.onLivingUpdate();
@@ -107,7 +135,7 @@ public final class EntityRunningRhino extends EntityMob {
         if(coverCooldown>0)coverCooldown--;
         if(coverMemory>0)coverMemory--;else coverMark=null;
         if(waveAge>=0)waveTick();
-        EntityLivingBase target=getAttackTarget();
+        EntityLivingBase target=recoverTarget();
         boolean hasTarget=valid(target)&&getDistanceSq(target)<64*64;
         boolean visible=hasTarget&&canEntityBeSeen(target);
         if(visible)remember(target);
@@ -306,6 +334,19 @@ public final class EntityRunningRhino extends EntityMob {
     private void particles(EnumParticleTypes type,double x,double y,double z,int n,double dx,double dy,double dz){((WorldServer)world).spawnParticle(type,x,y,z,n,dx,dy,dz,.03);}
     private void sound(SoundEvent event,float volume,float pitch){world.playSound(null,posX,posY,posZ,event,SoundCategory.HOSTILE,volume,pitch);}
     @Override protected void dropLoot(boolean recent,int looting,DamageSource source){super.dropLoot(recent,looting,source);if(recent)entityDropItem(AbilityDiscoveryItem.create("dash"),.5F);}
-    @Override public void writeEntityToNBT(NBTTagCompound n){super.writeEntityToNBT(n);n.setInteger("RhinoIrritation",tactics.frustration());n.setInteger("RhinoCollapseDelay",tactics.cooldown());}
-    @Override public void readEntityFromNBT(NBTTagCompound n){super.readEntityFromNBT(n);tactics.restore(n.getInteger("RhinoIrritation"),n.getInteger("RhinoCollapseDelay"));begin(ROAM,1);attackDelay=55;}
+    @Override public void writeEntityToNBT(NBTTagCompound n){
+        super.writeEntityToNBT(n);n.setInteger("RhinoIrritation",tactics.frustration());n.setInteger("RhinoCollapseDelay",tactics.cooldown());
+        EntityLivingBase target=getAttackTarget();
+        UUID id=target instanceof EntityPlayer?target.getUniqueID():opponent;
+        if(id!=null)n.setUniqueId("RhinoOpponent",id);
+    }
+    @Override public void readEntityFromNBT(NBTTagCompound n){
+        super.readEntityFromNBT(n);tactics.restore(n.getInteger("RhinoIrritation"),n.getInteger("RhinoCollapseDelay"));
+        opponent=n.hasUniqueId("RhinoOpponent")?n.getUniqueId("RhinoOpponent"):null;
+        setAttackTarget(null);recoveringAfterLoad=true;
+        coverMark=support=breakMark=null;coverMemory=blockedTicks=coverCooldown=waterStall=circleTicks=combo=0;
+        previousApproach=Double.NaN;waveAge=-1;chargeHits.clear();waveHits.clear();
+        motionX=motionZ=0;moveForward=moveStrafing=0;
+        begin(ROAM,1);attackDelay=55;airProbe=35;
+    }
 }
